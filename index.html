@@ -283,6 +283,7 @@
   .stavBox { border: 2px solid var(--ink); border-radius: 5px; padding: 10px 12px; margin: 8px 0; font-size: 16px; }
   .stavBox.ok { background: var(--teal-pale); } .stavBox.ne { background: var(--coral-pale); }
   .stavBox .btn.small { margin: 8px 0 0; }
+  .codeShow { font-family: Menlo, Consolas, monospace; font-size: 22px; letter-spacing: 2px; background: #fff; border: 2px dashed var(--ink); border-radius: 6px; padding: 8px 12px; margin: 6px 0; text-align: center; user-select: all; }
   textarea { min-height: 110px; font-size: .8em; }
   textarea.words { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 17px; min-height: 160px; line-height: 1.5; }
   label { font-size: .95em; color: var(--muted2); font-style: italic; }
@@ -3262,6 +3263,18 @@ var SYNC_KEY = "bradaviceSync";
 var SYNC_URL = "https://cihtqgbsdobsgrxfdqrl.supabase.co";
 var SYNC_ANON = "sb_publishable_eDWQjAFSA7pBiH3CGMrUTQ_Byx59pVd";
 var SYNC_CODE_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
+var GAME_URL = "https://pavelpavlicek9-source.github.io/bradavice-hra/";
+/* Kód z klávesnice: malá písmena, bez mezer, různé pomlčky → „-“ (iPad je umí zaměnit). */
+function syncNormCode(s) { return String(s || "").toLowerCase().replace(/[\u2010-\u2015\u2212]/g, "-").replace(/\s+/g, "").trim(); }
+function syncJoinLink() { return GAME_URL + "#kod=" + encodeURIComponent(syncCfg().code); }
+/* Zjistí, zda pod kódem na serveru existuje postup: Promise<{exists, name, earned, house}> */
+function syncPeek(code) {
+  var cfg = syncCfg();
+  return fetch(cfg.url + "/rest/v1/rpc/get_save", { method: "POST",
+    headers: { "apikey": cfg.key, "Authorization": "Bearer " + cfg.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ code: code }) }).then(function (r) { if (!r.ok) { var e = new Error("http"); e.status = r.status; throw e; } return r.text(); })
+    .then(function (tx) { var r = tx ? JSON.parse(tx) : null; return r && r.data ? { exists: true, name: r.data.name || "", earned: r.data.dustEarned || 0, house: r.data.house } : { exists: false }; });
+}
 var syncSt = { busy: false, pending: false, err: null, last: null, timer: null };
 var lastScreen = null;
 function syncCfg() {
@@ -4325,7 +4338,12 @@ function screenParent(section) {
       '<p class="muted">Rodinný kód je jako klíč od domu: každé zařízení (Mac, tablet, další prohlížeč) ho jednou zadáte a od té chvíle sdílí jeden postup — galeony, plamínek, slovíčka, odznaky i nastavení učeben — a používá hlas ze serveru. <b>První zařízení:</b> Vytvořit nový kód → Uložit. <b>Každé další:</b> stejný kód opsat → Uložit. Kdo kód zná, může postup číst i měnit, proto ho nikomu nedávejte. Bez internetu hra funguje dál a srovná se při dalším spuštění. Kód se ukládá jen v tomto prohlížeči (ne do zálohy).</p>' +
       '<div class="row"><div><label>Rodinný kód</label><input type="text" id="pSyncCode" autocomplete="off" autocapitalize="none" spellcheck="false" value="' + esc(syncCfg().code) + '" placeholder="např. k7mfx-2p9qa-…"></div></div>' +
       '<button class="btn small" id="syncSave">Uložit kód a zaregistrovat</button> <button class="btn small secondary" id="syncGen">Vytvořit nový kód</button> <button class="btn small secondary" id="syncNow">Synchronizovat teď</button> <button class="btn small secondary" id="syncOff">Vypnout</button>' +
-      '<p class="muted" id="syncMsg">' + syncStatusText() + '</p>' +
+      '<div id="syncConfirm"></div><p class="muted" id="syncMsg">' + syncStatusText() + '</p>' +
+      (syncOn() ? '<h3 style="font-size:17px">📲 Přidat další zařízení (tablet)</h3>' +
+        '<p class="muted">Nejjednodušší cesta: pošlete si odkaz na tablet a otevřete ho tam v Safari. Hra se sama zeptá, jestli se má připojit ke Karolinčinu postupu. Odkaz obsahuje rodinný kód, posílejte ho jen sobě.</p>' +
+        '<div class="codeShow">' + esc(syncCfg().code) + '</div>' +
+        '<button class="btn small" id="copyJoin">Zkopírovat odkaz pro tablet</button>' + (typeof navigator !== "undefined" && navigator.share ? ' <button class="btn small secondary" id="shareJoin">Sdílet… (AirDrop)</button>' : '') +
+        '<p class="muted" id="joinMsg"></p>' : '') +
       '<h3>🖼️ Obrázky ve hře</h3>' +
       '<p class="muted">Ilustrace (pozadí ložnic, mazlíčci a další) jsou v cloudu; hra si je při prvním spuštění online stáhne a zapamatuje, pak fungují i bez internetu. Bez obrázku ukáže původní podobu. Na novém zařízení je dobré stáhnout všechny najednou. Obrázky jsou veřejné, registrace pro ně není potřeba.</p>' +
       '<button class="btn small" id="imgAll">Stáhnout všechny obrázky pro offline</button> <button class="btn small secondary" id="imgClear">Smazat stažené</button> <span class="muted" id="imgMsg">Zjišťuji…</span>';
@@ -4469,15 +4487,36 @@ function screenParent(section) {
     reopen("zarizeni", "hRegistrace");
     msg("syncMsg", (changed ? "Postup sloučen s Bradavicemi: " + (S.name || "bez jména") + ", " + S.dustEarned + " " + galeonWord(S.dustEarned) + " celkem, plamínek " + S.streak.current + " " + dayWord(S.streak.current) + ". " : "Zařízení je zaregistrované. ") + syncStatusText());
   }
-  on("syncGen", "onclick", function () { el("pSyncCode").value = syncGenCode(); msg("syncMsg", "Nový kód je připravený — klikněte na „Uložit kód a zaregistrovat“ a pak ho opište na další zařízení."); });
-  on("syncSave", "onclick", function () {
-    var code = el("pSyncCode").value.trim().toLowerCase();
-    if (code.length < 16) { msg("syncMsg", "Kód musí mít aspoň 16 znaků — nechte si jeden vytvořit."); return; }
+  var regNewCode = null;
+  on("syncGen", "onclick", function () { regNewCode = syncGenCode(); el("pSyncCode").value = regNewCode; msg("syncMsg", "Nový kód je připravený — klikněte na „Uložit kód a zaregistrovat“. Jen pro úplně první zařízení; na dalších kód opište nebo použijte odkaz pro tablet."); });
+  function doRegister(code) {
     syncSaveCfg(code);
     if (!ttsOnline()) { msg("syncMsg", "Kód uložen. Zařízení je offline — synchronizace proběhne po připojení."); return; }
     msg("syncMsg", "Registruji…");
     syncRun().then(syncReport);
+  }
+  on("syncSave", "onclick", function () {
+    var code = syncNormCode(el("pSyncCode").value);
+    el("pSyncCode").value = code;
+    if (code.length < 16) { msg("syncMsg", "Kód musí mít aspoň 16 znaků — nechte si jeden vytvořit."); return; }
+    if (code === regNewCode || !ttsOnline()) { doRegister(code); return; }
+    msg("syncMsg", "Ověřuji kód…");
+    syncPeek(code).then(function (r) {
+      if (r.exists) { doRegister(code); return; }
+      var box = el("syncConfirm"); if (!box) return;
+      box.innerHTML = '<div class="stavBox ne"><b>Pod tímto kódem na serveru žádný postup není.</b> Pokud kód opisujete z jiného zařízení, nejspíš je v něm překlep — porovnejte ho znak po znaku (nebo použijte odkaz pro tablet). ' +
+        'Pokud je to opravdu první zařízení, můžete pod ním založit nový postup.<div class="row2" style="margin-top:8px"><button class="btn small secondary" id="syncFix">Opravím kód</button><button class="btn small" id="syncNew">Založit nový postup</button></div></div>';
+      on("syncFix", "onclick", function () { box.innerHTML = ""; el("pSyncCode").focus(); msg("syncMsg", ""); });
+      on("syncNew", "onclick", function () { box.innerHTML = ""; doRegister(code); });
+      msg("syncMsg", "");
+    }, function () { msg("syncMsg", "Nepodařilo se spojit se serverem, zkuste to za chvíli."); });
   });
+  on("copyJoin", "onclick", function () {
+    var link = syncJoinLink();
+    var done = function () { msg("joinMsg", "Odkaz zkopírován. Pošlete si ho na tablet (AirDrop, zpráva, e-mail) a otevřete ho tam v Safari."); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { msg("joinMsg", link); }); else msg("joinMsg", link);
+  });
+  on("shareJoin", "onclick", function () { if (navigator.share) navigator.share({ title: "Bradavická škola", text: "Připojit tablet k Bradavicím", url: syncJoinLink() }).catch(function () {}); });
   on("syncNow", "onclick", function () {
     if (!syncOn()) { msg("syncMsg", "Nejdřív uložte rodinný kód."); return; }
     msg("syncMsg", "Synchronizuji…");
@@ -4575,7 +4614,7 @@ W.BRADAVICE = {
   parseWordList: parseWordList, misspellings: misspellings, genVocab: genVocab,
   checkAnswer: checkAnswer, wordRecord: wordRecord, wordLevel: wordLevel, csVariants: csVariants,
   vocabTypeQ: vocabTypeQ, vocabRecallCsQ: vocabRecallCsQ, dictCounts: dictCounts,
-  topicStars: topicStars, totalCorrect: totalCorrect, vok: vok,
+  topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
   SHOP_BY_ID: shopById, SYNC_URL: SYNC_URL, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
@@ -4587,9 +4626,39 @@ function routeHome() {
   if (!S.house) { screenSortingIntro(); return; }
   screenHome();
 }
+/* Odkaz pro tablet: …/#kod=xxxxx — nabídne připojení k rodinnému postupu, kód z adresy hned zmizí. */
+function joinFromLink() {
+  if (typeof location === "undefined" || !location.hash) return null;
+  var m = /[#&]kod=([^&]+)/.exec(location.hash);
+  try { if (history.replaceState) history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  if (!m) return null;
+  var code = syncNormCode(decodeURIComponent(m[1]));
+  return code.length >= 16 ? code : null;
+}
+function screenJoin(code) {
+  render('<div class="card center"><div class="bigIcon">' + svgLetter(100) + '</div><h2>Připojit tento tablet</h2>' +
+    '<p class="qtext">Ověřuji rodinný kód…</p><div id="joinArea"></div></div>');
+  syncPeek(code).then(function (r) {
+    var a = el("joinArea"); if (!a) return;
+    if (!r.exists) { a.innerHTML = '<div class="stavBox ne">Pod tímto kódem na serveru žádný postup není. Odkaz je asi neúplný — pošlete si ho z Macu znovu.</div><button class="btn" onclick="routeHome()">Pokračovat bez připojení</button>'; return; }
+    a.innerHTML = '<div class="heroCard"><div class="hcEmblem">' + houseIcon(r.house, 44) + '</div><div class="hcName">' + esc(r.name || "Studentka") + '</div><div class="hcDate">' + r.earned + ' galeonů celkem</div></div>' +
+      '<p class="qtext">Připojit tento tablet k tomuto postupu?</p>' +
+      '<p class="muted">Tablet pak sdílí galeony, plamínek, slovíčka i odznaky s ostatními zařízeními.</p>' +
+      '<button class="btn gold" id="joinYes">Ano, připojit</button><button class="btn secondary" onclick="routeHome()">Ne</button>';
+    el("joinYes").onclick = function () {
+      syncSaveCfg(code);
+      a.innerHTML = '<p class="qtext">Sova letí pro postup…</p>';
+      syncRun().then(function () { applyHouseColors(); bootLocal(); }, function () { bootLocal(); });
+    };
+  }, function () {
+    var a = el("joinArea"); if (a) a.innerHTML = '<div class="stavBox ne">Nepodařilo se spojit se serverem. Zkontrolujte internet a otevřete odkaz znovu.</div><button class="btn" onclick="routeHome()">Pokračovat</button>';
+  });
+}
 function boot() {
   applyHouseColors();
   fxInit();
+  var joinCode = joinFromLink();
+  if (joinCode && joinCode !== syncCfg().code) { screenJoin(joinCode); return; }
   if (syncReady()) {
     render('<div class="card center"><div class="bigIcon">' + svgLetter(100) + '</div>' +
       '<h2>Sova letí pro tvůj postup…</h2><p class="muted">Spojuji se s Bradavicemi.</p></div>');
