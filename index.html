@@ -448,6 +448,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
+var GAME_VERSION = "2026-10-08b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2075,6 +2076,7 @@ function defaultState() {
     chapters: cloneObj(DEFAULT_CHAPTERS),
     words: cloneObj(SCHOOL_WORDS_DEFAULT),
     unitsShipped: SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; }),
+    wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
     dustEarned: 0,
     unlocked: unlocked,
@@ -2123,14 +2125,16 @@ function migrate(s) {
   if (!s.chapters || typeof s.chapters !== "object") s.chapters = cloneObj(DEFAULT_CHAPTERS);
   if (!Array.isArray(s.words)) s.words = [];
   if (!s.words.length && !s.wordsCleared) { s.words = cloneObj(SCHOOL_WORDS_DEFAULT); s.unitsShipped = SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; }); }
-  /* nové lekce ze sešitu: jednou doplnit do uložené hry; starým slovům doplnit číslo lekce */
+  /* lekce ze sešitu: doplnit každé slovo, které chybí a táta ho nesmazal (S.wordsRemoved);
+     starým slovům doplnit číslo lekce. Nezávisí na unitsShipped — starší verze hry ho mohla
+     přenést synchronizací bez slov (8. 10. 2026). Smazání všeho (wordsCleared) se respektuje. */
   if (!Array.isArray(s.unitsShipped)) s.unitsShipped = [];
+  if (!Array.isArray(s.wordsRemoved)) s.wordsRemoved = [];
   SCHOOL_UNITS_SHIPPED.forEach(function (u) {
     var have = {}; s.words.forEach(function (w) { have[w.en] = w; });
     u.words.forEach(function (w) { var x = have[w.en]; if (x && !x.b) { x.b = w.b; x.bl = w.bl; if (w.alt && !x.alt) x.alt = w.alt; } });
-    if (s.unitsShipped.indexOf(u.name) !== -1) return;
-    u.words.forEach(function (w) { if (!have[w.en]) s.words.push(cloneObj(w)); });
-    s.unitsShipped.push(u.name);
+    if (!s.wordsCleared) u.words.forEach(function (w) { if (!have[w.en] && s.wordsRemoved.indexOf(w.en) === -1) s.words.push(cloneObj(w)); });
+    if (s.unitsShipped.indexOf(u.name) === -1) s.unitsShipped.push(u.name);
   });
   if (!Array.isArray(s.owned)) s.owned = [];
   if (!Array.isArray(s.badges)) s.badges = [];
@@ -3422,7 +3426,15 @@ function mergeStates(a, b) {
     var ow = o.wordLv[w], mw = m.wordLv[w];
     if (!mw || (ow.l || 0) > (mw.l || 0) || ((ow.l || 0) === (mw.l || 0) && (ow.d || []).length > (mw.d || []).length)) m.wordLv[w] = ow;
   }
-  if (!m.words.length && (o.words || []).length) { m.words = o.words; m.wordsCleared = false; }
+  /* slova: sjednocení obou zařízení (jinak by starší verze hry mohla slova „ztratit“), bez slov smazaných tátou */
+  var removed = {}; (m.wordsRemoved || []).concat(o.wordsRemoved || []).forEach(function (en) { removed[en] = true; });
+  m.wordsRemoved = Object.keys(removed);
+  if (!m.wordsCleared || !o.wordsCleared) {
+    var haveW = {}; (m.words || []).forEach(function (w) { haveW[w.en] = true; });
+    (o.words || []).forEach(function (w) { if (!haveW[w.en] && !removed[w.en]) { m.words.push(w); haveW[w.en] = true; } });
+    m.words = m.words.filter(function (w) { return !removed[w.en]; });
+    if (m.words.length) m.wordsCleared = false;
+  }
   if (Array.isArray(o.unitsShipped)) { if (!Array.isArray(m.unitsShipped)) m.unitsShipped = []; o.unitsShipped.forEach(function (x) { if (m.unitsShipped.indexOf(x) === -1) m.unitsShipped.push(x); }); }
   var seen = {}, all = (m.mistakes || []).concat(o.mistakes || []).filter(function (x) {
     var k = x.q + "|" + x.datum + "|" + x.napsala; if (seen[k]) return false; seen[k] = true; return true;
@@ -4281,7 +4293,8 @@ function screenParent(section) {
     render(topbarHTML() + '<div class="card"><h2 class="center">' + svgLock(22) + ' Pro rodiče</h2>' +
       '<p class="muted center">Vyberte, co chcete nastavit nebo prohlédnout.</p>' +
       '<div class="subjectGrid parentGrid">' + tiles + '</div>' +
-      '<button class="btn" onclick="routeHome()">Zpět do hry</button></div>');
+      '<button class="btn" onclick="routeHome()">Zpět do hry</button>' +
+      '<p class="muted center" style="font-size:13px">Verze hry ' + GAME_VERSION + ' · ' + (typeof location !== "undefined" && /^https?:/.test(location.protocol) ? "web" : "soubor") + '</p></div>');
     return;
   }
 
@@ -4512,6 +4525,10 @@ function screenParent(section) {
   /* slovíčka */
   on("saveWords", "onclick", function () {
     var parsed = parseWordList(el("pWords").value);
+    var nowEn = {}; parsed.forEach(function (w) { nowEn[w.en] = true; });
+    if (!Array.isArray(S.wordsRemoved)) S.wordsRemoved = [];
+    S.words.forEach(function (w) { if (!nowEn[w.en] && S.wordsRemoved.indexOf(w.en) === -1) S.wordsRemoved.push(w.en); });
+    S.wordsRemoved = S.wordsRemoved.filter(function (en) { return !nowEn[en]; });
     S.words = parsed; S.wordsCleared = parsed.length === 0;
     saveState();
     el("pWords").value = wordsToText(parsed);
