@@ -1544,61 +1544,94 @@ var VOCAB_SETS = {
 /* Slovíčka ze školy — výchozí náplň učebny E0 (podle sešitu Karolinky, Unit 1).
    Táta je může kdykoli přepsat v rodičovském panelu; do uložené hry se
    nasadí jen tehdy, když je seznam prázdný. */
-var SCHOOL_WORDS_DEFAULT = [
-  { en:"clap your hands", cs:"zatleskej", e:"👏" },
-  { en:"stamp your feet", cs:"zadupej", e:"🦶" },
-  { en:"turn around", cs:"otoč se dokola", e:"🔄" },
-  { en:"ball", cs:"míč", e:"⚽" },
-  { en:"on the floor", cs:"na podlaze" },
-  { en:"try again", cs:"zkus to znovu", e:"🔁" },
-  { en:"one", cs:"jedna", e:"1️⃣" }, { en:"two", cs:"dva", e:"2️⃣" }, { en:"three", cs:"tři", e:"3️⃣" },
-  { en:"four", cs:"čtyři", e:"4️⃣" }, { en:"five", cs:"pět", e:"5️⃣" }, { en:"six", cs:"šest", e:"6️⃣" },
-  { en:"seven", cs:"sedm", e:"7️⃣" }, { en:"eight", cs:"osm", e:"8️⃣" }, { en:"nine", cs:"devět", e:"9️⃣" }, { en:"ten", cs:"deset", e:"🔟" },
-  { en:"how old are you?", cs:"Kolik je ti let?", e:"🎂" },
-  { en:"i am seven years old", cs:"Je mi sedm let", e:"🎂" },
-  { en:"boy", cs:"chlapec", e:"👦" },
-  { en:"girl", cs:"dívka", e:"👧" },
-  { en:"table", cs:"stůl", e:"🪑" },
-  { en:"desk", cs:"pracovní stůl (lavice)", e:"🏫" },
-  { en:"chair", cs:"židle", e:"🪑" },
-  { en:"board", cs:"tabule", e:"🧑‍🏫" },
-  { en:"teacher", cs:"pan učitel, paní učitelka", e:"👩‍🏫" },
-  { en:"he", cs:"on", e:"👦" },
-  { en:"she", cs:"ona", e:"👧" },
-  { en:"he is ben", cs:"on se jmenuje Ben (on je Ben)", e:"👦" },
-  { en:"she is meggie", cs:"ona se jmenuje Meggie (ona je Meggie)", e:"👧" },
-  { en:"he is seven years old", cs:"je mu sedm let", e:"👦" },
-  { en:"she is seven years old", cs:"je jí sedm let", e:"👧" },
-  { en:"his favourite colour is red", cs:"jeho oblíbená barva je červená", e:"🔴" },
-  { en:"her favourite colour is blue", cs:"její oblíbená barva je modrá", e:"🔵" },
-  { en:"open the window", cs:"otevři okno", e:"🪟" },
-  { en:"open the door", cs:"otevři dveře", e:"🚪" },
-  { en:"touch the table", cs:"dotkni se stolu", e:"👆" },
-  { en:"touch the floor", cs:"dotkni se podlahy", e:"👇" },
-  { en:"close the door", cs:"zavři dveře", e:"🚪" },
-  { en:"turn the key", cs:"otoč klíčem", e:"🗝️" },
-  { en:"open your book", cs:"otevři si knihu", e:"📖" },
-  { en:"look at me", cs:"podívej se na mne", e:"👀" }
+/* Slovíčka ze školního sešitu po lekcích. b = pořadí lekce, bl = název, alt = druhý anglický tvar.
+   Novou lekci přidej jako SCHOOL_UNITn, připoj na konec SCHOOL_WORDS_DEFAULT a zapiš do SCHOOL_UNITS_SHIPPED;
+   migrate() ji jednou doplní i do uložené hry (evidence S.unitsShipped). */
+var SCHOOL_UNIT1 = [
+  { b:1, bl:"Unit 1", en:"clap your hands", cs:"zatleskej", e:"👏" },
+  { b:1, bl:"Unit 1", en:"stamp your feet", cs:"zadupej", e:"🦶" },
+  { b:1, bl:"Unit 1", en:"turn around", cs:"otoč se dokola", e:"🔄" },
+  { b:1, bl:"Unit 1", en:"ball", cs:"míč", e:"⚽" },
+  { b:1, bl:"Unit 1", en:"on the floor", cs:"na podlaze" },
+  { b:1, bl:"Unit 1", en:"try again", cs:"zkus to znovu", e:"🔁" },
+  { b:1, bl:"Unit 1", en:"one", cs:"jedna", e:"1️⃣" }, { b:1, bl:"Unit 1", en:"two", cs:"dva", e:"2️⃣" }, { b:1, bl:"Unit 1", en:"three", cs:"tři", e:"3️⃣" },
+  { b:1, bl:"Unit 1", en:"four", cs:"čtyři", e:"4️⃣" }, { b:1, bl:"Unit 1", en:"five", cs:"pět", e:"5️⃣" }, { b:1, bl:"Unit 1", en:"six", cs:"šest", e:"6️⃣" },
+  { b:1, bl:"Unit 1", en:"seven", cs:"sedm", e:"7️⃣" }, { b:1, bl:"Unit 1", en:"eight", cs:"osm", e:"8️⃣" }, { b:1, bl:"Unit 1", en:"nine", cs:"devět", e:"9️⃣" }, { b:1, bl:"Unit 1", en:"ten", cs:"deset", e:"🔟" },
+  { b:1, bl:"Unit 1", en:"how old are you?", cs:"Kolik je ti let?", e:"🎂" },
+  { b:1, bl:"Unit 1", en:"i am seven years old", cs:"Je mi sedm let", e:"🎂" },
+  { b:1, bl:"Unit 1", en:"boy", cs:"chlapec", e:"👦" },
+  { b:1, bl:"Unit 1", en:"girl", cs:"dívka", e:"👧" },
+  { b:1, bl:"Unit 1", en:"table", cs:"stůl", e:"🪑" },
+  { b:1, bl:"Unit 1", en:"desk", cs:"pracovní stůl (lavice)", e:"🏫" },
+  { b:1, bl:"Unit 1", en:"chair", cs:"židle", e:"🪑" },
+  { b:1, bl:"Unit 1", en:"board", cs:"tabule", e:"🧑‍🏫" },
+  { b:1, bl:"Unit 1", en:"teacher", cs:"pan učitel, paní učitelka", e:"👩‍🏫" },
+  { b:1, bl:"Unit 1", en:"he", cs:"on", e:"👦" },
+  { b:1, bl:"Unit 1", en:"she", cs:"ona", e:"👧" },
+  { b:1, bl:"Unit 1", en:"he is ben", cs:"on se jmenuje Ben (on je Ben)", e:"👦" },
+  { b:1, bl:"Unit 1", en:"she is meggie", cs:"ona se jmenuje Meggie (ona je Meggie)", e:"👧" },
+  { b:1, bl:"Unit 1", en:"he is seven years old", cs:"je mu sedm let", e:"👦" },
+  { b:1, bl:"Unit 1", en:"she is seven years old", cs:"je jí sedm let", e:"👧" },
+  { b:1, bl:"Unit 1", en:"his favourite colour is red", cs:"jeho oblíbená barva je červená", e:"🔴" },
+  { b:1, bl:"Unit 1", en:"her favourite colour is blue", cs:"její oblíbená barva je modrá", e:"🔵" },
+  { b:1, bl:"Unit 1", en:"open the window", cs:"otevři okno", e:"🪟" },
+  { b:1, bl:"Unit 1", en:"open the door", cs:"otevři dveře", e:"🚪" },
+  { b:1, bl:"Unit 1", en:"touch the table", cs:"dotkni se stolu", e:"👆" },
+  { b:1, bl:"Unit 1", en:"touch the floor", cs:"dotkni se podlahy", e:"👇" },
+  { b:1, bl:"Unit 1", en:"close the door", cs:"zavři dveře", e:"🚪" },
+  { b:1, bl:"Unit 1", en:"turn the key", cs:"otoč klíčem", e:"🗝️" },
+  { b:1, bl:"Unit 1", en:"open your book", cs:"otevři si knihu", e:"📖" },
+  { b:1, bl:"Unit 1", en:"look at me", cs:"podívej se na mne", e:"👀" }
 ];
+var SCHOOL_UNIT2 = [
+  { b:2, bl:"Unit 2", en:"what is this?", cs:"Co to je?", e:"❓" },
+  { b:2, bl:"Unit 2", en:"this is", cs:"to je", e:"👉" },
+  { b:2, bl:"Unit 2", en:"pencil case", cs:"penál", e:"👝" },
+  { b:2, bl:"Unit 2", en:"ruler", cs:"pravítko", e:"📏" },
+  { b:2, bl:"Unit 2", en:"rubber", alt:"eraser", cs:"guma" },
+  { b:2, bl:"Unit 2", en:"pencil", cs:"obyčejná tužka", e:"✏️" },
+  { b:2, bl:"Unit 2", en:"pen", cs:"pero", e:"🖊️" },
+  { b:2, bl:"Unit 2", en:"pencil sharpener", cs:"ořezávátko" },
+  { b:2, bl:"Unit 2", en:"glue", cs:"lepidlo", e:"🧴" },
+  { b:2, bl:"Unit 2", en:"crayon", cs:"pastelka (voskovka)", e:"🖍️" },
+  { b:2, bl:"Unit 2", en:"marker", cs:"fixa", e:"🖍️" },
+  { b:2, bl:"Unit 2", en:"highlighter", cs:"zvýrazňovač", e:"🖍️" },
+  { b:2, bl:"Unit 2", en:"scissors", cs:"nůžky", e:"✂️" },
+  { b:2, bl:"Unit 2", en:"bag", cs:"taška", e:"🎒" },
+  { b:2, bl:"Unit 2", en:"this is my pen.", cs:"To je moje pero.", e:"🖊️" },
+  { b:2, bl:"Unit 2", en:"is this your pen?", cs:"Je to tvoje pero?", e:"🖊️" },
+  { b:2, bl:"Unit 2", en:"yes, it is.", cs:"Ano, je.", e:"👍" },
+  { b:2, bl:"Unit 2", en:"no, it isn't.", cs:"Ne, není.", e:"👎" }
+];
+var SCHOOL_WORDS_DEFAULT = SCHOOL_UNIT1.concat(SCHOOL_UNIT2);
+var SCHOOL_UNITS_SHIPPED = [{ name: "Unit 1", words: SCHOOL_UNIT1 }, { name: "Unit 2", words: SCHOOL_UNIT2 }];
+/* Nejnovější lekce v seznamu slov (číslo b), 0 když lekce nejsou. */
+function newestUnit(words) { var m = 0; (words || []).forEach(function (w) { if (w.b > m) m = w.b; }); return m; }
 
 /* Rodičovský seznam: řádky „owl - sova“ (oddělovač -, =, :, ; tabulátor, čárka), volitelně třetí položka emoji. */
 var EN_RE = /^[a-z][a-z' ?!.,-]*$/;
 function parseWordList(text) {
-  var out = [], seen = {};
+  var out = [], seen = {}, unit = 0, unitName = "";
   String(text || "").split(/\r?\n/).forEach(function (line) {
     line = line.trim();
     if (!line) return;
+    var hm = /^#\s*(.*?)\s*$/.exec(line);
+    if (hm) { var num = /(\d+)/.exec(hm[1]); unit = num ? parseInt(num[1], 10) : unit + 1; unitName = hm[1] || ("Unit " + unit); return; }
     var parts = line.split(/\s*(?:=|:|;|\t| - | – |—|,)\s*/).filter(function (p) { return p.trim(); });
     if (parts.length < 2) parts = line.split(/\s+-\s+|\s{2,}/);
     if (parts.length < 2) return;
-    var en = parts[0].trim().toLowerCase(), cs = parts[1].trim();
+    var en = parts[0].trim().toLowerCase(), cs = parts[1].trim(), alt = "";
     en = en.replace(/[’´`]/g, "'");
+    var am = /^(.+?)\s*(?:\((.+)\)|\/\s*(.+))$/.exec(en);   /* „rubber (eraser)“ nebo „rubber / eraser“ */
+    if (am && EN_RE.test(am[1].trim())) { en = am[1].trim(); alt = (am[2] || am[3] || "").trim(); }
     if (!EN_RE.test(en) && /^[a-záčďéěíňóřšťúůýž][a-záčďéěíňóřšťúůýž ?!.,-]*$/i.test(parts[0]) && /^[a-z'?!. -]+$/i.test(parts[1])) {
       en = parts[1].trim().toLowerCase(); cs = parts[0].trim();   /* rodič napsal „sova - owl“ */
     }
     if (!EN_RE.test(en) || !cs || seen[en]) return;
     seen[en] = true;
     var item = { en: en, cs: cs };
+    if (alt && EN_RE.test(alt)) item.alt = alt;
+    if (unit) { item.b = unit; item.bl = unitName; }
     if (parts[2] && !/^[a-z0-9]/i.test(parts[2].trim())) item.e = parts[2].trim();
     else { for (var k in VOCAB_SETS) VOCAB_SETS[k].forEach(function (w) { if (w.en === en && !item.e) item.e = w.e; }); }
     out.push(item);
@@ -1606,7 +1639,13 @@ function parseWordList(text) {
   return out;
 }
 function wordsToText(words) {
-  return (words || []).map(function (w) { return w.en + " - " + w.cs + (w.e ? " - " + w.e : ""); }).join("\n");
+  var last = null, lines = [];
+  (words || []).forEach(function (w) {
+    var bl = w.b ? (w.bl || ("Unit " + w.b)) : "";
+    if (bl !== last) { if (bl) { if (lines.length) lines.push(""); lines.push("# " + bl); } last = bl; }
+    lines.push(w.en + (w.alt ? " (" + w.alt + ")" : "") + " - " + w.cs + (w.e ? " - " + w.e : ""));
+  });
+  return lines.join("\n");
 }
 function vocabPool(t, state) {
   if (t === "E0") return (state && state.words) || [];
@@ -1758,7 +1797,7 @@ function vocabTypeQ(w) {
     return b;
   }
   return { kind:"type", how:"recall", dir:"cz", recall:true, word:w.en, q:"Z hlavy — napiš anglicky: " + w.cs, cue:w.e || "", correct:w.en, opts:[w.en],
-    accept:[normAns(w.en)], why:"Správně: " + w.en + " = " + w.cs + "." };
+    accept: [normAns(w.en)].concat(w.alt ? [normAns(w.alt)] : []), why:"Správně: " + w.en + (w.alt ? " (nebo " + w.alt + ")" : "") + " = " + w.cs + "." };
 }
 /* Z hlavy, anglicky → česky. Slova napsat česky (háčky nevadí), věty říct nahlas a poctivě ohodnotit. */
 function vocabRecallCsQ(w) {
@@ -1770,14 +1809,16 @@ function vocabRecallCsQ(w) {
     accept: csVariants(w.cs), fuzzy:true, why: w.en + " = " + w.cs + (w.e ? " " + w.e : "") + "." };
 }
 function pickWordWeighted(list, state) {
-  var today = todayStr();
+  var today = todayStr(), newest = newestUnit(list);
   var weights = list.map(function (w) {
     var x = state && state.wordLv && state.wordLv[w.en];
-    var l = x ? x.l : 0;
-    if (l === 0) return 3;
-    if (l === 1) return 5;
-    var ago = x.last ? dateDiffDays(x.last, today) : 99;
-    return ago >= 3 ? 2 : 0.5;
+    var l = x ? x.l : 0, base;
+    if (l === 0) base = 3;
+    else if (l === 1) base = 5;
+    else { var ago = x.last ? dateDiffDays(x.last, today) : 99; base = ago >= 3 ? 2 : 0.5; }
+    /* lekce: nejnovější 4×, předchozí 1,2× (jen u slov ze školy s číslem lekce) */
+    if (newest && w.b) base *= w.b === newest ? 4 : w.b === newest - 1 ? 1.2 : 1;
+    return base;
   });
   var sum = weights.reduce(function (a, b) { return a + b; }, 0), r = Math.random() * sum;
   for (var i = 0; i < list.length; i++) { r -= weights[i]; if (r <= 0) return list[i]; }
@@ -1793,7 +1834,11 @@ function genVocab(t, state, usedIds) {
   usedIds["w:" + w.en] = true;
   var lvl = wordLevel(state, w.en), r = Math.random(), q;
   var ph = isPhrase(w.en), hasSpace = w.en.indexOf(" ") !== -1;
-  if (lvl === 0) {
+  var newestB = newestUnit(pool), untried = !(state.wordLv && state.wordLv[w.en]);
+  if (lvl === 0 && untried && w.b && w.b < newestB) {
+    /* starší lekce, ještě nezkoušené: nejdřív z hlavy — co zná, nemusí proklikávat poznávání */
+    q = r < 0.5 ? vocabTypeQ(w) : vocabRecallCsQ(w);
+  } else if (lvl === 0) {
     /* učení: poznávání a skládání */
     if (r < 0.28) q = vocabMeaningQ(w, pool, all);
     else if (r < 0.52) q = vocabSpellChoiceQ(w, pool, all);
@@ -2029,6 +2074,7 @@ function defaultState() {
     year: DEFAULT_YEAR,
     chapters: cloneObj(DEFAULT_CHAPTERS),
     words: cloneObj(SCHOOL_WORDS_DEFAULT),
+    unitsShipped: SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; }),
     dust: 0,
     dustEarned: 0,
     unlocked: unlocked,
@@ -2056,6 +2102,8 @@ function migrate(s) {
   if (!s || typeof s !== "object") return defaultState();
   if (!s.version) s.version = 1;
   var d = defaultState();
+  /* hra uložená před zavedením lekcí: měla jen Unit 1 (dřívější výchozí seznam) */
+  if (!Array.isArray(s.unitsShipped) && Array.isArray(s.words)) s.unitsShipped = ["Unit 1"];
   if (s.version < 3) {
     /* Z Akademie: řád se na kolej nepřevádí (Moudrý klobouk je zážitek, projde
        jím znovu), ale hvězdný prach → galeony, plamínek, statistiky, odznaky
@@ -2074,7 +2122,16 @@ function migrate(s) {
   for (var e in d.equipped) if (!(e in s.equipped)) s.equipped[e] = d.equipped[e];
   if (!s.chapters || typeof s.chapters !== "object") s.chapters = cloneObj(DEFAULT_CHAPTERS);
   if (!Array.isArray(s.words)) s.words = [];
-  if (!s.words.length && !s.wordsCleared) s.words = cloneObj(SCHOOL_WORDS_DEFAULT);
+  if (!s.words.length && !s.wordsCleared) { s.words = cloneObj(SCHOOL_WORDS_DEFAULT); s.unitsShipped = SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; }); }
+  /* nové lekce ze sešitu: jednou doplnit do uložené hry; starým slovům doplnit číslo lekce */
+  if (!Array.isArray(s.unitsShipped)) s.unitsShipped = [];
+  SCHOOL_UNITS_SHIPPED.forEach(function (u) {
+    var have = {}; s.words.forEach(function (w) { have[w.en] = w; });
+    u.words.forEach(function (w) { var x = have[w.en]; if (x && !x.b) { x.b = w.b; x.bl = w.bl; if (w.alt && !x.alt) x.alt = w.alt; } });
+    if (s.unitsShipped.indexOf(u.name) !== -1) return;
+    u.words.forEach(function (w) { if (!have[w.en]) s.words.push(cloneObj(w)); });
+    s.unitsShipped.push(u.name);
+  });
   if (!Array.isArray(s.owned)) s.owned = [];
   if (!Array.isArray(s.badges)) s.badges = [];
   if (!Array.isArray(s.mistakes)) s.mistakes = [];
@@ -2186,7 +2243,11 @@ function buildQuestItems(state, n) {
   /* Slovíčka od táty se objeví v každém vyučování nejmíň dvakrát. */
   var usedIds = {}, items = [];
   var forced = [];
-  if (isUnlocked("E0", state)) forced = ["E0", "E0"];
+  if (isUnlocked("E0", state)) {
+    forced = ["E0", "E0"];
+    var nu = newestUnit(state.words);
+    if (nu && state.words.some(function (w) { return w.b === nu && wordLevel(state, w.en) < 2; })) forced.push("E0");   /* nejnovější lekce ještě ne celá z hlavy */
+  }
   if (isUnlocked("H" + state.year, state)) forced.push("H" + state.year);
   var rest = shuffle(keys.filter(function (k) { return forced.indexOf(k) === -1 || k === "E0"; }));
   var seq = forced.slice();
@@ -4295,7 +4356,7 @@ function screenParent(section) {
   if (section === "slovicka") {
     body =
       '<h3>' + svgWand(18) + ' Slovíčka ze školy (Kouzelné formule)</h3>' +
-      '<p class="muted">Napište slova, která se má dcera právě naučit — každé na vlastní řádek jako <b>owl - sova</b> (oddělovač může být také =, : nebo čárka; volitelně třetí položka emoji: <b>owl - sova - 🦉</b>). Fráze a věty jsou v pořádku (<b>open the door - otevři dveře</b>) — krátké se píšou, dlouhé skládají ze slov. Nová lekce: řádek <b># Unit 3</b> a pod něj slova. ' +
+      '<p class="muted">Napište slova, která se má dcera právě naučit — každé na vlastní řádek jako <b>owl - sova</b> (oddělovač může být také =, : nebo čárka; volitelně třetí položka emoji: <b>owl - sova - 🦉</b>). Fráze a věty jsou v pořádku (<b>open the door - otevři dveře</b>) — krátké se píšou, dlouhé skládají ze slov. Lekce oddělujte řádkem <b># Unit 3</b> — nejnovější lekce se procvičuje nejčastěji (a v denním vyučování třikrát, dokud ji dcera neumí z hlavy). Druhý anglický tvar do závorky: <b>rubber (eraser) - guma</b>. ' +
       'Hra je procvičuje hlavně psaním: výběr správně napsaného slova mezi překlepy, doplnění písmene, skládání z písmenek a psaní na klávesnici. Při aspoň 4 slovech se otevře učebna „Slovíčka ze školy“ a v každém denním vyučování se objeví nejmíň dvakrát.</p>' +
       '<textarea class="words" id="pWords" placeholder="owl - sova\ncat - kočka\nbook - kniha">' + esc(wordsToText(S.words)) + '</textarea>' +
       '<button class="btn small" id="saveWords">Uložit slovíčka</button> <span class="muted" id="wordsMsg">Aktuálně: ' + S.words.length + ' slov.</span>' +
@@ -4303,7 +4364,15 @@ function screenParent(section) {
       '<h3>📖 Co opravdu umí</h3>' +
       '<p class="muted">Výběr ze čtyř možností jde tipnout, proto má každé slovo stupeň: <b>🥚 Nové</b> → <b>👀 Poznávám</b> (2× správně ve výběru) → <b>🌟 Umím z hlavy</b> (bez nabídky napsala anglicky <i>i</i> řekla česky, správně ve 2 různé dny). Chyba z hlavy vrací „Umím“ na „Poznávám“. U delších frází anglicky → česky hra ukáže větu, Karolinka ji řekne nahlas a sama ohodnotí „věděla / ještě ne“ — tady pomůže, když sedíte vedle.</p>' +
       '<p>Celkem: 🌟 <b>' + dc[2] + '</b> · 👀 <b>' + dc[1] + '</b> · 🥚 <b>' + dc[0] + '</b></p>' +
-      (S.words.length ? '<div class="dictList">' + S.words.map(function (w) { var l = wordLevel(S, w.en); return '<span class="dictChip lv' + l + '">' + WORD_LV_ICON[l] + ' <b>' + esc(w.en) + '</b> <span class="muted">' + esc(w.cs) + '</span></span>'; }).join("") + '</div>' : '');
+      (S.words.length ? (function () {
+        var groups = {}, order = [];
+        S.words.forEach(function (w) { var k = w.b ? (w.bl || "Unit " + w.b) : "Další slova"; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(w); });
+        return order.map(function (k) {
+          var ws = groups[k], known = ws.filter(function (w) { return wordLevel(S, w.en) === 2; }).length;
+          return '<p style="margin:10px 0 4px"><b>' + esc(k) + '</b> <span class="muted">— z hlavy ' + known + ' z ' + ws.length + '</span></p><div class="dictList">' +
+            ws.map(function (w) { var l = wordLevel(S, w.en); return '<span class="dictChip lv' + l + '">' + WORD_LV_ICON[l] + ' <b>' + esc(w.en) + '</b>' + (w.alt ? ' <span class="muted">(' + esc(w.alt) + ')</span>' : '') + ' <span class="muted">' + esc(w.cs) + '</span></span>'; }).join("") + '</div>';
+        }).join("");
+      })() : '');
   }
 
   if (section === "hlas") {
@@ -4615,6 +4684,7 @@ W.BRADAVICE = {
   checkAnswer: checkAnswer, wordRecord: wordRecord, wordLevel: wordLevel, csVariants: csVariants,
   vocabTypeQ: vocabTypeQ, vocabRecallCsQ: vocabRecallCsQ, dictCounts: dictCounts,
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
+  SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
   SHOP_BY_ID: shopById, SYNC_URL: SYNC_URL, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
