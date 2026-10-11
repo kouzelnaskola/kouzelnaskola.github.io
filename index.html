@@ -330,7 +330,18 @@
   .hall .candles { position: absolute; inset: 0 0 50% 0; }
   .hall .candle { position: absolute; width: 7px; height: 26px; border-radius: 2px; background: linear-gradient(90deg, #efe6d2, #fff8e8 60%, #d9cdb4); box-shadow: 0 0 0 1px rgba(58,47,40,.35); animation: floatC 5s ease-in-out infinite; }
   .hall .candle i { position: absolute; left: 50%; top: -13px; width: 9px; height: 14px; margin-left: -4.5px; border-radius: 50% 50% 45% 45%; background: radial-gradient(circle at 50% 70%, #fff6c8 0, #ffd36b 35%, #e2694f 75%, transparent 76%);
-    box-shadow: 0 0 14px 6px rgba(255,200,90,.35); transform-origin: 50% 100%; animation: flickC .7s ease-in-out infinite alternate; }
+    box-shadow: 0 0 14px 6px rgba(255,200,90,.35); transform-origin: 50% 100%; animation: flickC .7s ease-in-out infinite alternate; animation-delay: var(--fd, 0s); }
+  /* zapálení svíček při vstupu: knot nejdřív bez plamene, pak jiskra a plamen */
+  .hall.ignite .candle i { animation: igniteC .7s cubic-bezier(.3,1.6,.5,1) both, flickC .7s ease-in-out infinite alternate; animation-delay: var(--ig, 0s), var(--fd, 0s); }
+  @keyframes igniteC { 0% { opacity: 0; scale: .1 .1; box-shadow: 0 0 0 0 rgba(255,200,90,0); } 55% { opacity: 1; scale: 1.25 1.4; box-shadow: 0 0 26px 12px rgba(255,210,110,.7); } 100% { opacity: 1; scale: 1 1; } }
+  .hall .hallBg { position: absolute; inset: -4%; background-size: cover; background-position: center 30%; opacity: 0; }
+  .hall.ignite .hallBg, .hall.ignite .hallShade { transition: opacity 1.2s ease; }
+  .hall.photo .hallBg { opacity: 1; animation: kenBurns 46s ease-in-out infinite alternate; }
+  @keyframes kenBurns { 0% { transform: scale(1) translate(0, 0); } 50% { transform: scale(1.06) translate(-1.2%, 0.8%); } 100% { transform: scale(1.03) translate(1.2%, -0.6%); } }
+  .hall.photo .ceiling { inset: 0 0 62% 0; mix-blend-mode: screen; opacity: .7; }
+  .hall .hallShade { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: radial-gradient(ellipse 60% 45% at 50% 78%, rgba(255,190,90,.28), transparent 70%), linear-gradient(180deg, rgba(20,24,48,.25) 0%, transparent 30%, transparent 55%, rgba(30,20,10,.45) 100%); }
+  .hall.photo .hallShade { opacity: 1; }
   @keyframes floatC { 0%, 100% { translate: 0 0; } 50% { translate: 0 -9px; } }
   @keyframes flickC { from { scale: 1 1; rotate: -3deg; } to { scale: .9 1.12; rotate: 3deg; } }
   .hall .banners { position: absolute; top: 46%; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 6%; }
@@ -344,7 +355,7 @@
   .hall .hallCenter .weekRow { margin: 8px 0 2px; }
   .hall .goldNote { font-size: 14px; color: var(--mustard-d); font-weight: 700; }
   .hall .stamp { top: 10px; right: 12px; }
-  .hall.photo .ceiling, .hall.photo .banners { display: none; }
+  .hall.photo .banners { display: none; }
   .bigCta { font-size: 26px; padding: 18px 20px 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; animation: ctaGlow 2.6s ease-in-out infinite; }
   .bigCta span { font-size: 15px; font-weight: 400; font-style: italic; opacity: .9; }
   .bigCta.done { animation: none; background: var(--teal); }
@@ -518,7 +529,7 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .confetti, .sparkle, #fx { display: none !important; }
-    .hall .cloud, .hall .candle, .hall .candle i, .hall .stars, .hall .hbanner, .bigCta { animation: none !important; }
+    .hall .cloud, .hall .candle, .hall .candle i, .hall .stars, .hall .hbanner, .hall .hallBg, .bigCta { animation: none !important; }
   }
   .parentLink { text-align: center; margin-top: 26px; }
   .parentLink button { background: none; border: none; color: #8a7a6a; text-decoration: underline; font-size: .9em; font-style: italic; padding: 8px; }
@@ -545,7 +556,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2920,20 +2931,24 @@ function rewardLineHTML() {
 }
 /* Velká síň jako scéna: kouzelný strop (hvězdy, mraky), vznášející se svíčky, prapory kolejí.
    Vše v CSS; s ilustrací „sin“ z cloudu se pod scénu doplní obrázek. Jedna velká výzva, stavy jako štítky. */
+/* Velká síň: ilustrace (IMAGES.sin) je jen spodní vrstva s pomalým pohybem kamery; svíčky, třpyt hvězd a mraky
+   zůstávají živé nad ní. Při prvním vstupu do Síně po spuštění se svíčky jedna po druhé zapálí (hallIgnited). */
+var hallIgnited = false;
 function hallSceneHTML() {
   var h = HOUSES[S.house], today = todayStr(), gold = isGoldWeek(S.streak, today);
-  var candles = "";
+  var ignite = !hallIgnited; hallIgnited = true;
+  var candles = "", order = [5, 2, 8, 0, 6, 3, 10, 1, 7, 4, 9];
   for (var i = 0; i < 11; i++) {
     var x = 5 + i * 8.6 + (i % 2 ? 2 : -2), y = 10 + ((i * 37) % 26), d = (i * 0.37) % 2.6;
-    candles += '<span class="candle" style="left:' + x.toFixed(1) + '%;top:' + y + '%;animation-delay:-' + d.toFixed(2) + 's"><i style="animation-delay:-' + (d * 0.7).toFixed(2) + 's"></i></span>';
+    candles += '<span class="candle" style="left:' + x.toFixed(1) + '%;top:' + y + '%;animation-delay:-' + d.toFixed(2) + 's;--fd:-' + (d * 0.7).toFixed(2) + 's;--ig:' + (0.35 + order.indexOf(i) * 0.16).toFixed(2) + 's"><i></i></span>';
   }
   var banners = HOUSE_KEYS.map(function (k) {
     return '<span class="hbanner' + (k === S.house ? " mine" : "") + '" style="background:' + HOUSES[k].c + '">' + houseIcon(k, 22) + '</span>';
   }).join("");
-  return '<div class="hall" data-img="sin">' +
+  return '<div class="hall' + (ignite ? " ignite" : "") + '" data-img="sin"><div class="hallBg"></div>' +
     '<div class="ceiling"><span class="stars s1"></span><span class="stars s2"></span><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span></div>' +
     '<div class="candles">' + candles + '</div>' +
-    '<div class="banners">' + banners + '</div>' +
+    '<div class="banners">' + banners + '</div><div class="hallShade"></div>' +
     (S.streak.current > 0 ? '<div class="stamp' + (gold ? " mustard" : "") + '">' + S.streak.current + '. den!</div>' : '') +
     '<div class="hallCenter">' +
     '<span class="mascot pulse">' + flameIcon(56 + Math.min(S.streak.current, 30)) + '</span>' +
@@ -2978,7 +2993,7 @@ function screenHome() {
     syncHomeLine() + navHTML("sin");
   render(html);
   lastScreen = "home";
-  imgApply(".hall", "sin", function (el, url) { el.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
+  imgApply(".hall", "sin", function (el, url) { var bg = el.querySelector(".hallBg"); if (!bg) return; bg.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
 }
 
 /* Nový školní rok — když táta posune ročník */
