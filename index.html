@@ -599,7 +599,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11e";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3110,12 +3110,13 @@ function nodeHTML(t, i) {
    Obrázky (IMAGES mapa-*) nahradí nakreslené SVG; bez nich mapa funguje stejně. Do S se nic neukládá.
    ===================================================================== */
 var MAP_SPOTS = [
-  { k: "hrad",     subj: null, x: 50, y: 33, w: 33 },
-  { k: "knihovna", subj: "cj", x: 20, y: 31, w: 25, n: "Psaní brkem" },
-  { k: "formule",  subj: "en", x: 80, y: 29, w: 22, n: "Formule" },
-  { k: "lektvary", subj: "m",  x: 25, y: 66, w: 26, n: "Lektvary" },
-  { k: "dejiny",   subj: "hp", x: 75, y: 66, w: 26, n: "Dějiny" },
-  { k: "hajenka",  subj: null, x: 52, y: 86, w: 18 }
+  /* x, y = pata stavby v % podkladu (střed mýtiny na mapa-podklad.png, změřeno 11. 10. 2026), w = šířka stavby */
+  { k: "hrad",     subj: null, x: 50,   y: 28, w: 34 },
+  { k: "knihovna", subj: "cj", x: 17.5, y: 25, w: 27, n: "Psaní brkem" },
+  { k: "formule",  subj: "en", x: 81,   y: 25, w: 23, n: "Formule" },
+  { k: "lektvary", subj: "m",  x: 27,   y: 61, w: 28, n: "Lektvary" },
+  { k: "dejiny",   subj: "hp", x: 72,   y: 61, w: 28, n: "Dějiny" },
+  { k: "hajenka",  subj: null, x: 51,   y: 84, w: 22 }
 ];
 var mapView = null, mapDragged = false, mapRaf = 0;   /* natočení si mapa pamatuje do zavření hry; na úzkém displeji méně nakloněná */
 var MAP_INK = 'stroke="#3a2f28" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"';
