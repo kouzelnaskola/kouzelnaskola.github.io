@@ -425,6 +425,24 @@
   #pullInd.done { background: var(--teal-pale); }
   @keyframes screenIn { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
   #app > * { animation: screenIn .28s ease-out both; }
+  /* otáčení stránek (pageTurnPlay): list s kopií staré obrazovky se otočí kolem hřbetu */
+  #pageTurn { position: fixed; top: 0; bottom: 0; z-index: 25; pointer-events: none; perspective: 1800px; }
+  #pageTurn .ptLeaf { position: absolute; inset: 0; transform-style: preserve-3d; animation: ptFwd .72s cubic-bezier(.45, .05, .3, 1) forwards; transform-origin: 0 50%; }
+  #pageTurn.waapi .ptLeaf { animation: none; }
+  #pageTurn.waapi .ptFront, #pageTurn.waapi .ptBack { backface-visibility: visible; -webkit-backface-visibility: visible; }
+  #pageTurn .ptFront * { animation: none !important; transition: none !important; }
+  #pageTurn.back .ptLeaf { transform-origin: 100% 50%; animation-name: ptBack; }
+  #pageTurn .ptFront, #pageTurn .ptBack { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: #f6efe0; }
+  #pageTurn .ptFront { box-shadow: inset -1px 0 0 rgba(58,47,40,.25), 6px 0 18px rgba(58,47,40,.18); }
+  #pageTurn .ptFront::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(58,47,40,0) 40%, rgba(58,47,40,.28)); opacity: 0; animation: ptDark .72s ease-in forwards; }
+  #pageTurn.back .ptFront::after { background: linear-gradient(270deg, rgba(58,47,40,0) 40%, rgba(58,47,40,.28)); }
+  #pageTurn .ptBack { transform: rotateY(180deg); background: linear-gradient(90deg, #efe3c8, #f6efe0 30%, #efe3c8); box-shadow: inset 0 0 40px rgba(58,47,40,.18); }
+  #pageTurn .ptShade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(58,47,40,.3), transparent 60%); opacity: 0; animation: ptShade .72s ease-out forwards; }
+  #pageTurn.back .ptShade { background: linear-gradient(270deg, rgba(58,47,40,.3), transparent 60%); }
+  @keyframes ptFwd { 0% { transform: rotateY(0deg); } 85% { opacity: 1; } 100% { transform: rotateY(-180deg); opacity: 0; } }
+  @keyframes ptBack { 0% { transform: rotateY(0deg); } 85% { opacity: 1; } 100% { transform: rotateY(180deg); opacity: 0; } }
+  @keyframes ptDark { 60% { opacity: 1; } 100% { opacity: 1; } }
+  @keyframes ptShade { 0% { opacity: .9; } 100% { opacity: 0; } }
   #app > *:nth-child(2) { animation-delay: .04s; } #app > *:nth-child(3) { animation-delay: .08s; } #app > *:nth-child(n+4) { animation-delay: .12s; }
   @keyframes bump { 0% { scale: 1; } 40% { scale: 1.35; } 100% { scale: 1; } }
   .chip.dust.bump { animation: bump .32s ease-out; color: var(--mustard-d); }
@@ -617,7 +635,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11i";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11j";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2701,7 +2719,72 @@ function render(html) {
   if (typeof mentalStop === "function") mentalStop();
   var old = document.querySelectorAll(".confetti");
   for (var i = 0; i < old.length; i++) old[i].remove();
+  var turn = pageTurnDir; pageTurnDir = 0;
+  var snap = turn ? pageSnapshot() : null;
   el("app").innerHTML = html; W.scrollTo && W.scrollTo(0, 0);
+  if (snap) pageTurnPlay(snap, turn);
+}
+
+/* ---------------------------------------------------------------------
+   OTÁČENÍ STRÁNEK — přepnutí záložky dole otočí starou obrazovku jako list knihy.
+   render() je synchronní: těsně před vložením nové obrazovky se stará zkopíruje do vrstvy
+   #pageTurn (bez id a bez pruhu záložek), nová se vykreslí pod ní a kopie se otočí kolem
+   hřbetu: záložka vpravo = dopředu (list jde doleva), vlevo = zpátky. Kopie nepřijímá
+   klepnutí, nová obrazovka je ovladatelná hned. Omezený pohyb = bez otáčení. Jen DOM, nic v S.
+   --------------------------------------------------------------------- */
+var pageTurnDir = 0;
+function navGo(k) {
+  var nxt = -1, cur = -1, tabs = document.querySelectorAll(".tabbar .tab");
+  NAV_TABS.forEach(function (t, i) { if (t.k === k) nxt = i; });
+  for (var i = 0; i < tabs.length; i++) if (tabs[i].classList.contains("on")) cur = i;
+  if (nxt < 0) return;
+  pageTurnDir = cur < 0 || cur === nxt || reducedMotion() ? 0 : nxt > cur ? 1 : -1;
+  if (pageTurnDir) sfxPage();
+  NAV_FNS[NAV_TABS[nxt].f]();
+  pageTurnDir = 0;
+}
+function pageSnapshot() {
+  var app = el("app"); if (!app || !app.firstChild || typeof innerHeight === "undefined") return null;
+  var r = app.getBoundingClientRect(), c = app.cloneNode(true);
+  c.removeAttribute("id");
+  Array.prototype.forEach.call(c.querySelectorAll("[id]"), function (n) { n.removeAttribute("id"); });
+  Array.prototype.forEach.call(c.querySelectorAll(".tabbar, script"), function (n) { n.parentNode.removeChild(n); });
+  return { node: c, left: r.left, top: r.top, width: r.width };
+}
+function pageTurnPlay(s, dir) {
+  var prev = document.getElementById("pageTurn"); if (prev) prev.parentNode.removeChild(prev);
+  var w = document.createElement("div");
+  w.id = "pageTurn"; w.className = dir > 0 ? "fwd" : "back";
+  w.style.left = s.left + "px"; w.style.width = s.width + "px";
+  w.innerHTML = '<div class="ptShade"></div><div class="ptLeaf"><div class="ptFront"></div><div class="ptBack"></div></div>';
+  s.node.style.position = "absolute"; s.node.style.left = "0"; s.node.style.top = s.top + "px"; s.node.style.width = s.width + "px"; s.node.style.margin = "0";
+  w.querySelector(".ptFront").appendChild(s.node);
+  document.body.appendChild(w);
+  var done = function () { if (w.parentNode) w.parentNode.removeChild(w); };
+  var leaf = w.querySelector(".ptLeaf"), front = w.querySelector(".ptFront"), back = w.querySelector(".ptBack");
+  if (leaf.animate) {
+    /* Jedno zrychlení pro celý pohyb: v půlce (eased 0,5) je list přesně bokem — tam se líc schová a ukáže rub.
+       (backface-visibility v Chromu selhává, když kopie obsahuje animované vrstvy.) */
+    var T = { duration: 720, easing: "cubic-bezier(.45, .05, .3, 1)", fill: "forwards" }, end = dir > 0 ? -180 : 180;
+    leaf.animate([{ transform: "rotateY(0deg)" }, { transform: "rotateY(" + end + "deg)" }], T);
+    front.animate([{ opacity: 1, offset: 0 }, { opacity: 1, offset: 0.5 }, { opacity: 0, offset: 0.501 }, { opacity: 0, offset: 1 }], T);
+    back.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1, offset: 0.501 }, { opacity: 0, offset: 1 }], T);
+    w.classList.add("waapi");
+    setTimeout(done, 760);
+  } else { leaf.addEventListener("animationend", done); setTimeout(done, 1400); }
+}
+/* šustnutí papíru: krátký šum přes pásmovou propust, která se posouvá nahoru */
+function sfxPage() {
+  if (!sfxOn()) return;
+  var ctx = sfxCtxGet(); if (!ctx) return;
+  try {
+    var len = Math.floor(ctx.sampleRate * 0.42), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) { var x = i / len; d[i] = (Math.random() * 2 - 1) * Math.pow(Math.sin(Math.PI * Math.min(1, x * 1.3)), 2) * (0.55 + 0.45 * Math.random()); }
+    var src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(), t0 = ctx.currentTime;
+    src.buffer = buf; f.type = "bandpass"; f.Q.value = 0.7;
+    f.frequency.setValueAtTime(1400, t0); f.frequency.exponentialRampToValueAtTime(4200, t0 + 0.38);
+    g.gain.value = 0.1; src.connect(f); f.connect(g); g.connect(ctx.destination); src.start(t0);
+  } catch (e) {}
 }
 
 function flameIcon(w) {
@@ -2719,7 +2802,7 @@ var NAV_TABS = [
 ];
 function navHTML(active) {
   return '<nav class="tabbar">' + NAV_TABS.map(function (t) {
-    return '<button class="tab' + (t.k === active ? " on" : "") + '" onclick="' + t.f + '()">' + t.ico() + '<span>' + t.n + '</span></button>';
+    return '<button class="tab' + (t.k === active ? " on" : "") + '" onclick="navGo(\'' + t.k + '\')">' + t.ico() + '<span>' + t.n + '</span></button>';
   }).join("") + '</nav>';
 }
 function topbarHTML(inQuest, parentBtn) {
@@ -5262,6 +5345,7 @@ W.screenMapSubject = screenMapSubject;
 W.roomEdit = roomEdit;
 W.roomReset = roomReset;
 W.roomToggle = roomToggle;
+W.navGo = navGo;
 W.screenBadges = screenBadges;
 W.sfxToggle = sfxToggle;
 W.resumeSession = resumeSession;
