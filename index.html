@@ -399,8 +399,8 @@
   .hall .goldNote { font-size: 14px; color: var(--mustard-d); font-weight: 700; }
   .hall .stamp { top: 10px; right: 12px; }
   .hall.photo .banners { display: none; }
-  .bigCta { font-size: 26px; padding: 18px 20px 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; animation: ctaGlow 2.6s ease-in-out infinite; }
-  .bigCta span { font-size: 15px; font-weight: 400; font-style: italic; opacity: .9; }
+  .bigCta { font-size: 22px; padding: 14px 18px 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; animation: ctaGlow 2.6s ease-in-out infinite; }
+  .bigCta span { font-size: 14px; font-weight: 400; font-style: italic; opacity: .9; }
   .bigCta.done { animation: none; background: var(--teal); }
   @keyframes ctaGlow { 0%, 100% { box-shadow: 5px 5px 0 var(--shadow); } 50% { box-shadow: 5px 5px 0 var(--shadow), 0 0 22px rgba(217,160,50,.55); } }
   .hallChips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 6px 0 2px; }
@@ -515,6 +515,9 @@
   .roomClose { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--ink); background: #fffdf7; font-size: 20px; cursor: pointer; z-index: 2; }
   .roomTurnHint { display: none; color: #f3e3c0; font-size: 15px; margin: 0; }
   @media (orientation: portrait) and (max-width: 600px) { .roomTurnHint { display: block; } }
+  .mapFull .cmap { width: min(calc(100vw - 20px), calc(100dvh - 90px)); max-height: none; flex: 0 0 auto; }
+  .mapFullHint { color: #f3e3c0; font-size: 15px; margin: 0; }
+  .mapFullBtn { margin-top: 8px; }
   .roomPlaceholder { display: flex; align-items: center; justify-content: center; border: 2px dashed #b9ad97; border-radius: 6px; }
   .tower .mover[data-move="avatar"], .tower .mover[data-move="pet"], .tower .mover[data-move="hat"], .tower .mover[data-move="acc"] { z-index: 3; }   /* postava a mazlíček vpředu, ať se dá chytit klobouk i mašle */
   .tower .mover .avatar, .tower .mover .pet { position: relative; left: auto; bottom: auto; }
@@ -639,7 +642,18 @@
   .idHead { display: flex; align-items: center; gap: 14px; border-bottom: 2px dashed var(--ink); padding-bottom: 10px; margin-bottom: 10px; }
   .idHead .idName { font-size: 26px; font-weight: 700; line-height: 1.1; }
   .idHead .idSub { font-size: 15px; color: var(--muted2); font-style: italic; margin-top: 2px; }
-  .idHead .idAvatar { margin-left: auto; font-size: 34px; white-space: nowrap; }
+  .ava { display: inline-flex; align-items: center; justify-content: center; line-height: 1; vertical-align: middle; }
+  .ava.sticker { font-size: 0 !important; } .ava.sticker img { width: 100%; height: 100%; object-fit: contain; }
+  .idEmblem { position: relative; margin: 0; transform: none; padding: 8px; cursor: pointer; font: inherit; display: flex; }
+  .idEdit { position: absolute; right: -4px; bottom: -4px; width: 24px; height: 24px; border-radius: 50%; background: #fffdf7; border: 2px solid var(--ink); font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .idAvaBtn { margin-top: 6px; font-size: 14px; padding: 3px 10px; }
+  .avaGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; margin: 12px 0; }
+  .avaOpt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px 8px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; font: inherit; font-size: 13.5px; cursor: pointer; box-shadow: 3px 3px 0 var(--shadow); }
+  .avaOpt.on { background: var(--acc-pale); outline: 3px solid var(--acc); }
+  .avaOpt:active { transform: translate(1px, 1px); }
+  .avaSet { margin-top: 6px; background: none; border: none; color: var(--acc-d); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+  .avaMine { margin-top: 6px; font-size: 14px; color: #1f6363; font-weight: 700; }
+  .tabbar .tab .ava { border-radius: 50%; }
   .idGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; font-size: 16px; }
   @media (max-width: 480px) { .idGrid { grid-template-columns: 1fr; } }
   .idRow { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px dashed var(--shadow); padding: 5px 0; }
@@ -685,7 +699,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11l";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11m";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2380,6 +2394,7 @@ function defaultState() {
     paid: {},         /* skutečně zaplacená cena předmětu (kvůli slevám a sloučení) */
     rewards: [],      /* rodinné odměny: {id, n, e, p, status: open|claimed|done, created, claimed} */
     mental: true,     /* počítání z hlavy (bonus) u učeben Lektvarů s aspoň jednou hvězdou */
+    avatar: null,     /* vlastní avatar: null = erb koleje, "postava" = kouzelnice, jinak id vlastněné věci */
     savedAt: null
   };
 }
@@ -2430,6 +2445,7 @@ function migrate(s) {
   if (!s.roomPos || typeof s.roomPos !== "object") s.roomPos = {};
   if (!Array.isArray(s.roomOff)) s.roomOff = [];
   if (!s.paid || typeof s.paid !== "object") s.paid = {};
+  if (s.avatar === undefined) s.avatar = null;
   if (typeof s.mental !== "boolean") s.mental = true;
   if (!YEARS[s.year]) s.year = DEFAULT_YEAR;
   s.version = SAVE_VERSION;
@@ -2774,6 +2790,7 @@ function render(html) {
   var turn = pageTurnDir; pageTurnDir = 0;
   var snap = turn ? pageSnapshot() : null;
   el("app").innerHTML = html; W.scrollTo && W.scrollTo(0, 0);
+  imgApplyAll(".ava");
   if (snap) pageTurnPlay(snap, turn);
 }
 
@@ -2798,6 +2815,7 @@ function navGo(k) {
   NAV_TABS.forEach(function (t, i) { if (t.k === k) nxt = i; });
   for (var i = 0; i < tabs.length; i++) if (tabs[i].classList.contains("on")) cur = i;
   if (nxt < 0) return;
+  mapFull = false; roomFull = false;
   pageTurnDir = cur < 0 || cur === nxt || reducedMotion() ? 0 : nxt > cur ? 1 : -1;
   if (pageTurnDir) sfxPage();
   NAV_FNS[NAV_TABS[nxt].f]();
@@ -2858,8 +2876,36 @@ var NAV_TABS = [
   { k: "rozvrh", n: "Rozvrh", f: "screenMap", ico: function () { return svgMapIcon(26); } },
   { k: "ulice", n: "Příčná", f: "screenShop", ico: function () { return svgShopIcon(26); } },
   { k: "loznice", n: "Ložnice", f: "screenTower", ico: function () { return svgBedIcon(26); } },
-  { k: "ja", n: "Já", f: "screenProfile", ico: function () { return S.house ? houseIcon(S.house, 26) : svgBadgeIcon(26); } }
+  { k: "ja", n: "Já", f: "screenProfile", ico: function () { return avatarHTML(26); } }
 ];
+/* Avatar: cokoli, co Karolinka vlastní (mazlíček, čepice, věc do ložnice), kouzelnice, nebo erb koleje.
+   Je v pruhu záložek (Já) a na Průkazu studenta. Nevlastněná věc (např. po obnově zálohy) = erb. */
+function avatarKey() {
+  var a = S.avatar;
+  if (a === "postava") return a;
+  if (a && S.owned.indexOf(a) !== -1 && shopById(a) && shopById(a).cat !== "amulet") return a;
+  return null;
+}
+function avatarHTML(size) {
+  var k = avatarKey();
+  if (!k) return S.house ? houseIcon(S.house, size) : svgBadgeIcon(size);
+  var e = k === "postava" ? "🧙‍♀️" : shopById(k).e;
+  return '<span class="ava" data-img="' + k + '" style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.82) + 'px">' + e + '</span>';
+}
+function setAvatar(k) { S.avatar = k || null; saveState(); sfx("pop"); }
+function avatarPick(k, back) { setAvatar(k); if (back === "shop") screenShop(); else screenProfile(); }
+function screenAvatar() {
+  var cur = avatarKey();
+  var opts = [{ k: null, n: "Erb " + (S.house ? HOUSES[S.house].n + "u" : "koleje") }, { k: "postava", n: "Kouzelnice" }].concat(
+    S.owned.map(shopById).filter(function (i) { return i && i.cat !== "amulet"; }).map(function (i) { return { k: i.id, n: i.n }; }));
+  var save = S.avatar; 
+  var html = topbarHTML() + '<div class="card"><h2 class="center">Vyber si avatara</h2><p class="muted center">Bude tě zastupovat dole v liště a na Průkazu studenta. Vybrat můžeš cokoli, co máš.</p><div class="avaGrid">' +
+    opts.map(function (o) {
+      S.avatar = o.k; var pic = avatarHTML(64); S.avatar = save;
+      return '<button class="avaOpt' + ((o.k || null) === cur ? " on" : "") + '" onclick="avatarPick(' + (o.k ? "'" + o.k + "'" : "null") + ')">' + pic + '<span>' + esc(o.n) + '</span></button>';
+    }).join("") + '</div><button class="btn secondary" onclick="screenProfile()">Zpět na průkaz</button></div>' + navHTML("ja");
+  render(html);
+}
 function navHTML(active) {
   return '<nav class="tabbar">' + NAV_TABS.map(function (t) {
     return '<button class="tab' + (t.k === active ? " on" : "") + '" onclick="navGo(\'' + t.k + '\')">' + t.ico() + '<span>' + t.n + '</span></button>';
@@ -3427,7 +3473,7 @@ function mapGo(k) {
     sfx("tile"); return;
   }
   sfx("tile");
-  var go = function () { cancelAnimationFrame(mapRaf); if (k === "hrad") screenExamIntro(); else screenMapSubject(sp.subj); };
+  var go = function () { cancelAnimationFrame(mapRaf); mapFull = false; if (k === "hrad") screenExamIntro(); else screenMapSubject(sp.subj); };
   if (!el || reducedMotion()) { go(); return; }
   mapView.rz = mapRz(el);
   el.style.setProperty("--zx", (50 - sp.x) + "%"); el.style.setProperty("--zy", (50 - sp.y + 8) + "%");
@@ -3437,12 +3483,39 @@ function mapGo(k) {
 }
 function screenMap() {
   var html = topbarHTML() + '<div class="card mapCard"><h2 class="center">' + svgMapIcon(28) + ' Rozvrh hodin</h2>' + castleMapHTML() +
-    '<p class="muted center mapHint">Klepni na stavbu a vyber si učebnu. Prstem můžeš mapou otáčet.</p></div>' + navHTML("rozvrh");
+    '<p class="muted center mapHint">Klepni na stavbu a vyber si učebnu. Prstem můžeš mapou otáčet.</p>' +
+    '<button class="btn secondary mapFullBtn" onclick="mapFullToggle(true)">⛶ Mapa na celou obrazovku</button></div>' + navHTML("rozvrh");
   render(html);
   imgApply(".cmGround", "mapa-podklad", function (el, url) { el.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
   imgApplyAll(".cmap .bldArt");
   mapWire(); mapIdleStart();
   [60, 900, 1600].forEach(function (ms) { setTimeout(mapTagsSync, ms); });   /* i bez animace (omezený pohyb) */
+  if (mapFull) mapOpenFull(mapFullAnim);
+  mapFullAnim = false;
+}
+/* Mapa na celou obrazovku: #cmap se přesune do vrstvy body > .mapFull (jako ložnice); klepnutí na stavbu
+   funguje dál a po odchodu z Rozvrhu se vrstva zavře. */
+var mapFull = false, mapFullAnim = false;
+function mapFullToggle(on) { mapFull = !!on; mapFullAnim = !!on; screenMap(); }
+function mapOpenFull(anim) {
+  var m = document.getElementById("cmap"); if (!m) return;
+  var from = m.getBoundingClientRect();
+  var ph = document.createElement("div"); ph.className = "roomPlaceholder"; ph.style.height = from.height + "px";
+  ph.innerHTML = '<button class="btn secondary" onclick="mapFullToggle(true)">⛶ Otevřít mapu na celou obrazovku</button>';
+  m.parentNode.insertBefore(ph, m);
+  var ov = document.createElement("div"); ov.className = "roomFull mapFull";
+  ov.innerHTML = '<button class="roomClose" onclick="mapFullToggle(false)" aria-label="Zavřít">✕</button>';
+  ov.appendChild(m);
+  var hint = document.createElement("p"); hint.className = "mapFullHint"; hint.textContent = "Klepni na stavbu a vyber si učebnu. Prstem mapou otáčej.";
+  ov.appendChild(hint);
+  document.body.appendChild(ov);
+  if (anim && m.animate && !reducedMotion()) {
+    var to = m.getBoundingClientRect();
+    m.animate([{ transform: "translate(" + (from.left - to.left) + "px," + (from.top - to.top) + "px) scale(" + (from.width / to.width) + ")", transformOrigin: "0 0" },
+      { transform: "none", transformOrigin: "0 0" }], { duration: 420, easing: "cubic-bezier(.3, 1.2, .4, 1)" });
+    ov.animate([{ backgroundColor: "rgba(28,24,20,0)" }, { backgroundColor: "rgba(28,24,20,.86)" }], { duration: 320, fill: "backwards" });
+  }
+  [80, 450].forEach(function (ms) { setTimeout(mapTagsSync, ms); });
 }
 /* Učebny jednoho předmětu (z mapy hradu) — dřívější seznam Rozvrhu, beze změny pořadí, hvězd a zamykání. */
 function subjectRoomsHTML(subj) {
@@ -3519,9 +3592,9 @@ function screenProfile() {
   var exams = Object.keys(S.exams).filter(function (y) { return S.exams[y] && S.exams[y].passed; }).map(function (y) { return y + ". ročník"; });
   var gotBadges = BADGES.filter(function (b) { return S.badges.indexOf(b.id) !== -1; });
   render(topbarHTML() + '<div class="card"><h2 class="center">🪪 Průkaz studenta</h2>' +
-    '<div class="idCard"><div class="idHead"><div class="emblem" style="margin:0;transform:none;padding:10px">' + houseIcon(S.house, 44) + '</div>' +
-    '<div><div class="idName">' + esc(S.name) + '</div><div class="idSub">' + esc(h.n) + ' · ' + yearLabel(S.year) + (since ? '<br>v Bradavicích od ' + czDate(since) : '') + '</div></div>' +
-    '<div class="idAvatar">' + (hat ? hat.e : '') + '🧙‍♀️' + (pet ? pet.e : '') + '</div></div>' +
+    '<div class="idCard"><div class="idHead"><button class="emblem idEmblem" onclick="screenAvatar()" title="Vybrat avatara">' + avatarHTML(56) + '<span class="idEdit">✎</span></button>' +
+    '<div><div class="idName">' + esc(S.name) + '</div><div class="idSub">' + esc(h.n) + ' · ' + yearLabel(S.year) + (since ? '<br>v Bradavicích od ' + czDate(since) : '') + '</div>' +
+    '<button class="hintBtn idAvaBtn" onclick="screenAvatar()">Změnit avatara</button></div></div>' +
     '<div class="idGrid">' +
     row(flameIcon(17) + ' Plamínek teď', S.streak.current + ' ' + dayWord(S.streak.current)) +
     row('🏆 Nejdelší plamínek', S.streak.best + ' ' + dayWord(S.streak.best)) +
@@ -4677,6 +4750,9 @@ function shopItemHTML(it) {
       ? '<div class="muted">' + svgCheck(14, "#2a7f7f") + ' Právě ' + (it.cat === "pet" ? "s tebou" : "nasazeno") + '</div>'
       : '<button class="btn small secondary" onclick="equipItem(\'' + it.cat + '\',\'' + it.id + '\')">Vzít s sebou</button>';
   }
+  if (owned && it.cat !== "amulet") html += avatarKey() === it.id
+    ? '<div class="avaMine">' + svgCheck(13, "#2a7f7f") + ' Můj avatar</div>'
+    : '<button class="avaSet" onclick="avatarPick(\'' + it.id + '\', \'shop\')">Nastavit jako avatara</button>';
   return html + '</div>';
 }
 var shopTab = null;
@@ -5615,6 +5691,9 @@ W.roomEdit = roomEdit;
 W.roomReset = roomReset;
 W.roomToggle = roomToggle;
 W.roomFullToggle = roomFullToggle;
+W.screenAvatar = screenAvatar;
+W.avatarPick = avatarPick;
+W.mapFullToggle = mapFullToggle;
 W.navGo = navGo;
 W.screenBadges = screenBadges;
 W.sfxToggle = sfxToggle;
