@@ -38,6 +38,7 @@
     box-shadow: 5px 5px 0 var(--shadow); transform: rotate(-.4deg);
   }
   .topbar .who { display: flex; align-items: center; gap: 9px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 480px) { .topbar.inQuest .who > span { display: none; } .topbar { padding: 10px 12px; } }
   .topbar .who .yr { font-size: 13px; color: var(--muted2); font-style: italic; font-weight: 400; }
   .topbar .chips { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
   .chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
@@ -110,7 +111,7 @@
   /* ------- skládání slov z písmenek (Kouzelné formule) ------- */
   .wordCue { text-align: center; font-size: 3.2em; line-height: 1.1; margin: 4px 0 2px; }
   .wordSlots { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 12px 0; min-height: 56px; }
-  .slot2 { width: 46px; height: 54px; border: 2px dashed var(--ink); border-radius: 6px; background: var(--paper);
+  .slot2 { width: min(46px, calc((100vw - 96px) / var(--n, 1) - 8px)); height: 54px; border: 2px dashed var(--ink); border-radius: 6px; background: var(--paper);
     display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; font-family: "Helvetica Neue", Arial, sans-serif; text-transform: lowercase; }
   .slot2.filled { border-style: solid; background: #fff; box-shadow: 3px 3px 0 var(--shadow); animation: pop .25s; }
   .letterRow { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 10px 0 4px; }
@@ -121,6 +122,7 @@
   .tile.used { opacity: .25; box-shadow: none; cursor: default; }
   .tile.bad { animation: shake .4s; background: var(--coral-pale); border-color: var(--coral); }
   .slot2.wide, .tile.wide { width: auto; min-width: 56px; padding: 0 12px; font-size: 24px; }
+  @media (max-width: 480px) { .wordSlots { gap: 6px; flex-wrap: nowrap; } .wordSlots .slot2:not(.wide) { font-size: 24px; height: 48px; } .wordSlots:has(.wide) { flex-wrap: wrap; } }
   .recallTag { display: inline-block; background: var(--mustard-pale); border: 2px dashed var(--ink); border-radius: 5px; padding: 3px 10px; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
   .cardWord { text-align: center; font-size: 32px; margin: 14px 0; padding: 14px; background: #fff; border: 2px solid var(--ink); border-radius: 6px; box-shadow: 4px 4px 0 var(--shadow); }
   .cardAnswer { text-align: center; font-size: 26px; font-weight: 700; margin: 10px 0 4px; }
@@ -318,7 +320,7 @@
   .tabbar .tab:active { transform: translate(1px, 1px); }
   /* ------- Mapa hradu: 3D pop-up knížka ------- */
   .mapCard { padding-bottom: 10px; }
-  .cmap { position: relative; width: 100%; aspect-ratio: 1 / 1.02; max-height: 640px; margin: 4px auto 0; perspective: 1500px; perspective-origin: 50% 30%;
+  .cmap { container-type: inline-size; position: relative; width: 100%; aspect-ratio: 1 / 1.02; max-height: 640px; margin: 4px auto 0; perspective: 1500px; perspective-origin: 50% 30%;
     overflow: hidden; border: 2px solid var(--ink); border-radius: 10px; touch-action: none; user-select: none; -webkit-user-select: none;
     background: radial-gradient(ellipse 80% 60% at 50% 35%, #fffaf0 0%, #f3e3c0 70%, #e6d2a8 100%); }
   .cmStage { position: absolute; left: 8%; top: 13%; width: 84%; aspect-ratio: 1 / 1; transform-style: preserve-3d; transform-origin: 50% 50%;
@@ -339,7 +341,7 @@
   .bld:active .bldArt { scale: .95; }
   .cmTags { position: absolute; inset: 0; pointer-events: none; }
   .bldTag { position: absolute; left: 0; top: 0; translate: -50% 0; padding: 2px 9px 1px; background: #fffdf7; border: 2px solid var(--ink); border-radius: 12px;
-    font-size: clamp(12px, 2.4vw, 15px); font-weight: 700; color: var(--ink); line-height: 1.15; text-align: center; max-width: 34%; pointer-events: auto; cursor: pointer;
+    font-size: clamp(10px, 2.5cqw, 15px); font-weight: 700; color: var(--ink); line-height: 1.15; text-align: center; max-width: 34%; pointer-events: auto; cursor: pointer;
     box-shadow: 2px 2px 0 rgba(0,0,0,.2); opacity: 0; transition: opacity .3s; }
   .bldTag.on { opacity: 1; }
   .bldTag[data-news] { background: var(--mustard-pale); }
@@ -504,19 +506,33 @@
   .roomGlare { position: absolute; inset: 0; border-radius: 6px; pointer-events: none; mix-blend-mode: soft-light; opacity: .55;
     background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,250,235,.9), transparent 55%); transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
   .tower.editing ~ .roomGlare { display: none; }
-  .roomFull { position: fixed; inset: 0; z-index: 50; background: rgba(28,24,20,.86); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-    padding: calc(12px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom)); overflow-y: auto; }
-  .roomFull .roomStage { width: min(calc(100vw - 20px), calc((100dvh - 170px) * 1.5)); flex: 0 0 auto; }
+  .roomFull { position: fixed; inset: 0; z-index: 50; background: #1f1a16; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+  /* celá obrazovka: pokoj vyplní displej; na výšku vyplní výšku a do stran se posouvá prstem */
+  /* pokoj vždy vyplní celý displej (jako „cover“): co přečnívá, se dá posunout prstem; flex-start, aby šlo posunout i doleva a nahoru */
+  .roomFull:not(.mapFull) { display: block; overflow: auto; }
+  .roomFull .roomStage { width: max(100vw, calc(100dvh * 1.5)); }
+  .roomFull .tower { border-radius: 0; border: none; box-shadow: none; }
+  .roomFull .roomStage .tower, .roomFull .roomStage .tower.editing { touch-action: pan-x pan-y; }
   .roomFull .tower, .roomFull .tower.photo { width: 100%; height: auto; aspect-ratio: 3 / 2; }
-  .roomFull .roomStage .tower { touch-action: none; }
-  .roomFull #roomNote { color: #f3e3c0; margin: 0 !important; }
-  .roomFull .roomCtl { width: min(100%, 700px); }
-  .roomFull .chest { background: rgba(255,250,240,.95); max-height: 30vh; overflow-y: auto; }
+
+  .roomFull #roomNote { display: none; }
+  /* ovládání pluje přes pokoj, aby pokoj mohl vyplnit celý displej */
+  /* ovládání nahoře pod stropem (v obrázku je tam prázdný strop), podlaha s věcmi zůstane volná */
+  .roomFull .roomCtl { position: fixed; left: 10px; top: calc(8px + env(safe-area-inset-top)); width: min(calc(100vw - 76px), 640px); z-index: 3; display: flex; flex-direction: column-reverse; }
+  .roomFull .roomCtl .row2 { gap: 8px; }
+  .roomFull .roomCtl .btn { margin: 0; padding: 8px 12px; font-size: 16px; opacity: .93; }
+  .roomFull .chest { background: rgba(255,250,240,.94); margin: 8px 0 0; padding: 6px 8px; }
+  .roomFull .chestHead { display: none; }
+  .roomFull .chestItems { flex-wrap: nowrap; overflow-x: auto; }
+  .roomFull .chestItem { flex: 0 0 auto; width: 60px; }
+  .roomFull .roomTurnHint { display: none !important; }
   .roomClose { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--ink); background: #fffdf7; font-size: 20px; cursor: pointer; z-index: 2; }
   .roomTurnHint { display: none; color: #f3e3c0; font-size: 15px; margin: 0; }
   @media (orientation: portrait) and (max-width: 600px) { .roomTurnHint { display: block; } }
-  .mapFull .cmap { width: min(calc(100vw - 20px), calc(100dvh - 90px)); max-height: none; flex: 0 0 auto; }
-  .mapFullHint { color: #f3e3c0; font-size: 15px; margin: 0; }
+  .mapFull .cmap { width: 100vw; height: 100dvh; aspect-ratio: auto; max-height: none; margin: 0; border: none; border-radius: 0; flex: 0 0 auto; }
+  .mapFull .cmStage { --sw: min(94vw, 88dvh); width: var(--sw); left: calc(50% - var(--sw) / 2); top: calc(50% - var(--sw) / 2 + 4dvh); }
+  .mapFull .bldTag { font-size: clamp(11px, 1.3vw + .5dvh, 17px); }
+  .mapFullHint { position: fixed; left: 14px; right: 70px; bottom: calc(8px + env(safe-area-inset-bottom)); color: var(--ink); font-size: 14px; font-style: italic; margin: 0; z-index: 3; opacity: .75; }
   .mapFullBtn { margin-top: 8px; }
   .roomPlaceholder { display: flex; align-items: center; justify-content: center; border: 2px dashed #b9ad97; border-radius: 6px; }
   .tower .mover[data-move="avatar"], .tower .mover[data-move="pet"], .tower .mover[data-move="hat"], .tower .mover[data-move="acc"] { z-index: 3; }   /* postava a mazlíček vpředu, ať se dá chytit klobouk i mašle */
@@ -699,7 +715,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11m";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11o";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2004,7 +2020,11 @@ function isPhrase(en) { return /[^a-z']/.test(en) || en.length > 9; }
 
 function vocabMeaningQ(w, pool, all) {
   var seen = {}; seen[w.cs] = true;
-  var others = shuffle(all).filter(function (x) { if (x.en === w.en || seen[x.cs]) return false; seen[x.cs] = true; return true; }).slice(0, 3).map(function (x) { return x.cs; });
+  /* špatné možnosti stejného druhu: k větě věty, ke slovu slova — jinak se dá uhodnout podle tvaru */
+  var kind = function (x) { var n = x.en.split(" ").length; return n >= 3 ? 2 : n === 2 ? 1 : 0; }, k0 = kind(w);
+  var cand = shuffle(all).filter(function (x) { return x.en !== w.en; });
+  cand.sort(function (a, b) { return Math.abs(kind(a) - k0) - Math.abs(kind(b) - k0); });
+  var others = cand.filter(function (x) { if (seen[x.cs]) return false; seen[x.cs] = true; return true; }).slice(0, 3).map(function (x) { return x.cs; });
   var ph = w.en.indexOf(" ") !== -1;
   /* Bez obrázku — jinak by stačilo poznat obrázek, ne slovo. */
   return { kind:"choice", how:"rec", sayPre:true, q:(ph ? "Co znamená „" + w.en + "“?" : "Co znamená slovo " + w.en + "?"), word:w.en, cue:"", opts: shuffle([w.cs].concat(others)), correct:w.cs,
@@ -2048,7 +2068,7 @@ function vocabTypeQ(w) {
     b.q = "Z hlavy: poskládej anglicky „" + w.cs + "“";
     return b;
   }
-  return { kind:"type", how:"recall", dir:"cz", recall:true, word:w.en, q:"Z hlavy — napiš anglicky: " + w.cs, cue:w.e || "", correct:w.en, opts:[w.en],
+  return { kind:"type", how:"recall", dir:"cz", recall:true, word:w.en, q:"Napiš anglicky: " + w.cs, cue:w.e || "", correct:w.en, opts:[w.en],
     accept: [normAns(w.en)].concat(w.alt ? [normAns(w.alt)] : []), why:"Správně: " + w.en + (w.alt ? " (nebo " + w.alt + ")" : "") + " = " + w.cs + "." };
 }
 /* Z hlavy, anglicky → česky. Slova napsat česky (háčky nevadí), věty říct nahlas a poctivě ohodnotit. */
@@ -2057,7 +2077,7 @@ function vocabRecallCsQ(w) {
     return { kind:"card", how:"recall", dir:"en", recall:true, sayPre:true, word:w.en, q:"Řekni nahlas česky, co to znamená:", shownWord:w.en, cue:"", correct:w.cs, opts:[w.cs],
       why: w.en + " = " + w.cs + "." };
   }
-  return { kind:"type", how:"recall", dir:"en", recall:true, csInput:true, sayPre:true, word:w.en, q:"Z hlavy — co znamená " + w.en + "? Napiš česky.", cue:"", correct:w.cs, opts:[w.cs],
+  return { kind:"type", how:"recall", dir:"en", recall:true, csInput:true, sayPre:true, word:w.en, q:"Co znamená " + w.en + "? Napiš česky.", cue:"", correct:w.cs, opts:[w.cs],
     accept: csVariants(w.cs), fuzzy:true, why: w.en + " = " + w.cs + (w.e ? " " + w.e : "") + "." };
 }
 function pickWordWeighted(list, state) {
@@ -2815,6 +2835,7 @@ function navGo(k) {
   NAV_TABS.forEach(function (t, i) { if (t.k === k) nxt = i; });
   for (var i = 0; i < tabs.length; i++) if (tabs[i].classList.contains("on")) cur = i;
   if (nxt < 0) return;
+  if (mapFull || roomFull) fsSet(false);
   mapFull = false; roomFull = false;
   pageTurnDir = cur < 0 || cur === nxt || reducedMotion() ? 0 : nxt > cur ? 1 : -1;
   if (pageTurnDir) sfxPage();
@@ -2914,7 +2935,7 @@ function navHTML(active) {
 function topbarHTML(inQuest, parentBtn) {
   var avatar = S.house ? houseIcon(S.house, 30) : svgCastle(28);
   var mid = inQuest ? '<button class="homeBtn" onclick="abortQuest()">' + svgHome(15) + ' Velká síň</button>' : "";
-  return '<div class="topbar"><span class="who">' + avatar + ' <span>' + esc(S.name || "Bradavice") +
+  return '<div class="topbar' + (inQuest ? " inQuest" : "") + '"><span class="who">' + avatar + ' <span>' + esc(S.name || "Bradavice") +
     '<br><span class="yr">' + yearLabel(S.year) + (S.house ? " · " + esc(HOUSES[S.house].n) : "") + '</span></span></span>' + mid +
     '<span class="chips"><span class="chip dust">' + svgCoin(18) + ' <span class="num">' + S.dust + '</span></span>' +
     '<span class="chip flame">' + flameIcon(16) + ' ' + S.streak.current + '</span>' + sfxBtnHTML() +
@@ -3473,7 +3494,7 @@ function mapGo(k) {
     sfx("tile"); return;
   }
   sfx("tile");
-  var go = function () { cancelAnimationFrame(mapRaf); mapFull = false; if (k === "hrad") screenExamIntro(); else screenMapSubject(sp.subj); };
+  var go = function () { cancelAnimationFrame(mapRaf); if (mapFull) fsSet(false); mapFull = false; if (k === "hrad") screenExamIntro(); else screenMapSubject(sp.subj); };
   if (!el || reducedMotion()) { go(); return; }
   mapView.rz = mapRz(el);
   el.style.setProperty("--zx", (50 - sp.x) + "%"); el.style.setProperty("--zy", (50 - sp.y + 8) + "%");
@@ -3496,7 +3517,32 @@ function screenMap() {
 /* Mapa na celou obrazovku: #cmap se přesune do vrstvy body > .mapFull (jako ložnice); klepnutí na stavbu
    funguje dál a po odchodu z Rozvrhu se vrstva zavře. */
 var mapFull = false, mapFullAnim = false;
-function mapFullToggle(on) { mapFull = !!on; mapFullAnim = !!on; screenMap(); }
+function mapFullToggle(on) { mapFull = !!on; mapFullAnim = !!on; fsSet(on); screenMap(); }
+/* Skutečná celá obrazovka prohlížeče (Mac, iPad, Android): schová lištu prohlížeče. Na celý dokument, ne na vrstvu,
+   protože překreslení (např. Přestavit pokoj) vrstvu vymění. Na iPhonu API není a aplikace z plochy je celá sama.
+   Zavření celé obrazovky prohlížeče (Esc, gesto) zavře i vrstvu. */
+var fsOurs = false;
+function fsSet(on) {
+  if (typeof document === "undefined") return;
+  var d = document.documentElement, fe = document.fullscreenElement || document.webkitFullscreenElement;
+  try {
+    if (on && !fe && !isStandalone()) {
+      var rq = d.requestFullscreen || d.webkitRequestFullscreen;
+      if (rq) { var r = rq.call(d); fsOurs = true; if (r && r.catch) r.catch(function () { fsOurs = false; }); }
+    } else if (!on && fe && fsOurs) {
+      fsOurs = false; var ex = document.exitFullscreen || document.webkitExitFullscreen; if (ex) ex.call(document);
+    }
+  } catch (e) { fsOurs = false; }
+}
+function fsWire() {
+  if (typeof document === "undefined") return;
+  var h = function () {
+    if (document.fullscreenElement || document.webkitFullscreenElement || !fsOurs) return;
+    fsOurs = false;
+    if (roomFull) roomFullToggle(false); else if (mapFull) mapFullToggle(false);
+  };
+  document.addEventListener("fullscreenchange", h); document.addEventListener("webkitfullscreenchange", h);
+}
 function mapOpenFull(anim) {
   var m = document.getElementById("cmap"); if (!m) return;
   var from = m.getBoundingClientRect();
@@ -4004,10 +4050,19 @@ function syncGenCode() {
   for (var g = 0; g < 4; g++) { var s = ""; for (var i = 0; i < 5; i++) s += SYNC_CODE_CHARS.charAt(Math.floor(Math.random() * SYNC_CODE_CHARS.length)); out.push(s); }
   return out.join("-");
 }
-function syncRpc(fn, args) {
+/* Požadavek na server. Na mobilu po probuzení z pozadí první požadavek občas uvízne (síť se teprve rozbíhá):
+   uvízlý nebo síťově neúspěšný požadavek se proto jednou zopakuje s delším čekáním (9 s → 20 s). */
+function syncRpc(fn, args, attempt) {
+  attempt = attempt || 0;
+  return syncRpcOnce(fn, args, attempt ? 20000 : 9000).then(null, function (e) {
+    if (attempt === 0 && !e.status) return new Promise(function (res) { setTimeout(res, 1200); }).then(function () { return syncRpc(fn, args, 1); });
+    throw e;
+  });
+}
+function syncRpcOnce(fn, args, ms) {
   var cfg = syncCfg();
   var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
-  var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 9000);
+  var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
   return fetch(cfg.url + "/rest/v1/rpc/" + fn, {
     method: "POST", signal: ctrl ? ctrl.signal : undefined,
     headers: { "apikey": cfg.key, "Authorization": "Bearer " + cfg.key, "Content-Type": "application/json" },
@@ -4119,13 +4174,15 @@ function syncRun() {
     }
     return null;
   }).then(function () {
-    syncSt.busy = false; syncSt.last = new Date().toISOString(); syncSaveStatus();
+    syncSt.busy = false; syncSt.last = new Date().toISOString(); syncSt.retries = 0; syncSaveStatus();
     if (changed) { persistLocal(); syncOnApplied(); }
     if (syncSt.pending) { syncSt.pending = false; syncSchedulePush(); }
     return changed;
   }, function (e) {
     syncSt.busy = false; syncSt.err = syncErrText(e);
-    if (syncSt.pending) { syncSt.pending = false; syncSchedulePush(30000); }
+    /* samo to zkusí znovu: za 15, 30 a 60 s (pak až po dalším uložení, obnovení nebo návratu do hry) */
+    syncSt.retries = (syncSt.retries || 0) + 1;
+    if (syncSt.pending || syncSt.retries <= 3) { syncSt.pending = false; syncSchedulePush(15000 * Math.pow(2, Math.min(2, syncSt.retries - 1))); }
     return changed;
   });
 }
@@ -4141,7 +4198,7 @@ function syncOnApplied() {
 function syncStatusText() {
   if (!syncOn()) return "Vypnuto — postup je jen v tomto prohlížeči.";
   if (syncSt.busy) return "Synchronizuji…";
-  if (syncSt.err) return "Poslední pokus selhal: " + syncSt.err + ". Zkusím to znovu po dalším uložení.";
+  if (syncSt.err) return "Poslední pokus selhal: " + syncSt.err + ". " + ((syncSt.retries || 0) <= 3 ? "Za chvíli to zkusím znovu sám." : "Zkusím to znovu po dalším uložení, nebo stáhni obrazovku dolů.");
   if (!ttsOnline()) return "Zařízení je offline — srovná se po připojení.";
   if (syncSt.last) return "Naposledy synchronizováno " + syncWhen(syncSt.last) + ".";
   return "Zatím nesynchronizováno.";
@@ -4408,7 +4465,7 @@ function buildUIHTML(it) {
   var wide = !!it.tokens;
   it._tiles = tiles; it._pos = 0; it._slips = 0;
   var html = (it.cue ? '<div class="wordCue">' + it.cue + '</div>' : '') +
-    '<p class="qtext center">' + esc(it.q) + '</p><div class="wordSlots" id="slots">';
+    '<p class="qtext center">' + esc(it.q) + '</p><div class="wordSlots" id="slots" style="--n:' + letters.length + '">';
   letters.forEach(function (ch, i) { html += '<div class="slot2' + (wide ? " wide" : "") + '" id="sl' + i + '">' + (ch === " " ? "·" : "") + '</div>'; });
   html += '</div><div class="letterRow" id="tiles">';
   tiles.forEach(function (t, k) { html += '<button class="tile' + (wide ? " wide" : "") + '" data-k="' + k + '">' + esc(t.ch === " " ? "␣" : t.ch) + '</button>'; });
@@ -5097,7 +5154,14 @@ function screenTower() {
    Celá obrazovka: .roomStage a ovládání se přesunou do vrstvy body > .roomFull (uvnitř #app by je
    animace stránky přišpendlila k obsahu). Nic z toho se neukládá. */
 var roomFull = false, roomFullAnim = false, roomTilt = { rx: 0, ry: 0, drag: false }, roomRaf = 0;
-function roomFullToggle(on) { roomFull = !!on; roomFullAnim = !!on; screenTower(); }
+/* vycentrovat pokoj v celé obrazovce: do stran na střed, svisle k podlaze (tam stojí věci); i po otočení telefonu */
+function roomFullCenter() {
+  var o = document.querySelector("body > .roomFull:not(.mapFull)"); if (!o) return;
+  o.scrollLeft = Math.max(0, (o.scrollWidth - o.clientWidth) / 2);
+  o.scrollTop = Math.max(0, o.scrollHeight - o.clientHeight);
+}
+if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("resize", function () { setTimeout(roomFullCenter, 120); });
+function roomFullToggle(on) { roomFull = !!on; roomFullAnim = !!on; fsSet(on); screenTower(); }
 function roomOpenFull(anim) {
   var stage = document.querySelector(".roomStage"), ctl = document.querySelector(".roomCtl"), note = el("roomNote");
   if (!stage) return;
@@ -5109,6 +5173,8 @@ function roomOpenFull(anim) {
   ov.innerHTML = '<button class="roomClose" onclick="roomFullToggle(false)" aria-label="Zavřít">✕</button><p class="roomTurnHint">📱 Otoč telefon na šířku a pokoj bude větší</p>';
   ov.appendChild(stage); if (note) ov.appendChild(note); if (ctl) ov.appendChild(ctl);
   document.body.appendChild(ov);
+  var sc = ov.querySelector(".roomScroll") || ov;
+  roomFullCenter();
   if (anim && stage.animate && !reducedMotion()) {
     var to = stage.getBoundingClientRect();
     stage.animate([{ transform: "translate(" + (from.left - to.left) + "px," + (from.top - to.top) + "px) scale(" + (from.width / to.width) + ")", transformOrigin: "0 0" },
@@ -5718,7 +5784,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, vocabMeaningQ: vocabMeaningQ, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
@@ -5885,6 +5951,7 @@ function screenJoin(code) {
 }
 function boot() {
   applyHouseColors();
+  fsWire();
   fxInit();
   var joinCode = joinFromLink();
   if (joinCode && joinCode !== syncCfg().code) { if (isIOSWeb() && !isStandalone()) screenAddToHome(joinCode); else screenJoin(joinCode); return; }
