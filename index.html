@@ -316,6 +316,49 @@
     border-radius: 10px; padding: 6px 4px 4px; font: inherit; font-size: 14px; font-weight: 700; color: var(--muted2); }
   .tabbar .tab.on { color: var(--ink); background: var(--acc-pale); border-color: var(--ink); box-shadow: 2px 2px 0 var(--shadow); }
   .tabbar .tab:active { transform: translate(1px, 1px); }
+  /* ------- Mapa hradu: 3D pop-up knížka ------- */
+  .mapCard { padding-bottom: 10px; }
+  .cmap { position: relative; width: 100%; aspect-ratio: 1 / 1.02; max-height: 640px; margin: 4px auto 0; perspective: 1500px; perspective-origin: 50% 30%;
+    overflow: hidden; border: 2px solid var(--ink); border-radius: 10px; touch-action: none; user-select: none; -webkit-user-select: none;
+    background: radial-gradient(ellipse 80% 60% at 50% 35%, #fffaf0 0%, #f3e3c0 70%, #e6d2a8 100%); }
+  .cmStage { position: absolute; left: 8%; top: 13%; width: 84%; aspect-ratio: 1 / 1; transform-style: preserve-3d; transform-origin: 50% 50%;
+    transform: rotateX(var(--rx)) rotateZ(var(--rz)) scale(var(--zs, 1)) translate(var(--zx, 0), var(--zy, 0)); }
+  .cmap.zooming .cmStage { --zs: 2.4; transition: transform .56s cubic-bezier(.55, 0, .35, 1); }
+  .cmap.zooming { transition: opacity .3s ease .3s; opacity: 0; }
+  .cmGround { position: absolute; inset: 0; border-radius: 14px; overflow: hidden; background-size: cover; background-position: center;
+    box-shadow: 0 0 0 3px #3a2f28, 0 18px 0 -2px #b9a27a, 0 18px 0 1px #3a2f28; }
+  .cmGround svg { display: block; width: 100%; height: 100%; }
+  .cmGround.photo svg { display: none; }
+  .bldShadow { position: absolute; aspect-ratio: 2 / 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(40,30,20,.35), transparent); pointer-events: none; }
+  .bld { position: absolute; height: 0; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; transform-style: preserve-3d; transform-origin: 50% 0;
+    transform: rotateZ(calc(-1 * var(--rz))) rotateX(calc(-1 * var(--rx))); animation: bldPop .8s cubic-bezier(.3, 1.5, .5, 1) var(--d, 0s) backwards; -webkit-tap-highlight-color: transparent; }
+  @keyframes bldPop { from { transform: rotateZ(calc(-1 * var(--rz))) rotateX(0deg); opacity: 0; } 25% { opacity: 1; } to { transform: rotateZ(calc(-1 * var(--rz))) rotateX(calc(-1 * var(--rx))); } }
+  .bldUp { position: absolute; left: 0; bottom: 0; width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .bldArt { display: block; width: 100%; filter: drop-shadow(0 5px 3px rgba(40,30,20,.25)); transition: scale .15s; transform-origin: 50% 100%; }
+  .bldArt svg, .bldArt img { display: block; width: 100%; height: auto; }
+  .bld:active .bldArt { scale: .95; }
+  .cmTags { position: absolute; inset: 0; pointer-events: none; }
+  .bldTag { position: absolute; left: 0; top: 0; translate: -50% 0; padding: 2px 9px 1px; background: #fffdf7; border: 2px solid var(--ink); border-radius: 12px;
+    font-size: clamp(12px, 2.4vw, 15px); font-weight: 700; color: var(--ink); line-height: 1.15; text-align: center; max-width: 34%; pointer-events: auto; cursor: pointer;
+    box-shadow: 2px 2px 0 rgba(0,0,0,.2); opacity: 0; transition: opacity .3s; }
+  .bldTag.on { opacity: 1; }
+  .bldTag[data-news] { background: var(--mustard-pale); }
+  .cmap.zooming .bldTag { opacity: 0; }
+  .bldStars { font-weight: 400; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+  .bld.news .bldArt { animation: bldNews 1.1s ease-in-out infinite alternate; }
+  @keyframes bldNews { from { filter: drop-shadow(0 0 4px rgba(243,199,79,.6)); } to { filter: drop-shadow(0 0 16px rgba(243,199,79,1)); } }
+  .bld.wig .bldArt { animation: bldWig .5s ease-in-out; }
+  @keyframes bldWig { 25% { rotate: -6deg; } 50% { rotate: 5deg; } 75% { rotate: -3deg; } }
+  .cmap.zooming .bld:not(.chosen) { opacity: .25; transition: opacity .3s; }
+  .cmCloud { position: absolute; width: 34%; height: 12%; border-radius: 50%; background: rgba(255,255,255,.55); filter: blur(6px); pointer-events: none;
+    transform: translateZ(150px); animation: cmCloud 34s linear infinite; }
+  .cmCloud.c1 { left: -30%; top: 20%; } .cmCloud.c2 { left: -40%; top: 58%; width: 26%; animation-duration: 47s; animation-delay: -20s; }
+  @keyframes cmCloud { to { translate: 190% 0; } }
+  .mapHint { margin: 10px 0 0; font-size: 15px; }
+  @media (max-width: 430px) { .cmap { aspect-ratio: 1 / 1.22; } .cmStage { left: 2%; width: 96%; top: 17%; } .bldTag { max-width: 40%; padding: 1px 6px; } }
+  .backMap { margin: 0 0 6px; }
+  .subjTitle { margin-bottom: 0; }
+  @media (prefers-reduced-motion: reduce) { .bld, .bld.news .bldArt, .cmCloud { animation: none !important; } }
   /* ------- Velká síň jako scéna ------- */
   .hall { position: relative; height: 450px; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; box-shadow: 6px 6px 0 var(--shadow); margin-bottom: 18px;
     background: linear-gradient(180deg, #1c2541 0%, #3a3f6b 38%, #8a6a5a 70%, #e9d3ae 100%); background-size: cover; background-position: center; }
@@ -556,7 +599,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11e";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3058,31 +3101,209 @@ function nodeHTML(t, i) {
     '<span class="subj">' + esc(sub) + '</span></span>' +
     '<span class="ns">' + svgLock(18, "#c8c8c8") + '</span></button>';
 }
-function screenMap() {
-  var ex = S.exams[S.year];
-  var html = topbarHTML() + '<div class="card"><h2 class="center">' + svgMapIcon(28) + ' Rozvrh hodin</h2>' +
-    '<button class="examCard" onclick="screenExamIntro()">' + svgTrophy(34) + '<span><b>Zkouška ' + yearLabel(S.year) + 'u</b><br><span class="muted">' +
-    (ex && ex.passed ? "složena ✓ — můžeš si ji zkusit znovu" : ex ? "nejlépe " + ex.best + " / 15 — zkus to znovu" : "15 otázek ze všeho, co umíš") + '</span></span></button>';
-  ["hp", "en", "m", "cj"].forEach(function (subj) {
-    var open = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && isUnlocked(t, S); });
-    var locked = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && !isUnlocked(t, S); });
-    html += '<div class="subjHead">' + subjIcon(subj, 26) + ' ' + esc(SUBJECTS[subj].n) + ' <span class="muted">— ' + esc(SUBJECTS[subj].sub) + '</span></div><div class="path">';
-    open.forEach(function (t, i) { html += nodeHTML(t, i); });
-    html += '</div>';
-    if (locked.length) {
-      var later = subj === "hp" ? locked.filter(function (t) { return TOPICS[t].book > S.year; }).length : 0;
-      html += '<div class="lockedSum">' + svgLock(16) + ' ' + (subj === "hp" && later === locked.length
-        ? (later === 1 ? "Další díl se otevře" : "Dalších " + later + " dílů se otevře") + " v dalších ročnících"
-        : locked.length + " " + (locked.length === 1 ? "další učebna se otevře" : locked.length < 5 ? "další učebny se otevřou" : "dalších učeben se otevře") + ", až na ně přijde čas") + '</div>';
-    }
-    if (subj === "en") {
-      var sc = dictCounts(S);
-      html += '<button class="btn secondary" onclick="screenDictionary()">📖 Můj slovníček — umím z hlavy ' + sc[2] + ' z ' + (sc[0] + sc[1] + sc[2]) + '</button>';
-    }
+/* =====================================================================
+   MAPA HRADU — Rozvrh jako 3D pop-up knížka
+   Deska s podkladem je v CSS 3D nakloněná (rotateX/rotateZ v proměnných --rx/--rz na #cmap). Stavby stojí
+   na mýtinách a vždy se otáčejí k dítěti (opačná rotace = „billboard“), při otevření se vyklopí nahoru.
+   Prstem se mapa natáčí, v klidu se kamera pomalu kolébá (rAF, jen dokud je mapa na obrazovce).
+   Klepnutí na stavbu = přiblížení a seznam učeben předmětu (screenMapSubject); hrad = zkouška ročníku.
+   Obrázky (IMAGES mapa-*) nahradí nakreslené SVG; bez nich mapa funguje stejně. Do S se nic neukládá.
+   ===================================================================== */
+var MAP_SPOTS = [
+  { k: "hrad",     subj: null, x: 50, y: 33, w: 33 },
+  { k: "knihovna", subj: "cj", x: 20, y: 31, w: 25, n: "Psaní brkem" },
+  { k: "formule",  subj: "en", x: 80, y: 29, w: 22, n: "Formule" },
+  { k: "lektvary", subj: "m",  x: 25, y: 66, w: 26, n: "Lektvary" },
+  { k: "dejiny",   subj: "hp", x: 75, y: 66, w: 26, n: "Dějiny" },
+  { k: "hajenka",  subj: null, x: 52, y: 86, w: 18 }
+];
+var mapView = null, mapDragged = false, mapRaf = 0;   /* natočení si mapa pamatuje do zavření hry; na úzkém displeji méně nakloněná */
+var MAP_INK = 'stroke="#3a2f28" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"';
+function mapStarPath(x, y, r) { return '<path d="M' + x + ' ' + (y - r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + 'Z" fill="#f3c74f" stroke="#b5832a" stroke-width="1"/>'; }
+function mapArtSVG(k) {
+  var I = MAP_INK, g = '<ellipse cx="50" cy="95" rx="40" ry="5" fill="#8fbf72" ' + I + '/>', b = "";
+  if (k === "hrad") {
+    var flag = function (x, y, c) { return '<path d="M' + x + ' ' + y + ' v-10" ' + I + '/><path d="M' + x + ' ' + (y - 10) + ' l9 3 l-9 3z" fill="' + c + '" ' + I + '/>'; };
+    b = '<rect x="16" y="40" width="16" height="52" fill="#d9cdb4" ' + I + '/><path d="M13 42 L24 16 L35 42Z" fill="#2a7f7f" ' + I + '/>' +
+      '<rect x="68" y="40" width="16" height="52" fill="#d9cdb4" ' + I + '/><path d="M65 42 L76 16 L87 42Z" fill="#2a7f7f" ' + I + '/>' +
+      '<rect x="36" y="30" width="28" height="62" fill="#e8dcc2" ' + I + '/><path d="M32 32 L50 6 L68 32Z" fill="#1f6363" ' + I + '/>' +
+      '<path d="M8 92 V62 h6 v-5 h6 v5 h6 v-5 h6 v5 h6 v-5 h6 v5 h6 v-5 h6 v5 h6 v-5 h6 v5 h6 v-5 h6 v5 h4 V92Z" fill="#efe6d2" ' + I + '/>' +
+      '<path d="M41 92 V78 a9 9 0 0 1 18 0 V92Z" fill="#8a5a3a" ' + I + '/>' +
+      '<rect x="21" y="48" width="6" height="8" rx="3" fill="#f3c74f" ' + I + '/><rect x="73" y="48" width="6" height="8" rx="3" fill="#f3c74f" ' + I + '/>' +
+      '<rect x="44" y="40" width="5" height="8" rx="2.5" fill="#f3c74f" ' + I + '/><rect x="52" y="40" width="5" height="8" rx="2.5" fill="#f3c74f" ' + I + '/>' +
+      flag(24, 16, "#a3282c") + flag(50, 6, "#c9a227") + flag(76, 16, "#2e4a8c") + flag(11, 57, "#2b7a4b");
+  } else if (k === "lektvary") {
+    b = '<path d="M4 93 Q50 22 96 93Z" fill="#8fbf72" ' + I + '/><path d="M30 93 V72 a14 14 0 0 1 28 0 V93Z" fill="#b9ad97" ' + I + '/>' +
+      '<path d="M35 93 V73 a9 9 0 0 1 18 0 V93Z" fill="#6e4a30" ' + I + '/><circle cx="49" cy="83" r="1.6" fill="#f3c74f"/>' +
+      '<path d="M66 80 a12 9 0 0 0 24 0Z" fill="#3a2f28" ' + I + '/><path d="M64 90 a14 11 0 0 0 28 0 V80 H64Z" fill="#3a2f28" ' + I + '/>' +
+      '<ellipse cx="78" cy="80" rx="14" ry="4" fill="#4fae6a" ' + I + '/>' +
+      '<circle cx="73" cy="70" r="3.4" fill="#9fe3b0" ' + I + '/><circle cx="81" cy="62" r="2.8" fill="#9fe3b0" ' + I + '/><circle cx="76" cy="53" r="2.2" fill="#9fe3b0" ' + I + '/>' +
+      '<path d="M14 92 v-8 h3 v-4 h4 v4 h3 v8Z" fill="#e2694f" ' + I + '/><path d="M22 92 v-6 a3 3 0 0 1 6 0 v6Z" fill="#2e4a8c" ' + I + '/>';
+  } else if (k === "formule") {
+    b = '<rect x="38" y="30" width="24" height="62" fill="#e8dcc2" ' + I + '/><path d="M33 32 L50 2 L67 32Z" fill="#e2694f" ' + I + '/>' +
+      '<rect x="33" y="54" width="34" height="5" fill="#b5832a" ' + I + '/><path d="M44 92 V82 a6 6 0 0 1 12 0 V92Z" fill="#8a5a3a" ' + I + '/>' +
+      '<rect x="46" y="38" width="8" height="10" rx="4" fill="#f3c74f" ' + I + '/><rect x="46" y="64" width="8" height="10" rx="4" fill="#f3c74f" ' + I + '/>' +
+      mapStarPath(20, 22, 6) + mapStarPath(80, 14, 7) + mapStarPath(82, 42, 5) + mapStarPath(18, 48, 5) + mapStarPath(50, 2, 4);
+  } else if (k === "knihovna") {
+    b = '<rect x="14" y="46" width="72" height="46" fill="#efe6d2" ' + I + '/><path d="M8 48 L50 20 L92 48Z" fill="#c3543c" ' + I + '/>' +
+      '<path d="M20 78 V62 a8 8 0 0 1 16 0 V78Z" fill="#cfe5e5" ' + I + '/><path d="M64 78 V62 a8 8 0 0 1 16 0 V78Z" fill="#cfe5e5" ' + I + '/>' +
+      '<path d="M23 78 v-10 M27 78 v-12 M31 78 v-9 M67 78 v-12 M71 78 v-9 M75 78 v-11" stroke="#a3282c" stroke-width="2.6"/>' +
+      '<path d="M43 92 V76 a7 7 0 0 1 14 0 V92Z" fill="#8a5a3a" ' + I + '/>' +
+      '<path d="M66 6 Q86 16 72 44 Q68 26 66 6Z" fill="#fffaf0" ' + I + '/><path d="M66 6 L73 42" ' + I + '/>' +
+      '<rect x="38" y="30" width="10" height="9" rx="2" fill="#2e4a8c" ' + I + '/>';
+  } else if (k === "dejiny") {
+    b = '<rect x="10" y="84" width="80" height="8" fill="#d9cdb4" ' + I + '/><path d="M8 52 L50 30 L92 52Z" fill="#e8dcc2" ' + I + '/>' +
+      '<rect x="16" y="52" width="68" height="5" fill="#d9cdb4" ' + I + '/>' +
+      '<rect x="20" y="57" width="8" height="27" fill="#f6efe0" ' + I + '/><rect x="36" y="57" width="8" height="27" fill="#f6efe0" ' + I + '/>' +
+      '<rect x="56" y="57" width="8" height="27" fill="#f6efe0" ' + I + '/><rect x="72" y="57" width="8" height="27" fill="#f6efe0" ' + I + '/>' +
+      '<path d="M44 84 V70 h12 V84Z" fill="#8a5a3a" ' + I + '/><rect x="42" y="60" width="16" height="6" rx="3" fill="#fffaf0" ' + I + '/>' +
+      '<path d="M41 8 h18 l-9 12 l9 12 h-18 l9 -12Z" fill="#cfe5e5" ' + I + '/><path d="M45 28 l5 -6 l5 6Z" fill="#d9a032"/><path d="M41 8 h18 M41 32 h18" ' + I + '/>';
+  } else if (k === "hajenka") {
+    b = '<rect x="62" y="28" width="8" height="18" fill="#b9ad97" ' + I + '/>' +
+      '<circle cx="68" cy="20" r="4" fill="#e8e2d8" opacity=".9"/><circle cx="74" cy="12" r="5" fill="#e8e2d8" opacity=".8"/><circle cx="82" cy="5" r="4" fill="#e8e2d8" opacity=".6"/>' +
+      '<path d="M24 92 V58 H76 V92Z" fill="#d9cdb4" ' + I + '/><path d="M16 60 L50 30 L84 60Z" fill="#a8845a" ' + I + '/>' +
+      '<path d="M42 92 V74 a8 8 0 0 1 16 0 V92Z" fill="#6e4a30" ' + I + '/><rect x="28" y="66" width="8" height="8" rx="2" fill="#f3c74f" ' + I + '/>' +
+      '<ellipse cx="14" cy="88" rx="9" ry="6" fill="#e8892f" ' + I + '/><ellipse cx="86" cy="87" rx="10" ry="7" fill="#e8892f" ' + I + '/><path d="M14 82 v-3 M86 80 v-3" ' + I + '/>';
+  }
+  var top = { hrad: -6, lektvary: 46, formule: -4, knihovna: 3, dejiny: 5, hajenka: 0 }[k] || 0;
+  return '<svg viewBox="0 ' + top + ' 100 ' + (100 - top) + '" aria-hidden="true">' + g + b + '</svg>';
+}
+function mapGroundSVG() {
+  var I = MAP_INK, paths = "", spots = "", trees = "";
+  MAP_SPOTS.forEach(function (sp) {
+    if (sp.k !== "hrad") paths += '<path d="M50 40 Q' + ((50 + sp.x) / 2 + (sp.x < 50 ? -8 : 8)) + ' ' + ((40 + sp.y) / 2) + ' ' + sp.x + ' ' + sp.y + '" fill="none" stroke="#e9d3ae" stroke-width="4" stroke-linecap="round"/>';
+    spots += '<ellipse cx="' + sp.x + '" cy="' + sp.y + '" rx="' + (sp.w * 0.42).toFixed(1) + '" ry="' + (sp.w * 0.3).toFixed(1) + '" fill="#ecdcb6"/>';
   });
-  html += '</div>' + navHTML("rozvrh");
+  [[94, 6], [90, 14], [96, 20], [92, 30], [97, 38], [91, 46], [95, 54], [90, 62], [96, 70], [88, 78], [94, 84], [84, 90], [92, 94], [76, 95], [66, 97]].forEach(function (p, i) {
+    trees += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (3.2 + (i % 3) * 0.8) + '" fill="' + ["#3f7d4f", "#2b6a42", "#4f8f5a"][i % 3] + '" stroke="#3a2f28" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';
+  });
+  return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+    '<rect x="0" y="0" width="100" height="100" rx="5" fill="#bcd99a"/>' +
+    '<ellipse cx="30" cy="20" rx="22" ry="12" fill="#c8e1a8"/><ellipse cx="62" cy="58" rx="26" ry="14" fill="#c8e1a8"/>' +
+    '<path d="M0 72 Q14 70 20 82 Q24 96 8 100 H0Z" fill="#8fc3d6" stroke="#3a2f28" stroke-width="1.6" vector-effect="non-scaling-stroke"/>' +
+    '<path d="M3 80 q4 -2 8 0 M5 88 q4 -2 8 0" fill="none" stroke="#fffaf0" stroke-width="1.2" vector-effect="non-scaling-stroke"/>' +
+    paths + spots + trees + '</svg>';
+}
+function mapTagHTML(sp) {
+  if (sp.k === "hajenka") return "";
+  if (sp.k === "hrad") {
+    var ex = S.exams[S.year];
+    return '<div class="bldTag">' + svgTrophy(16) + ' Zkouška' + (ex && ex.passed ? ' ✓' : '') + '</div>';
+  }
+  var got = 0, max = 0, news = false;
+  TOPIC_ORDER.forEach(function (t) { if (TOPICS[t].subj === sp.subj && isUnlocked(t, S)) { got += topicStars(S, t); max += 3; if (recentStars[t]) news = true; } });
+  return '<div class="bldTag">' + esc(sp.n || SUBJECTS[sp.subj].n) + ' <span class="bldStars">' + svgStar(13) + got + '/' + max + '</span></div>';
+}
+function mapHasNews(sp) {
+  return !!sp.subj && TOPIC_ORDER.some(function (t) { return TOPICS[t].subj === sp.subj && recentStars[t]; });
+}
+function castleMapHTML() {
+  if (!mapView) mapView = { rx: (typeof innerWidth === "number" && innerWidth < 500) ? 38 : 50, rz: -6 };
+  var h = '<div class="cmap" id="cmap" style="--rx:' + mapView.rx + 'deg;--rz:' + mapView.rz + 'deg"><div class="cmStage">' +
+    '<div class="cmGround" data-img="mapa-podklad">' + mapGroundSVG() + '</div>';
+  MAP_SPOTS.forEach(function (sp, i) {
+    h += '<span class="bldShadow" style="left:' + sp.x + '%;top:' + sp.y + '%;width:' + (sp.w * 0.9) + '%"></span>' +
+      '<button class="bld b-' + sp.k + (mapHasNews(sp) ? " news" : "") + '" style="left:' + (sp.x - sp.w / 2) + '%;top:' + sp.y + '%;width:' + sp.w + '%;--d:' + (0.15 + i * 0.12).toFixed(2) + 's" onclick="mapGo(\'' + sp.k + '\')" aria-label="' + (sp.subj ? esc(SUBJECTS[sp.subj].n) : sp.k === "hrad" ? "Zkouška ročníku" : "Hájenka") + '">' +
+      '<span class="bldUp"><span class="bldArt" data-img="mapa-' + sp.k + '">' + mapArtSVG(sp.k) + '</span></span></button>';
+  });
+  h += '<span class="cmCloud c1"></span><span class="cmCloud c2"></span></div>';
+  /* cedulky jsou plochá vrstva nad mapou: drží se paty stavby (mapTagsSync), takže je nezakryje deska ani jiná stavba */
+  h += '<div class="cmTags">' + MAP_SPOTS.map(function (sp) { var tg = mapTagHTML(sp); return tg ? tg.replace('class="bldTag"', 'class="bldTag" data-for="' + sp.k + '" onclick="mapGo(\'' + sp.k + '\')"' + (mapHasNews(sp) ? ' data-news="1"' : '')) : ""; }).join("") + '</div></div>';
+  return h;
+}
+function mapTagsSync() {
+  var el = document.getElementById("cmap"); if (!el) return;
+  var r0 = el.getBoundingClientRect();
+  Array.prototype.forEach.call(el.querySelectorAll(".cmTags .bldTag"), function (tg) {
+    var art = el.querySelector(".b-" + tg.getAttribute("data-for") + " .bldArt"); if (!art) return;
+    var r = art.getBoundingClientRect();
+    tg.style.left = (r.left + r.width / 2 - r0.left).toFixed(1) + "px"; tg.style.top = (r.bottom - r0.top - 8).toFixed(1) + "px";
+    tg.classList.add("on");
+  });
+}
+function mapRz(el) { var v = parseFloat((el && el.style.getPropertyValue("--rz")) || mapView.rz); return isNaN(v) ? mapView.rz : v; }
+function mapIdleStart() {
+  if (typeof requestAnimationFrame !== "function") return;
+  cancelAnimationFrame(mapRaf);
+  if (reducedMotion()) return;
+  var t0 = null, base = mapView.rz;
+  (function tick(t) {
+    var el = document.getElementById("cmap");
+    if (!el) return;
+    if (t0 === null) t0 = t;
+    if (!el.classList.contains("dragging") && !el.classList.contains("zooming")) el.style.setProperty("--rz", (base + 5 * Math.sin((t - t0) / 3800)).toFixed(2) + "deg");
+    mapTagsSync();
+    mapRaf = requestAnimationFrame(tick);
+  })(typeof performance !== "undefined" ? performance.now() : 0);
+}
+function mapWire() {
+  var el = document.getElementById("cmap"); if (!el) return;
+  var down = false, sx = 0, sy = 0, rx0 = 0, rz0 = 0, pid = null;
+  el.addEventListener("pointerdown", function (e) { down = true; mapDragged = false; sx = e.clientX; sy = e.clientY; rx0 = mapView.rx; rz0 = mapRz(el); pid = e.pointerId; });
+  el.addEventListener("pointermove", function (e) {
+    if (!down) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!mapDragged && Math.abs(dx) + Math.abs(dy) < 8) return;
+    if (!mapDragged) { mapDragged = true; el.classList.add("dragging"); try { el.setPointerCapture(pid); } catch (er) {} }
+    var rz = Math.max(-32, Math.min(32, rz0 + dx * 0.22)), rx = Math.max(36, Math.min(62, rx0 + dy * 0.12));
+    el.style.setProperty("--rz", rz.toFixed(2) + "deg"); el.style.setProperty("--rx", rx.toFixed(2) + "deg");
+    mapView.rx = rx; mapTagsSync();
+  });
+  var up = function () { if (!down) return; down = false; if (mapDragged) { mapView.rz = mapRz(el); el.classList.remove("dragging"); mapIdleStart(); } };
+  el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+}
+function mapGo(k) {
+  if (mapDragged) { mapDragged = false; return; }
+  var sp = MAP_SPOTS.filter(function (x) { return x.k === k; })[0], el = document.getElementById("cmap");
+  if (!sp) return;
+  if (k === "hajenka") {
+    var b = el && el.querySelector(".b-hajenka");
+    if (b) { b.classList.remove("wig"); void b.offsetWidth; b.classList.add("wig"); }
+    sfx("tile"); return;
+  }
+  sfx("tile");
+  var go = function () { cancelAnimationFrame(mapRaf); if (k === "hrad") screenExamIntro(); else screenMapSubject(sp.subj); };
+  if (!el || reducedMotion()) { go(); return; }
+  mapView.rz = mapRz(el);
+  el.style.setProperty("--zx", (50 - sp.x) + "%"); el.style.setProperty("--zy", (50 - sp.y + 8) + "%");
+  el.classList.add("zooming");
+  var me = el.querySelector(".b-" + k); if (me) me.classList.add("chosen");
+  setTimeout(go, 560);
+}
+function screenMap() {
+  var html = topbarHTML() + '<div class="card mapCard"><h2 class="center">' + svgMapIcon(28) + ' Rozvrh hodin</h2>' + castleMapHTML() +
+    '<p class="muted center mapHint">Klepni na stavbu a vyber si učebnu. Prstem můžeš mapou otáčet.</p></div>' + navHTML("rozvrh");
   render(html);
-  recentStars = {};
+  imgApply(".cmGround", "mapa-podklad", function (el, url) { el.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
+  imgApplyAll(".cmap .bldArt");
+  mapWire(); mapIdleStart();
+  [60, 900, 1600].forEach(function (ms) { setTimeout(mapTagsSync, ms); });   /* i bez animace (omezený pohyb) */
+}
+/* Učebny jednoho předmětu (z mapy hradu) — dřívější seznam Rozvrhu, beze změny pořadí, hvězd a zamykání. */
+function subjectRoomsHTML(subj) {
+  var open = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && isUnlocked(t, S); });
+  var locked = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && !isUnlocked(t, S); });
+  var html = '<div class="path">';
+  open.forEach(function (t, i) { html += nodeHTML(t, i); });
+  html += '</div>';
+  if (locked.length) {
+    var later = subj === "hp" ? locked.filter(function (t) { return TOPICS[t].book > S.year; }).length : 0;
+    html += '<div class="lockedSum">' + svgLock(16) + ' ' + (subj === "hp" && later === locked.length
+      ? (later === 1 ? "Další díl se otevře" : "Dalších " + later + " dílů se otevře") + " v dalších ročnících"
+      : locked.length + " " + (locked.length === 1 ? "další učebna se otevře" : locked.length < 5 ? "další učebny se otevřou" : "dalších učeben se otevře") + ", až na ně přijde čas") + '</div>';
+  }
+  if (subj === "en") {
+    var sc = dictCounts(S);
+    html += '<button class="btn secondary" onclick="screenDictionary()">📖 Můj slovníček — umím z hlavy ' + sc[2] + ' z ' + (sc[0] + sc[1] + sc[2]) + '</button>';
+  }
+  return html;
+}
+function screenMapSubject(subj) {
+  var html = topbarHTML() + '<div class="card"><button class="btn secondary small backMap" onclick="screenMap()">← Mapa hradu</button>' +
+    '<h2 class="center subjTitle">' + subjIcon(subj, 30) + ' ' + esc(SUBJECTS[subj].n) + '</h2><p class="muted center">' + esc(SUBJECTS[subj].sub) + '</p>' +
+    subjectRoomsHTML(subj) + '</div>' + navHTML("rozvrh");
+  render(html);
+  TOPIC_ORDER.forEach(function (t) { if (TOPICS[t].subj === subj) delete recentStars[t]; });
 }
 /* Slovníček — všechna slova z odemčených učeben angličtiny */
 function dictWords(state) {
@@ -3112,7 +3333,7 @@ function screenDictionary() {
     '<div class="dictHead">🌟 ' + WORD_LV_NAMES[2] + ' (' + c[2] + ')</div>' + dictListHTML(words, 2) +
     '<div class="dictHead">👀 ' + WORD_LV_NAMES[1] + ' (' + c[1] + ') <span class="muted">— poznáš je mezi možnostmi, z hlavy ještě ne vždycky</span></div>' + dictListHTML(words, 1) +
     '<div class="dictHead">🥚 ' + WORD_LV_NAMES[0] + ' (' + c[0] + ')</div>' + dictListHTML(words, 0) +
-    '<button class="btn secondary" onclick="screenMap()">Zpět k rozvrhu</button></div>' + navHTML("rozvrh");
+    '<button class="btn secondary" onclick="screenMapSubject(\'en\')">Zpět do Kouzelných formulí</button></div>' + navHTML("rozvrh");
   render(html);
 }
 /* Průkaz studenta — profil „na fotku“. */
@@ -4313,7 +4534,11 @@ var IMAGES = {
   "loznice-h": { f: "loznice-h.webp", v: 1 },
   "loznice-r": { f: "loznice-r.webp", v: 1 },
   "loznice-s": { f: "loznice-s.webp", v: 1 },
-  "sin": { f: "velka-sin.webp", v: 1 },   /* ilustrace Velké síně (Runway) — zatím volitelná */
+  "sin": { f: "velka-sin.webp", v: 1 },
+  /* mapa hradu (Rozvrh ve 3D): podklad shora a stavby z mřížky 3 × 2 */
+  "mapa-podklad": { f: "mapa-podklad.webp", v: 1 }, "mapa-hrad": { f: "mapa-hrad.webp", v: 1 }, "mapa-lektvary": { f: "mapa-lektvary.webp", v: 1 },
+  "mapa-formule": { f: "mapa-formule.webp", v: 1 }, "mapa-knihovna": { f: "mapa-knihovna.webp", v: 1 }, "mapa-dejiny": { f: "mapa-dejiny.webp", v: 1 },
+  "mapa-hajenka": { f: "mapa-hajenka.webp", v: 1 },   /* ilustrace Velké síně (Runway) — zatím volitelná */
   /* nálepky: mazlíčci podle id v SHOP a postavička; bez souboru zůstane emoji */
   "pet_sova": { f: "pet-sova.webp", v: 1 }, "pet_dracek": { f: "pet-dracek.webp", v: 1 }, "pet_kocka": { f: "pet-kocka.webp", v: 1 },
   "pet_liska": { f: "pet-liska.webp", v: 1 }, "pet_ropucha": { f: "pet-ropucha.webp", v: 1 },
@@ -4959,6 +5184,8 @@ W.buyItem = buyItem;
 W.equipItem = equipItem;
 W.routeHome = routeHome;
 W.screenProfile = screenProfile;
+W.mapGo = mapGo;
+W.screenMapSubject = screenMapSubject;
 W.roomEdit = roomEdit;
 W.roomReset = roomReset;
 W.screenBadges = screenBadges;
