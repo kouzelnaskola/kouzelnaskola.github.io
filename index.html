@@ -495,7 +495,27 @@
   @keyframes dropIn { 0% { translate: 0 -120px; opacity: 0; } 70% { translate: 0 6px; opacity: 1; } 100% { translate: 0 0; } }
   .tower .pet { transform-origin: 50% 100%; animation: breathe 3.2s ease-in-out infinite; }
   /* přesouvatelné prvky: left = střed, bottom = spodek (v %) */
-  .tower .mover { position: absolute; translate: -50% 0; z-index: 2; touch-action: none; }
+  .tower .mover { position: absolute; translate: calc(-50% + var(--px, 0px) * var(--dz, 1)) calc(var(--py, 0px) * var(--dz, 1)); z-index: 2; touch-action: none; }
+  /* natáčecí pokoj: karta v perspektivě, pozadí se posouvá opačně než věci, odlesk přes kartu */
+  .roomStage { position: relative; perspective: 1100px; }
+  .roomStage .tower { transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); touch-action: pan-y; }
+  .roomStage .tower.photo { background-position: calc(50% - var(--px, 0px) * 0.6) calc(50% - var(--py, 0px) * 0.6); background-size: 106%; }
+  .roomStage .tower.editing { transform: none; --px: 0px; --py: 0px; }
+  .roomGlare { position: absolute; inset: 0; border-radius: 6px; pointer-events: none; mix-blend-mode: soft-light; opacity: .55;
+    background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255,250,235,.9), transparent 55%); transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+  .tower.editing ~ .roomGlare { display: none; }
+  .roomFull { position: fixed; inset: 0; z-index: 50; background: rgba(28,24,20,.86); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    padding: calc(12px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom)); overflow-y: auto; }
+  .roomFull .roomStage { width: min(calc(100vw - 20px), calc((100dvh - 170px) * 1.5)); flex: 0 0 auto; }
+  .roomFull .tower, .roomFull .tower.photo { width: 100%; height: auto; aspect-ratio: 3 / 2; }
+  .roomFull .roomStage .tower { touch-action: none; }
+  .roomFull #roomNote { color: #f3e3c0; margin: 0 !important; }
+  .roomFull .roomCtl { width: min(100%, 700px); }
+  .roomFull .chest { background: rgba(255,250,240,.95); max-height: 30vh; overflow-y: auto; }
+  .roomClose { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--ink); background: #fffdf7; font-size: 20px; cursor: pointer; z-index: 2; }
+  .roomTurnHint { display: none; color: #f3e3c0; font-size: 15px; margin: 0; }
+  @media (orientation: portrait) and (max-width: 600px) { .roomTurnHint { display: block; } }
+  .roomPlaceholder { display: flex; align-items: center; justify-content: center; border: 2px dashed #b9ad97; border-radius: 6px; }
   .tower .mover[data-move="avatar"], .tower .mover[data-move="pet"], .tower .mover[data-move="hat"], .tower .mover[data-move="acc"] { z-index: 3; }   /* postava a mazlíček vpředu, ať se dá chytit klobouk i mašle */
   .tower .mover .avatar, .tower .mover .pet { position: relative; left: auto; bottom: auto; }
   .tower .mover .avatarHat { position: absolute; left: 50%; bottom: auto; top: -0.55em; translate: -50% 0; }
@@ -530,7 +550,25 @@
   .tower .roomCandles .candle { position: absolute; width: 7px; height: 24px; border-radius: 2px; background: linear-gradient(90deg, #efe6d2, #fff8e8 60%, #d9cdb4); animation: floatC 5s ease-in-out infinite; }
   .tower .roomCandles .candle i { position: absolute; left: 50%; top: -13px; width: 9px; height: 14px; margin-left: -4.5px; border-radius: 50% 50% 45% 45%; background: radial-gradient(circle at 50% 70%, #fff6c8 0, #ffd36b 35%, #e2694f 75%, transparent 76%); box-shadow: 0 0 14px 6px rgba(255,200,90,.35); animation: flickC .7s ease-in-out infinite alternate; }
   /* obchod: vzácnost, sleva, sbírky */
-  .shopItem { position: relative; }
+  .shopItem { position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .shopItem.poke { animation: pokeCard .5s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes pokeCard { 30% { scale: .97; } 60% { scale: 1.02; } }
+  .shopItem .slot, .setItem { transform-origin: 50% 90%; }
+  .poke-pet .slot { animation: pokePet .8s ease-out; }
+  @keyframes pokePet { 15% { transform: translateY(0) scale(1.1, .85); } 35% { transform: translateY(-22px) scale(.92, 1.1); } 55% { transform: translateY(0) scale(1.08, .9); } 70% { transform: translateY(-9px); } 85% { transform: translateY(0) scale(1.03, .97); } }
+  .poke-hat .slot { animation: pokeHat .8s ease-in-out; }
+  @keyframes pokeHat { 0% { transform: perspective(300px) rotateY(0); } 70% { transform: perspective(300px) rotateY(360deg) translateY(-10px); } 100% { transform: perspective(300px) rotateY(360deg); } }
+  .poke-petacc .slot { animation: pokeWig .7s ease-in-out; }
+  @keyframes pokeWig { 20% { rotate: -14deg; } 40% { rotate: 12deg; } 60% { rotate: -8deg; } 80% { rotate: 4deg; } }
+  .poke-dec .slot { animation: pokeDec .75s cubic-bezier(.3, 1.4, .5, 1); }
+  @keyframes pokeDec { 25% { transform: translateY(-12px) rotate(-5deg); } 50% { transform: translateY(0) rotate(4deg); } 75% { transform: rotate(-2deg); } }
+  .shopItem.rar-l.poke .slot { animation: pokeLegend .9s ease-out; }
+  @keyframes pokeLegend { 0% { filter: none; } 30% { transform: translateY(-14px) scale(1.12); filter: drop-shadow(0 0 14px rgba(243,199,79,1)); } 100% { transform: none; filter: none; } }
+  .poke-amulet .slot { animation: pokeIce .8s ease-in-out; }
+  @keyframes pokeIce { 30% { transform: rotate(-20deg) scale(1.1); filter: drop-shadow(0 0 10px #9fd4ff); } 60% { transform: rotate(16deg); } }
+  .setItem.poke-dec, .setItem.poke-hat { animation: pokeDec .75s cubic-bezier(.3, 1.4, .5, 1); }
+  .idleWig { animation: idleWig 1.1s ease-in-out; }
+  @keyframes idleWig { 20% { transform: rotate(-6deg) translateY(-3px); } 45% { transform: rotate(5deg); } 70% { transform: rotate(-2deg); } }
   .shopItem.rar-v { border-color: var(--teal-d); box-shadow: 4px 4px 0 var(--shadow), 0 0 0 3px var(--teal-pale) inset; }
   .shopItem.rar-l { border-color: var(--mustard-d); background: linear-gradient(180deg, #fffaf0, #f3e3c0); box-shadow: 4px 4px 0 var(--shadow), 0 0 16px rgba(217,160,50,.55); }
   .rarTag, .saleTag { position: absolute; top: -10px; left: 10px; font-size: 12px; font-weight: 700; padding: 1px 8px; border: 2px solid var(--ink); border-radius: 10px; background: var(--teal); color: #fff; }
@@ -647,7 +685,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11k";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11l";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2731,12 +2769,22 @@ function render(html) {
   if (typeof mentalStop === "function") mentalStop();
   var old = document.querySelectorAll(".confetti");
   for (var i = 0; i < old.length; i++) old[i].remove();
+  var oldSheets = document.querySelectorAll("body > .sheet, body > .roomFull");
+  for (var si = 0; si < oldSheets.length; si++) oldSheets[si].remove();
   var turn = pageTurnDir; pageTurnDir = 0;
   var snap = turn ? pageSnapshot() : null;
   el("app").innerHTML = html; W.scrollTo && W.scrollTo(0, 0);
   if (snap) pageTurnPlay(snap, turn);
 }
 
+/* Lišta s výsledkem odpovědi patří přímo do <body>: uvnitř karty by ji animace karty (zhoupnutí
+   od sovy, vjezd) „přišpendlila“ ke kartě místo k obrazovce a na mobilu by byla pod okrajem.
+   Zároveň zavře klávesnici, aby tlačítko Pokračovat nezakrývala. */
+function sheetToBody() {
+  var s = document.querySelector("#fb .sheet"); if (!s) return;
+  var a = document.activeElement; if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) a.blur();
+  document.body.appendChild(s);
+}
 /* ---------------------------------------------------------------------
    OTÁČENÍ STRÁNEK — přepnutí záložky dole otočí starou obrazovku jako list knihy.
    render() je synchronní: těsně před vložením nové obrazovky se stará zkopíruje do vrstvy
@@ -3805,6 +3853,7 @@ var SFX = {
   bell:    [N(262, .9, "sine", .18), N(524, .9, "sine", .07), N(786, .6, "sine", .035), N(1048, .4, "sine", .02)],
   badge:   [N(1319, .06, "sine", .12), N(1568, .06, "sine", .12, .06), N(1976, .06, "sine", .12, .12), N(1568, .12, "sine", .10, .18)],
   star:    [N(1760, .4, "sine", .13)],
+  pop:     [N(520, .07, "sine", .12, 0, 880), N(880, .06, "sine", .08, .07, 1200)],
   drum:    [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return N(110, .06, "square", .05, i * .09); }),
   buy:     [N(2637, .07, "sine", .11), N(2637, .07, "sine", .11, .08), N(2637, .07, "sine", .11, .16)],
   amulet:  [N(3951, .22, "sine", .09), N(3136, .3, "sine", .06, .1)]
@@ -4138,7 +4187,7 @@ function showQuestion() {
    let bez jisker a zvuku, poslední otázka = dopis se zlatou pečetí a mrknutí. Pózy sovy
    (IMAGES sova-*) střídá při mávání křídly; bez nich se použije nálepka sovy s kmitáním v CSS.
    ===================================================================== */
-var OWL_POSES = ["sova-kridla-nahore", "sova-kridla-dole", "sova-plachti", "sova-mava", "sova-mrka"];
+var OWL_POSES = ["sova-kridla-nahore", "sova-kridla-dole", "sova-plachti", "sova-dopis", "sova-mava", "sova-mrka"];
 var owlImgs = {}, owlRecent = [], owlRun = null;
 function owlPreload() {
   ["pet_sova"].concat(OWL_POSES).forEach(function (k) { if (!owlImgs[k] && IMAGES[k]) imgGet(k).then(function (u) { if (u) owlImgs[k] = u; }); });
@@ -4175,23 +4224,25 @@ function owlDeliver(it) {
   var card = document.querySelector("#app .card"); if (!card) return;
   var pick = owlPick(it), r = card.getBoundingClientRect(), W = innerWidth, H = innerHeight;
   var tx = r.left + r.width / 2, ty = Math.max(70, r.top + 6);
-  var path = owlPath(pick.v, W, H, tx, ty), size = W < 500 ? 62 : 82;
-  var box = document.createElement("div"); box.id = "owlFx";
+  var path = owlPath(pick.v, W, H, tx, ty), size = W < 500 ? 70 : 96;
   var poses = OWL_POSES.every(function (k) { return owlImgs[k]; });
-  var base = poses ? owlImgs["sova-kridla-nahore"] : owlImgs["pet_sova"];
+  var bw = poses ? Math.round(size * 1.33) : size;   /* pózy jsou 4 : 3 (roztažená křídla) */
+  var box = document.createElement("div"); box.id = "owlFx";
+  var base = poses ? owlImgs["sova-dopis"] : owlImgs["pet_sova"];
   box.innerHTML = '<div class="owlLetter' + (pick.seal ? " seal" : "") + '">' + svgLetter(34) + '</div>' +
-    '<div class="owlBird' + (poses ? " poses" : " flap") + (path.glide ? " slow" : "") + '" style="width:' + size + 'px;height:' + size + 'px">' +
+    '<div class="owlBird' + (poses ? " poses" : " flap") + (path.glide ? " slow" : "") + '" style="width:' + bw + 'px;height:' + size + 'px">' +
     (base ? '<img src="' + base + '" alt="">' : '<span>🦉</span>') + '</div>';
   document.body.appendChild(box);
   var bird = box.querySelector(".owlBird"), letter = box.querySelector(".owlLetter"), img = bird.querySelector("img");
   var T = { duration: path.d, easing: "linear", fill: "forwards" };
   var frames = path.pts.map(function (p, i) {
     var nx = path.pts[Math.min(i + 1, path.pts.length - 1)][0] - p[0], face = nx > 4 ? -1 : 1;   /* nálepka kouká doleva, při letu doprava se otočí */
-    return { transform: "translate(" + (p[0] - size / 2) + "px," + (p[1] - size / 2) + "px) rotate(" + p[3] + "deg) scaleX(" + face + ")", offset: p[2], easing: "ease-in-out" };
+    return { transform: "translate(" + (p[0] - bw / 2) + "px," + (p[1] - size / 2) + "px) rotate(" + p[3] + "deg) scaleX(" + face + ")", offset: p[2], easing: "ease-in-out" };
   });
   var anims = [bird.animate(frames, T)];
   var dropO = path.pts[path.drop][2];
-  var lf = path.pts.filter(function (p, i) { return i <= path.drop; }).map(function (p) { return { transform: "translate(" + (p[0] - 17) + "px," + (p[1] + size * 0.28) + "px) rotate(" + (p[3] * 0.5) + "deg)", offset: p[2], opacity: 1 }; });
+  /* s pózami nese sova dopis v zobáku (póza sova-dopis), samostatný dopis se objeví až při puštění */
+  var lf = path.pts.filter(function (p, i) { return i <= path.drop; }).map(function (p, i, arr) { return { transform: "translate(" + (p[0] - 17) + "px," + (p[1] + size * (poses ? 0.05 : 0.28)) + "px) rotate(" + (p[3] * 0.5) + "deg)", offset: p[2], opacity: poses && i < arr.length - 1 ? 0 : 1 }; });
   var fallTo = "translate(" + (tx - 17) + "px," + (ty + 6) + "px) rotate(" + (path.high || path.juggle ? 200 : 0) + "deg)";
   lf.push({ transform: fallTo, offset: Math.min(.97, dropO + (path.high ? .22 : .08)), opacity: 1 });
   lf.push({ transform: fallTo + " scale(1.15)", offset: Math.min(.98, dropO + (path.high ? .27 : .14)), opacity: 1 });
@@ -4203,8 +4254,8 @@ function owlDeliver(it) {
     var t0 = Date.now(), flip = false;
     timer = setInterval(function () {
       var prog = (Date.now() - t0) / path.d;
-      var atDrop = Math.abs(prog - dropO) < 0.06;
-      var k = atDrop && pick.wink ? "sova-mrka" : atDrop && path.wave ? "sova-mava" : path.glide && prog > .15 && prog < .85 ? "sova-plachti" : (flip = !flip) ? "sova-kridla-nahore" : "sova-kridla-dole";
+      var atDrop = prog >= dropO - 0.02 && prog < dropO + (path.wave || pick.wink ? 0.13 : 0.04);
+      var k = prog < dropO - 0.02 ? "sova-dopis" : atDrop && pick.wink ? "sova-mrka" : atDrop && path.wave ? "sova-mava" : path.glide && prog < .85 ? "sova-plachti" : (flip = !flip) ? "sova-kridla-nahore" : "sova-kridla-dole";
       if (img.getAttribute("src") !== owlImgs[k]) img.src = owlImgs[k];
     }, path.glide ? 180 : 110);
   }
@@ -4379,6 +4430,7 @@ function answerQ(it, chosen, btn) {
       (it.why ? '<br>' + esc(it.why) : '') + '</div>' + (it.word ? '<div class="sayRow">' + sayBtnHTML(it.word) + '</div>' : '') + note +
       '<button class="btn red" id="nextBtn">Pokračovat</button></div></div>';
   }
+  sheetToBody();
   checkBadges();
   saveState();
   el("nextBtn").onclick = function () { session.index++; showQuestion(); };
@@ -4606,7 +4658,7 @@ function shopItemHTML(it) {
   var visual = it.cat === "amulet" ? svgSnow(30) : it.e;
   var price = itemPrice(it), sale = price !== it.p;
   var priceHTML = '<div class="sp">' + (sale ? '<s class="muted">' + it.p + '</s> ' : '') + price + ' ' + svgCoin(15) + '</div>';
-  var html = '<div class="shopItem' + (owned ? " ownedItem" : "") + (it.r && it.r !== "b" ? " rar-" + it.r : "") + '">' +
+  var html = '<div class="shopItem' + (owned ? " ownedItem" : "") + (it.r && it.r !== "b" ? " rar-" + it.r : "") + '" data-cat="' + it.cat + '" data-r="' + (it.r || "b") + '">' +
     (it.r && it.r !== "b" ? '<span class="rarTag">' + RARITY[it.r] + '</span>' : '') + (sale && !owned ? '<span class="saleTag">−20 %</span>' : '') +
     '<div class="slot" data-img="' + it.id + '">' + visual + '</div><div class="sn">' + esc(it.n) + '</div>' +
     (it.set ? '<div class="setNote">' + SETS[it.set].e + ' sbírka ' + esc(SETS[it.set].n) + '</div>' : '');
@@ -4665,6 +4717,35 @@ function screenShop(tab) {
   html += '</div>' + navHTML("ulice");
   render(html);
   imgApplyAll(".shopItem .slot, .setItem");
+  shopWirePoke();
+}
+/* Živé karty v Příčné ulici: klepnutí na kartu (mimo tlačítko) ji rozpohybuje podle druhu zboží
+   a občas se sama pohne některá karta, aby obchod nestál. Jen CSS třídy, nic v S. */
+var shopIdleTimer = null;
+function shopPoke(card) {
+  var cat = card.getAttribute("data-cat") || "dec", slot = card.querySelector(".slot") || card;
+  var cls = "poke-" + cat;
+  card.classList.remove("poke", cls); void card.offsetWidth; card.classList.add("poke", cls);
+  setTimeout(function () { card.classList.remove("poke", cls); }, 900);
+  sfx(cat === "pet" ? "pop" : cat === "amulet" ? "amulet" : "tile");
+  var r = slot.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+  if (typeof fxAdd === "function" && !reducedMotion()) {
+    var gold = card.getAttribute("data-r") === "l", n = gold ? 12 : cat === "amulet" ? 8 : 4;
+    for (var i = 0; i < n; i++) fxAdd(fxSpark(x + (Math.random() - .5) * r.width, y - r.height * .3, gold ? "#f3c74f" : cat === "amulet" ? "#e8f4ff" : "#fff6c8", gold ? 8 : 5));
+  }
+}
+function shopWirePoke() {
+  Array.prototype.forEach.call(document.querySelectorAll(".shopItem, .setItem"), function (card) {
+    card.addEventListener("click", function (e) { if (e.target.closest("button")) return; shopPoke(card); });
+  });
+  if (shopIdleTimer) clearInterval(shopIdleTimer);
+  if (reducedMotion()) return;
+  shopIdleTimer = setInterval(function () {
+    var cards = document.querySelectorAll(".shopItem .slot, .setItem.own");
+    if (!cards.length || !document.querySelector(".shopTabs")) { clearInterval(shopIdleTimer); shopIdleTimer = null; return; }
+    var c = cards[Math.floor(Math.random() * cards.length)];
+    c.classList.remove("idleWig"); void c.offsetWidth; c.classList.add("idleWig");
+  }, 3200);
 }
 function rewardById(id) { for (var i = 0; i < (S.rewards || []).length; i++) if (S.rewards[i].id === id) return S.rewards[i]; return null; }
 function rewardItemHTML(r) {
@@ -4882,7 +4963,7 @@ function roomPosOf(key, i, def) {
   var p = S.roomPos && S.roomPos[key];
   return p ? p : def || { x: ROOM_DEFAULTS[i % ROOM_DEFAULTS.length][0], y: ROOM_DEFAULTS[i % ROOM_DEFAULTS.length][1] };
 }
-function moverStyle(p, i) { return 'left:' + p.x + '%;bottom:' + p.y + '%;animation-delay:' + (0.15 + (i || 0) * 0.1).toFixed(2) + 's'; }
+function moverStyle(p, i) { return 'left:' + p.x + '%;bottom:' + p.y + '%;--dz:' + (1 - Math.min(90, p.y) / 100).toFixed(2) + ';animation-delay:' + (0.15 + (i || 0) * 0.1).toFixed(2) + 's'; }
 function screenTower() {
   var off = Array.isArray(S.roomOff) ? S.roomOff : [];
   var allDecos = S.owned.map(shopById).filter(function (i) { return i && i.cat === "dec"; });
@@ -4913,19 +4994,82 @@ function screenTower() {
   });
   scene += '</div>';
   var h = HOUSES[S.house];
+  var wantFull = roomFull, animFull = roomFullAnim; roomFullAnim = false;
+  scene = '<div class="roomStage">' + scene + '<div class="roomGlare"></div></div>';
   render(topbarHTML() + '<div class="card">' +
     '<h2 class="center">' + svgBedIcon(28) + ' Ložnice ' + esc(h.n) + 'u</h2>' + scene +
     '<p class="muted center" style="margin-top:10px" id="roomNote">' + (roomEditing ? "✋ Přetáhni věci prstem, kam chceš. Až budeš hotová, klepni na Hotovo." :
     (pet ? "S tebou bydlí " + esc(pet.n) + (acc ? (/^[sšzž]/i.test(acc.inst || acc.n) ? " se " : " s ") + esc(acc.inst || acc.n.toLowerCase()) : "") + "." :
       "V ložnici je zatím ticho — na Příčné ulici čekají mazlíčci!")) + '</p>' +
-    (roomEditing ? roomChestHTML(allDecos, off) : '') +
+    '<div class="roomCtl">' + (roomEditing ? roomChestHTML(allDecos, off) : '') +
     '<div class="row2">' + (roomEditing
       ? '<button class="btn gold" onclick="roomEdit(false)">✓ Hotovo</button><button class="btn secondary" id="roomResetBtn" onclick="roomReset()">↺ Vrátit věci na místo</button>'
-      : '<button class="btn secondary" onclick="roomEdit(true)">✋ Přestavit pokoj</button>') + '</div>' +
+      : '<button class="btn secondary" onclick="roomEdit(true)">✋ Přestavit pokoj</button><button class="btn secondary" onclick="roomFullToggle(' + (wantFull ? 'false' : 'true') + ')">' + (wantFull ? '✕ Zavřít' : '⛶ Celá obrazovka') + '</button>') +
+    (roomEditing && wantFull ? '<button class="btn secondary" onclick="roomFullToggle(false)">✕ Zavřít</button>' : '') + '</div></div>' +
     '</div>' + navHTML("loznice"));
+  roomFull = wantFull;
+  if (wantFull) roomOpenFull(animFull);
   if (hasImg) imgApply(".tower", bgKey, function (el, url) { el.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
   imgApplyAll(".tower .avatar, .tower .pet, .tower .avatarHat, .tower .petAcc, .tower .deco");
   if (roomEditing) { roomWireDrag(); imgApplyAll(".chestItem .ci"); }
+  else roomWireTilt();
+}
+/* ---- Ložnice jako natáčecí karta (jako mapa hradu) a na celou obrazovku ----
+   Natočení: prstem (vodorovně v malém pokoji, aby šla stránka dál posouvat; v celé obrazovce všemi směry),
+   v klidu se pokoj pomalu kolébá. Hloubka: věci blíž u podlahy (malé bottom %) se posouvají víc (--dz),
+   pozadí opačně, odlesk jede přes kartu. Při přestavování je pokoj rovně, aby šlo přesně tahat.
+   Celá obrazovka: .roomStage a ovládání se přesunou do vrstvy body > .roomFull (uvnitř #app by je
+   animace stránky přišpendlila k obsahu). Nic z toho se neukládá. */
+var roomFull = false, roomFullAnim = false, roomTilt = { rx: 0, ry: 0, drag: false }, roomRaf = 0;
+function roomFullToggle(on) { roomFull = !!on; roomFullAnim = !!on; screenTower(); }
+function roomOpenFull(anim) {
+  var stage = document.querySelector(".roomStage"), ctl = document.querySelector(".roomCtl"), note = el("roomNote");
+  if (!stage) return;
+  var from = stage.getBoundingClientRect();
+  var ph = document.createElement("div"); ph.className = "roomPlaceholder"; ph.style.height = from.height + "px";
+  ph.innerHTML = '<button class="btn secondary" onclick="roomFullToggle(true)">⛶ Otevřít pokoj na celou obrazovku</button>';
+  stage.parentNode.insertBefore(ph, stage);
+  var ov = document.createElement("div"); ov.className = "roomFull";
+  ov.innerHTML = '<button class="roomClose" onclick="roomFullToggle(false)" aria-label="Zavřít">✕</button><p class="roomTurnHint">📱 Otoč telefon na šířku a pokoj bude větší</p>';
+  ov.appendChild(stage); if (note) ov.appendChild(note); if (ctl) ov.appendChild(ctl);
+  document.body.appendChild(ov);
+  if (anim && stage.animate && !reducedMotion()) {
+    var to = stage.getBoundingClientRect();
+    stage.animate([{ transform: "translate(" + (from.left - to.left) + "px," + (from.top - to.top) + "px) scale(" + (from.width / to.width) + ")", transformOrigin: "0 0" },
+      { transform: "none", transformOrigin: "0 0" }], { duration: 420, easing: "cubic-bezier(.3, 1.2, .4, 1)" });
+    ov.animate([{ backgroundColor: "rgba(28,24,20,0)" }, { backgroundColor: "rgba(28,24,20,.86)" }], { duration: 320, fill: "backwards" });
+  }
+}
+function roomApplyTilt(box, rx, ry) {
+  box.style.setProperty("--rx", rx.toFixed(2) + "deg"); box.style.setProperty("--ry", ry.toFixed(2) + "deg");
+  box.style.setProperty("--px", (ry * 1.1).toFixed(1) + "px"); box.style.setProperty("--py", (-rx * 0.9).toFixed(1) + "px");
+  var g = box.parentNode && box.parentNode.querySelector(".roomGlare");
+  if (g) { g.style.setProperty("--gx", (50 - ry * 3).toFixed(1) + "%"); g.style.setProperty("--gy", (30 + rx * 4).toFixed(1) + "%"); }
+}
+function roomWireTilt() {
+  var box = document.querySelector(".tower"); if (!box) return;
+  if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(roomRaf);
+  if (reducedMotion()) return;
+  var full = !!box.closest(".roomFull"), sx = 0, sy = 0, rx0 = 0, ry0 = 0;
+  roomTilt.drag = false;
+  box.addEventListener("pointerdown", function (e) { roomTilt.drag = true; sx = e.clientX; sy = e.clientY; rx0 = roomTilt.rx; ry0 = roomTilt.ry; try { box.setPointerCapture(e.pointerId); } catch (er) {} });
+  box.addEventListener("pointermove", function (e) {
+    if (!roomTilt.drag) return;
+    roomTilt.ry = Math.max(-22, Math.min(22, ry0 + (e.clientX - sx) * 0.12));
+    if (full) roomTilt.rx = Math.max(-12, Math.min(12, rx0 - (e.clientY - sy) * 0.08));
+  });
+  var up = function () { roomTilt.drag = false; };
+  box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up);
+  var t0 = null, cx = roomTilt.rx, cy = roomTilt.ry;
+  (function tick(t) {
+    if (!box.isConnected) return;
+    if (t0 === null) t0 = t;
+    var s = (t - t0) / 1000;
+    if (!roomTilt.drag) { roomTilt.ry += ((5 * Math.sin(s / 3.1)) - roomTilt.ry) * 0.03; roomTilt.rx += ((2 * Math.sin(s / 4.3 + 1)) - roomTilt.rx) * 0.03; }
+    cx += (roomTilt.rx - cx) * 0.18; cy += (roomTilt.ry - cy) * 0.18;
+    roomApplyTilt(box, cx, cy);
+    roomRaf = requestAnimationFrame(tick);
+  })(typeof performance !== "undefined" ? performance.now() : 0);
 }
 /* Klobouk a doplněk mazlíčka: nasazené (uvnitř postavy/mazlíčka), nebo volně v pokoji (S.roomPos.hat/acc s free). */
 function roomFree(k) { return !!(S.roomPos && S.roomPos[k] && S.roomPos[k].free); }
@@ -5470,6 +5614,7 @@ W.screenMapSubject = screenMapSubject;
 W.roomEdit = roomEdit;
 W.roomReset = roomReset;
 W.roomToggle = roomToggle;
+W.roomFullToggle = roomFullToggle;
 W.navGo = navGo;
 W.screenBadges = screenBadges;
 W.sfxToggle = sfxToggle;
@@ -5588,7 +5733,7 @@ function runPull() {
 }
 function pullWire() {
   if (typeof window === "undefined" || !("ontouchstart" in window)) return;
-  var ignore = function (tg) { return !tg || !tg.closest || !!tg.closest(".cmap, .tower.editing, input, textarea, select, .tabbar"); };
+  var ignore = function (tg) { return !tg || !tg.closest || !!tg.closest(".cmap, .tower, .roomFull, input, textarea, select, .tabbar"); };
   document.addEventListener("touchstart", function (e) {
     pullSt.y0 = null;
     if (!isStandalone() || session || pullSt.busy || e.touches.length !== 1 || (window.scrollY || 0) > 0 || ignore(e.target)) return;
