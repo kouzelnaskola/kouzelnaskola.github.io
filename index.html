@@ -508,11 +508,15 @@
   .tower.editing ~ .roomGlare { display: none; }
   .roomFull { position: fixed; inset: 0; z-index: 50; background: #1f1a16; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
   /* celá obrazovka: pokoj vyplní displej; na výšku vyplní výšku a do stran se posouvá prstem */
-  /* pokoj vždy vyplní celý displej (jako „cover“): co přečnívá, se dá posunout prstem; flex-start, aby šlo posunout i doleva a nahoru */
-  .roomFull:not(.mapFull) { display: block; overflow: auto; }
-  .roomFull .roomStage { width: max(100vw, calc(100dvh * 1.5)); }
+  /* celá obrazovka nejdřív ukáže celou scénu; přiblížení dělá .zoomBox (zoomWire) */
+  .roomFull { touch-action: none; overscroll-behavior: none; }
+  .roomFull .zoomBox { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transform-origin: 0 0; }
+  .roomFull .roomStage { width: min(100vw, calc(100dvh * 1.5)); }
+  .roomFull.zoomed .zoomBox { cursor: grab; }
+  .zoomHint { position: fixed; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); translate: -50% 0; margin: 0; padding: 4px 12px; border-radius: 14px; background: rgba(255,250,240,.85); color: var(--ink); font-size: 13.5px; font-style: italic; z-index: 3; pointer-events: none; white-space: nowrap; transition: opacity .4s; }
+  .roomFull.zoomed .zoomHint { opacity: 0; }
   .roomFull .tower { border-radius: 0; border: none; box-shadow: none; }
-  .roomFull .roomStage .tower, .roomFull .roomStage .tower.editing { touch-action: pan-x pan-y; }
+  .roomFull .roomStage .tower, .roomFull .roomStage .tower.editing, .roomFull .cmap { touch-action: none; }
   .roomFull .tower, .roomFull .tower.photo { width: 100%; height: auto; aspect-ratio: 3 / 2; }
 
   .roomFull #roomNote { display: none; }
@@ -523,13 +527,13 @@
   .roomFull .roomCtl .btn { margin: 0; padding: 8px 12px; font-size: 16px; opacity: .93; }
   .roomFull .chest { background: rgba(255,250,240,.94); margin: 8px 0 0; padding: 6px 8px; }
   .roomFull .chestHead { display: none; }
-  .roomFull .chestItems { flex-wrap: nowrap; overflow-x: auto; }
+  .roomFull .chestItems { flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; }
   .roomFull .chestItem { flex: 0 0 auto; width: 60px; }
   .roomFull .roomTurnHint { display: none !important; }
   .roomClose { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--ink); background: #fffdf7; font-size: 20px; cursor: pointer; z-index: 2; }
   .roomTurnHint { display: none; color: #f3e3c0; font-size: 15px; margin: 0; }
   @media (orientation: portrait) and (max-width: 600px) { .roomTurnHint { display: block; } }
-  .mapFull .cmap { width: 100vw; height: 100dvh; aspect-ratio: auto; max-height: none; margin: 0; border: none; border-radius: 0; flex: 0 0 auto; }
+  .mapFull .cmap { width: 100%; height: 100%; aspect-ratio: auto; max-height: none; margin: 0; border: none; border-radius: 0; flex: 0 0 auto; }
   .mapFull .cmStage { --sw: min(94vw, 88dvh); width: var(--sw); left: calc(50% - var(--sw) / 2); top: calc(50% - var(--sw) / 2 + 4dvh); }
   .mapFull .bldTag { font-size: clamp(11px, 1.3vw + .5dvh, 17px); }
   .mapFullHint { position: fixed; left: 14px; right: 70px; bottom: calc(8px + env(safe-area-inset-bottom)); color: var(--ink); font-size: 14px; font-style: italic; margin: 0; z-index: 3; opacity: .75; }
@@ -715,7 +719,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11o";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3445,11 +3449,11 @@ function castleMapHTML() {
 }
 function mapTagsSync() {
   var el = document.getElementById("cmap"); if (!el) return;
-  var r0 = el.getBoundingClientRect();
+  var r0 = el.getBoundingClientRect(), k = (el.offsetWidth ? r0.width / el.offsetWidth : 1) || 1;   /* přiblížení zvětšuje i cedulky */
   Array.prototype.forEach.call(el.querySelectorAll(".cmTags .bldTag"), function (tg) {
     var art = el.querySelector(".b-" + tg.getAttribute("data-for") + " .bldArt"); if (!art) return;
     var r = art.getBoundingClientRect();
-    tg.style.left = (r.left + r.width / 2 - r0.left).toFixed(1) + "px"; tg.style.top = (r.bottom - r0.top - 8).toFixed(1) + "px";
+    tg.style.left = ((r.left + r.width / 2 - r0.left) / k).toFixed(1) + "px"; tg.style.top = ((r.bottom - r0.top) / k - 8).toFixed(1) + "px";
     tg.classList.add("on");
   });
 }
@@ -3471,9 +3475,10 @@ function mapIdleStart() {
 function mapWire() {
   var el = document.getElementById("cmap"); if (!el) return;
   var down = false, sx = 0, sy = 0, rx0 = 0, rz0 = 0, pid = null;
-  el.addEventListener("pointerdown", function (e) { down = true; mapDragged = false; sx = e.clientX; sy = e.clientY; rx0 = mapView.rx; rz0 = mapRz(el); pid = e.pointerId; });
+  el.addEventListener("pointerdown", function (e) { if (zoomGesture) return; down = true; mapDragged = false; sx = e.clientX; sy = e.clientY; rx0 = mapView.rx; rz0 = mapRz(el); pid = e.pointerId; });
   el.addEventListener("pointermove", function (e) {
     if (!down) return;
+    if (zoomGesture) { down = false; el.classList.remove("dragging"); return; }
     var dx = e.clientX - sx, dy = e.clientY - sy;
     if (!mapDragged && Math.abs(dx) + Math.abs(dy) < 8) return;
     if (!mapDragged) { mapDragged = true; el.classList.add("dragging"); try { el.setPointerCapture(pid); } catch (er) {} }
@@ -3504,12 +3509,13 @@ function mapGo(k) {
 }
 function screenMap() {
   var html = topbarHTML() + '<div class="card mapCard"><h2 class="center">' + svgMapIcon(28) + ' Rozvrh hodin</h2>' + castleMapHTML() +
-    '<p class="muted center mapHint">Klepni na stavbu a vyber si učebnu. Prstem můžeš mapou otáčet.</p>' +
+    '<p class="muted center mapHint">Klepni na stavbu a vyber si učebnu. Prstem mapou otáčíš, poklepáním ji zvětšíš.</p>' +
     '<button class="btn secondary mapFullBtn" onclick="mapFullToggle(true)">⛶ Mapa na celou obrazovku</button></div>' + navHTML("rozvrh");
   render(html);
   imgApply(".cmGround", "mapa-podklad", function (el, url) { el.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
   imgApplyAll(".cmap .bldArt");
   mapWire(); mapIdleStart();
+  if (!mapFull) wireDblOpen(document.getElementById("cmap"), function () { mapFullToggle(true); });
   [60, 900, 1600].forEach(function (ms) { setTimeout(mapTagsSync, ms); });   /* i bez animace (omezený pohyb) */
   if (mapFull) mapOpenFull(mapFullAnim);
   mapFullAnim = false;
@@ -3551,10 +3557,11 @@ function mapOpenFull(anim) {
   m.parentNode.insertBefore(ph, m);
   var ov = document.createElement("div"); ov.className = "roomFull mapFull";
   ov.innerHTML = '<button class="roomClose" onclick="mapFullToggle(false)" aria-label="Zavřít">✕</button>';
-  ov.appendChild(m);
-  var hint = document.createElement("p"); hint.className = "mapFullHint"; hint.textContent = "Klepni na stavbu a vyber si učebnu. Prstem mapou otáčej.";
+  var zb = document.createElement("div"); zb.className = "zoomBox"; zb.appendChild(m); ov.appendChild(zb);
+  var hint = document.createElement("p"); hint.className = "mapFullHint"; hint.textContent = "Klepni na stavbu a vyber si učebnu. Poklepáním nebo dvěma prsty přiblížíš.";
   ov.appendChild(hint);
   document.body.appendChild(ov);
+  zoomWire(ov);
   if (anim && m.animate && !reducedMotion()) {
     var to = m.getBoundingClientRect();
     m.animate([{ transform: "translate(" + (from.left - to.left) + "px," + (from.top - to.top) + "px) scale(" + (from.width / to.width) + ")", transformOrigin: "0 0" },
@@ -5146,6 +5153,7 @@ function screenTower() {
   imgApplyAll(".tower .avatar, .tower .pet, .tower .avatarHat, .tower .petAcc, .tower .deco");
   if (roomEditing) { roomWireDrag(); imgApplyAll(".chestItem .ci"); }
   else roomWireTilt();
+  if (!wantFull) wireDblOpen(document.querySelector(".card .roomStage"), function () { roomFullToggle(true); });
 }
 /* ---- Ložnice jako natáčecí karta (jako mapa hradu) a na celou obrazovku ----
    Natočení: prstem (vodorovně v malém pokoji, aby šla stránka dál posouvat; v celé obrazovce všemi směry),
@@ -5154,13 +5162,81 @@ function screenTower() {
    Celá obrazovka: .roomStage a ovládání se přesunou do vrstvy body > .roomFull (uvnitř #app by je
    animace stránky přišpendlila k obsahu). Nic z toho se neukládá. */
 var roomFull = false, roomFullAnim = false, roomTilt = { rx: 0, ry: 0, drag: false }, roomRaf = 0;
-/* vycentrovat pokoj v celé obrazovce: do stran na střed, svisle k podlaze (tam stojí věci); i po otočení telefonu */
-function roomFullCenter() {
-  var o = document.querySelector("body > .roomFull:not(.mapFull)"); if (!o) return;
-  o.scrollLeft = Math.max(0, (o.scrollWidth - o.clientWidth) / 2);
-  o.scrollTop = Math.max(0, o.scrollHeight - o.clientHeight);
+/* ---- Přiblížení v celé obrazovce (ložnice i mapa) ----
+   Celá obrazovka nejdřív ukáže celou scénu. Přiblížit jako všude: poklepání (na místo, kam se klepne; další
+   poklepání vrátí zpět), dva prsty, na Macu sevření na touchpadu nebo dvojklik. Přiblížená scéna se posouvá
+   jedním prstem / tahem myši (místo natáčení), klepnutí na stavbu nebo věc funguje dál. Přiblížení se
+   neukládá; po otočení telefonu se vrátí na celou scénu. Prvek .zoomBox (celá plocha displeje) dostává
+   transform translate + scale s počátkem vlevo nahoře. */
+var zoomSt = { s: 1, x: 0, y: 0 };
+function zoomBox() { return document.querySelector("body > .roomFull .zoomBox"); }
+function zoomApply(anim) {
+  var b = zoomBox(); if (!b) return;
+  var W = b.clientWidth, H = b.clientHeight, s = zoomSt.s = Math.max(1, Math.min(4, zoomSt.s));
+  /* posun jen v rámci scény: pokud je přiblížená scéna větší než displej, nesmí odkrýt prázdný okraj; jinak na střed */
+  var c = b.firstElementChild, cx = 0, cy = 0, cw = W, ch = H;
+  if (c) { cx = c.offsetLeft; cy = c.offsetTop; cw = c.offsetWidth; ch = c.offsetHeight; }
+  var clamp = function (v, size, off, len) { return len * s > size ? Math.min(-off * s, Math.max(size - (off + len) * s, v)) : (size - len * s) / 2 - off * s; };
+  zoomSt.x = clamp(zoomSt.x, W, cx, cw); zoomSt.y = clamp(zoomSt.y, H, cy, ch);
+  b.style.transition = anim ? "transform .28s ease-out" : "none";
+  b.style.transform = "translate(" + zoomSt.x.toFixed(1) + "px," + zoomSt.y.toFixed(1) + "px) scale(" + zoomSt.s.toFixed(3) + ")";
+  var ov = b.parentNode; if (ov) ov.classList.toggle("zoomed", zoomSt.s > 1.01);
+  if (typeof mapTagsSync === "function") setTimeout(mapTagsSync, anim ? 300 : 0);
 }
-if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("resize", function () { setTimeout(roomFullCenter, 120); });
+function zoomAt(px, py, s2, anim) {
+  var s1 = zoomSt.s; s2 = Math.max(1, Math.min(4, s2));
+  zoomSt.x = px - (px - zoomSt.x) * (s2 / s1); zoomSt.y = py - (py - zoomSt.y) * (s2 / s1); zoomSt.s = s2;
+  zoomApply(anim);
+}
+function zoomReset(anim) { zoomSt = { s: 1, x: 0, y: 0 }; zoomApply(anim); }
+function zoomToggleAt(px, py) { if (zoomSt.s > 1.01) zoomReset(true); else zoomAt(px, py, 2.5, true); }
+/* poklepání: dvě klepnutí do 320 ms na stejném místě */
+var tapLast = { t: 0, x: 0, y: 0 };
+function isDoubleTap(e) {
+  var now = Date.now(), d = Math.hypot(e.clientX - tapLast.x, e.clientY - tapLast.y);
+  var dbl = now - tapLast.t < 320 && d < 34;
+  tapLast = dbl ? { t: 0, x: 0, y: 0 } : { t: now, x: e.clientX, y: e.clientY };
+  return dbl;
+}
+function zoomWire(ov) {
+  zoomSt = { s: 1, x: 0, y: 0 };
+  var pts = {}, pinch = null, pan = null, moved = 0;
+  var count = function () { return Object.keys(pts).length; };
+  var mid = function () { var k = Object.keys(pts), a = pts[k[0]], b = pts[k[1]]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) }; };
+  ov.addEventListener("pointerdown", function (e) {
+    if (e.target.closest(".roomClose, .roomCtl, button.btn")) return;
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (count() === 2) { var m = mid(); pinch = { d: m.d || 1, s: zoomSt.s, x: m.x, y: m.y }; pan = null; zoomGesture = true; e.stopPropagation(); return; }
+    var onPart = e.target.closest(".tower.editing .mover, .bld, .bldTag");
+    if (zoomSt.s > 1.01 && !onPart) { pan = { x: e.clientX, y: e.clientY, x0: zoomSt.x, y0: zoomSt.y }; moved = 0; zoomGesture = true; e.stopPropagation(); }
+  }, true);
+  ov.addEventListener("pointermove", function (e) {
+    if (!pts[e.pointerId]) return;
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (pinch && count() >= 2) { var m = mid(); var s2 = pinch.s * m.d / pinch.d; zoomAt(m.x, m.y, s2, false); zoomSt.x += m.x - pinch.x; zoomSt.y += m.y - pinch.y; pinch.x = m.x; pinch.y = m.y; zoomApply(false); e.stopPropagation(); return; }
+    if (pan) { moved = Math.max(moved, Math.abs(e.clientX - pan.x) + Math.abs(e.clientY - pan.y)); zoomSt.x = pan.x0 + e.clientX - pan.x; zoomSt.y = pan.y0 + e.clientY - pan.y; zoomApply(false); e.stopPropagation(); }
+  }, true);
+  var up = function (e) {
+    var wasGesture = !!pinch || (pan && moved > 8);
+    delete pts[e.pointerId];
+    if (count() < 2) pinch = null;
+    if (!count()) { pan = null; setTimeout(function () { zoomGesture = false; }, 0); }
+    if (e.type === "pointerup" && !wasGesture && !e.target.closest(".roomClose, .roomCtl, button, .tower.editing .mover") && isDoubleTap(e)) zoomToggleAt(e.clientX, e.clientY);
+  };
+  ov.addEventListener("pointerup", up, true); ov.addEventListener("pointercancel", up, true);
+  /* Mac: sevření na touchpadu (wheel + ctrl), kolečko posouvá přiblíženou scénu */
+  ov.addEventListener("wheel", function (e) {
+    if (e.ctrlKey) { e.preventDefault(); zoomAt(e.clientX, e.clientY, zoomSt.s * Math.exp(-e.deltaY * 0.01), false); }
+    else if (zoomSt.s > 1.01) { e.preventDefault(); zoomSt.x -= e.deltaX; zoomSt.y -= e.deltaY; zoomApply(false); }
+  }, { passive: false });
+}
+var zoomGesture = false;
+if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("resize", function () { setTimeout(function () { if (zoomBox()) zoomReset(false); }, 120); });
+/* poklepání na kartu mimo celou obrazovku ji otevře na celou obrazovku */
+function wireDblOpen(el, fn) {
+  if (!el) return;
+  el.addEventListener("pointerup", function (e) { if (e.target.closest(".bld, .bldTag, button, .mover")) return; if (isDoubleTap(e)) fn(); });
+}
 function roomFullToggle(on) { roomFull = !!on; roomFullAnim = !!on; fsSet(on); screenTower(); }
 function roomOpenFull(anim) {
   var stage = document.querySelector(".roomStage"), ctl = document.querySelector(".roomCtl"), note = el("roomNote");
@@ -5171,10 +5247,12 @@ function roomOpenFull(anim) {
   stage.parentNode.insertBefore(ph, stage);
   var ov = document.createElement("div"); ov.className = "roomFull";
   ov.innerHTML = '<button class="roomClose" onclick="roomFullToggle(false)" aria-label="Zavřít">✕</button><p class="roomTurnHint">📱 Otoč telefon na šířku a pokoj bude větší</p>';
-  ov.appendChild(stage); if (note) ov.appendChild(note); if (ctl) ov.appendChild(ctl);
+  var zb = document.createElement("div"); zb.className = "zoomBox"; zb.appendChild(stage); ov.appendChild(zb);
+  if (note) ov.appendChild(note); if (ctl) ov.appendChild(ctl);
+  var zh = document.createElement("p"); zh.className = "zoomHint"; zh.textContent = "Poklepáním nebo dvěma prsty přiblížíš";
+  ov.appendChild(zh);
   document.body.appendChild(ov);
-  var sc = ov.querySelector(".roomScroll") || ov;
-  roomFullCenter();
+  zoomWire(ov);
   if (anim && stage.animate && !reducedMotion()) {
     var to = stage.getBoundingClientRect();
     stage.animate([{ transform: "translate(" + (from.left - to.left) + "px," + (from.top - to.top) + "px) scale(" + (from.width / to.width) + ")", transformOrigin: "0 0" },
@@ -5194,9 +5272,10 @@ function roomWireTilt() {
   if (reducedMotion()) return;
   var full = !!box.closest(".roomFull"), sx = 0, sy = 0, rx0 = 0, ry0 = 0;
   roomTilt.drag = false;
-  box.addEventListener("pointerdown", function (e) { roomTilt.drag = true; sx = e.clientX; sy = e.clientY; rx0 = roomTilt.rx; ry0 = roomTilt.ry; try { box.setPointerCapture(e.pointerId); } catch (er) {} });
+  box.addEventListener("pointerdown", function (e) { if (zoomGesture) return; roomTilt.drag = true; sx = e.clientX; sy = e.clientY; rx0 = roomTilt.rx; ry0 = roomTilt.ry; try { box.setPointerCapture(e.pointerId); } catch (er) {} });
   box.addEventListener("pointermove", function (e) {
     if (!roomTilt.drag) return;
+    if (zoomGesture) { roomTilt.drag = false; return; }
     roomTilt.ry = Math.max(-22, Math.min(22, ry0 + (e.clientX - sx) * 0.12));
     if (full) roomTilt.rx = Math.max(-12, Math.min(12, rx0 - (e.clientY - sy) * 0.08));
   });
@@ -5760,6 +5839,8 @@ W.roomFullToggle = roomFullToggle;
 W.screenAvatar = screenAvatar;
 W.avatarPick = avatarPick;
 W.mapFullToggle = mapFullToggle;
+W.zoomAt = zoomAt;
+W.zoomReset = zoomReset;
 W.navGo = navGo;
 W.screenBadges = screenBadges;
 W.sfxToggle = sfxToggle;
