@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Bradavice">
 <meta name="theme-color" content="#f6efe0">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23f6efe0' stroke='%233a2f28' stroke-width='4'/%3E%3Cpath d='M32 10c7 11 15 15 15 28a15 15 0 0 1-30 0c0-8 5-11 8-17 2 4 4 6 7 6 0-6-3-11 0-17z' fill='%23e2694f' stroke='%233a2f28' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M32 30c3 5 6 7 6 12a6 6 0 0 1-12 0c0-4 3-6 6-12z' fill='%23d9a032'/%3E%3C/svg%3E">
 <title>Bradavická škola</title>
 <style>
@@ -283,6 +285,8 @@
   .stavBox { border: 2px solid var(--ink); border-radius: 5px; padding: 10px 12px; margin: 8px 0; font-size: 16px; }
   .stavBox.ok { background: var(--teal-pale); } .stavBox.ne { background: var(--coral-pale); }
   .stavBox .btn.small { margin: 8px 0 0; }
+  .howTo { text-align: left; margin: 12px auto; max-width: 440px; font-size: 19px; line-height: 1.5; padding-left: 26px; }
+  .howTo li { margin: 6px 0; } .shareIco { display: inline-block; border: 2px solid var(--ink); border-radius: 4px; padding: 0 5px; font-size: 15px; }
   .codeShow { font-family: Menlo, Consolas, monospace; font-size: 22px; letter-spacing: 2px; background: #fff; border: 2px dashed var(--ink); border-radius: 6px; padding: 8px 12px; margin: 6px 0; text-align: center; user-select: all; }
   textarea { min-height: 110px; font-size: .8em; }
   textarea.words { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 17px; min-height: 160px; line-height: 1.5; }
@@ -448,7 +452,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-08b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2657,6 +2661,7 @@ function screenWelcome() {
     '<input type="text" id="nameInput" maxlength="20" placeholder="Tvoje jméno">' +
     '<button class="btn" id="nameBtn">Vydat se do Bradavic</button>' +
     '</div>' +
+    (isIOSWeb() && !isStandalone() ? '<p class="muted center">Tip pro rodiče: v Safari klepněte na Sdílet → <b>Přidat na plochu</b>. Hra pak poběží přes celou obrazovku a bude se sama aktualizovat. Postup v aplikaci na ploše je oddělený od Safari, proto začněte až tam.</p>' : '') +
     '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Už máme postup na jiném zařízení? Pro rodiče</button></div>');
   el("nameBtn").onclick = function () {
     var n = el("nameInput").value.trim();
@@ -2759,6 +2764,7 @@ function rewardLineHTML() {
   }).join("") + '</div>';
 }
 function screenHome() {
+  if (updPending && typeof updApplyIfIdle === "function") { updApplyIfIdle(); }
   applyHouseColors();
   if (S.pendingYear) { screenNewYear(S.pendingYear); return; }
   var today = todayStr();
@@ -4422,7 +4428,7 @@ function screenParent(section) {
       '<button class="btn small" id="syncSave">Uložit kód a zaregistrovat</button> <button class="btn small secondary" id="syncGen">Vytvořit nový kód</button> <button class="btn small secondary" id="syncNow">Synchronizovat teď</button> <button class="btn small secondary" id="syncOff">Vypnout</button>' +
       '<div id="syncConfirm"></div><p class="muted" id="syncMsg">' + syncStatusText() + '</p>' +
       (syncOn() ? '<h3 style="font-size:17px">📲 Přidat další zařízení (tablet)</h3>' +
-        '<p class="muted">Nejjednodušší cesta: pošlete si odkaz na tablet a otevřete ho tam v Safari. Hra se sama zeptá, jestli se má připojit ke Karolinčinu postupu. Odkaz obsahuje rodinný kód, posílejte ho jen sobě.</p>' +
+        '<p class="muted"><b>Jednou pro každý tablet:</b> pošlete si odkaz, otevřete ho na iPadu v Safari, klepněte Sdílet → Přidat na plochu a hru pak spouštějte už jen z plochy — při prvním spuštění se sama připojí. Dál se aktualizuje sama, odkaz už nebudete potřebovat. Odkaz obsahuje rodinný kód, posílejte ho jen sobě. (Kdo nechce odkaz, může v aplikaci na ploše kód opsat ručně tady v této sekci.)</p>' +
         '<div class="codeShow">' + esc(syncCfg().code) + '</div>' +
         '<button class="btn small" id="copyJoin">Zkopírovat odkaz pro tablet</button>' + (typeof navigator !== "undefined" && navigator.share ? ' <button class="btn small secondary" id="shareJoin">Sdílet… (AirDrop)</button>' : '') +
         '<p class="muted" id="joinMsg"></p>' : '') +
@@ -4713,14 +4719,65 @@ function routeHome() {
   if (!S.house) { screenSortingIntro(); return; }
   screenHome();
 }
-/* Odkaz pro tablet: …/#kod=xxxxx — nabídne připojení k rodinnému postupu, kód z adresy hned zmizí. */
+/* ---------------------------------------------------------------------
+   AUTOMATICKÁ AKTUALIZACE (jen na webu). iPad drží aplikaci z plochy uspanou a stránku sám
+   nenačte znovu; hra proto při startu a po každém probuzení zkontroluje verzi na serveru
+   (bez mezipaměti). Novou verzi načte hned, pokud zrovna neběží hodina — jinak až po návratu
+   do Velké síně. Postup je uložený průběžně, nic se neztratí.
+   --------------------------------------------------------------------- */
+var updPending = false, updLastCheck = 0;
+function updCheck() {
+  if (!isWeb() || typeof fetch !== "function" || !ttsOnline()) return;
+  var now = Date.now(); if (now - updLastCheck < 60000) return; updLastCheck = now;
+  fetch(location.pathname + "?verze=" + now, { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (html) {
+    var m = /var GAME_VERSION = "([^"]+)"/.exec(html || "");
+    if (!m || m[1] === GAME_VERSION) return;
+    updPending = m[1];
+    updApplyIfIdle();
+  }, function () {});
+}
+function updApplyIfIdle() {
+  if (!updPending || session) return;
+  var editing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if (editing) return;
+  location.replace(location.pathname + "?v=" + encodeURIComponent(updPending) + (location.hash || ""));
+}
+function updWire() {
+  if (!isWeb() || typeof document === "undefined") return;
+  setTimeout(updCheck, 4000);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") updCheck(); });
+  window.addEventListener("pageshow", function (e) { if (e.persisted) updCheck(); });
+}
+
+/* Prostředí: aplikace z plochy (bez lišty prohlížeče), Safari na iPadu/iPhonu, nebo soubor na Macu. */
+function isStandalone() { return typeof navigator !== "undefined" && (navigator.standalone === true || (typeof matchMedia === "function" && matchMedia("(display-mode: standalone)").matches)); }
+function isIOSWeb() { return typeof navigator !== "undefined" && /^https?:/.test(location.protocol) && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)); }
+function isWeb() { return typeof location !== "undefined" && /^https?:/.test(location.protocol); }
+
+/* Odkaz pro tablet: …/#kod=xxxxx. Na iPadu v Safari kód v adrese zůstane — přidáním na plochu se
+   přenese do aplikace, která má vlastní úložiště, a připojí se při prvním spuštění z plochy. */
+var JOIN_DECLINED_KEY = "bradaviceJoinNe";
 function joinFromLink() {
   if (typeof location === "undefined" || !location.hash) return null;
   var m = /[#&]kod=([^&]+)/.exec(location.hash);
-  try { if (history.replaceState) history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
   if (!m) return null;
   var code = syncNormCode(decodeURIComponent(m[1]));
-  return code.length >= 16 ? code : null;
+  if (code.length < 16) return null;
+  var keepForHomeScreen = isIOSWeb() && !isStandalone();
+  if (!keepForHomeScreen) { try { if (history.replaceState) history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  try { if (localStorage.getItem(JOIN_DECLINED_KEY) === code) return null; } catch (e) {}
+  return code;
+}
+/* V Safari na iPadu: místo připojení návod „přidej na plochu“ — teprve aplikace z plochy se připojí. */
+function screenAddToHome(code) {
+  render('<div class="card center"><div class="bigIcon">' + svgLetter(100) + '</div><h2>Přidejte si Bradavice na plochu</h2>' +
+    '<p class="qtext">Hra pak poběží přes celou obrazovku jako aplikace a bude se sama aktualizovat.</p>' +
+    '<ol class="howTo"><li>Klepněte na <b>Sdílet</b> <span class="shareIco">⬆︎</span> nahoře v Safari.</li>' +
+    '<li>Zvolte <b>Přidat na plochu</b> a potvrďte <b>Přidat</b>.</li>' +
+    '<li>Otevřete <b>Bradavice</b> z plochy — samy se připojí ke Karolinčinu postupu.</li></ol>' +
+    '<p class="muted">Tuto záložku v Safari pak můžete zavřít. Aplikace na ploše má vlastní úložiště, proto se připojuje až tam.</p>' +
+    '<button class="btn secondary small" id="joinHere">Připojit raději tady v Safari</button></div>');
+  el("joinHere").onclick = function () { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} screenJoin(code); };
 }
 function screenJoin(code) {
   render('<div class="card center"><div class="bigIcon">' + svgLetter(100) + '</div><h2>Připojit tento tablet</h2>' +
@@ -4731,7 +4788,8 @@ function screenJoin(code) {
     a.innerHTML = '<div class="heroCard"><div class="hcEmblem">' + houseIcon(r.house, 44) + '</div><div class="hcName">' + esc(r.name || "Studentka") + '</div><div class="hcDate">' + r.earned + ' galeonů celkem</div></div>' +
       '<p class="qtext">Připojit tento tablet k tomuto postupu?</p>' +
       '<p class="muted">Tablet pak sdílí galeony, plamínek, slovíčka i odznaky s ostatními zařízeními.</p>' +
-      '<button class="btn gold" id="joinYes">Ano, připojit</button><button class="btn secondary" onclick="routeHome()">Ne</button>';
+      '<button class="btn gold" id="joinYes">Ano, připojit</button><button class="btn secondary" id="joinNo">Ne</button>';
+    el("joinNo").onclick = function () { try { localStorage.setItem(JOIN_DECLINED_KEY, code); } catch (e) {} routeHome(); };
     el("joinYes").onclick = function () {
       syncSaveCfg(code);
       a.innerHTML = '<p class="qtext">Sova letí pro postup…</p>';
@@ -4745,7 +4803,8 @@ function boot() {
   applyHouseColors();
   fxInit();
   var joinCode = joinFromLink();
-  if (joinCode && joinCode !== syncCfg().code) { screenJoin(joinCode); return; }
+  if (joinCode && joinCode !== syncCfg().code) { if (isIOSWeb() && !isStandalone()) screenAddToHome(joinCode); else screenJoin(joinCode); return; }
+  updWire();
   if (syncReady()) {
     render('<div class="card center"><div class="bigIcon">' + svgLetter(100) + '</div>' +
       '<h2>Sova letí pro tvůj postup…</h2><p class="muted">Spojuji se s Bradavicemi.</p></div>');
