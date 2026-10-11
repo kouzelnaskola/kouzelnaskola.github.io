@@ -522,10 +522,14 @@
   .roomFull #roomNote { display: none; }
   /* ovládání pluje přes pokoj, aby pokoj mohl vyplnit celý displej */
   /* ovládání nahoře pod stropem (v obrázku je tam prázdný strop), podlaha s věcmi zůstane volná */
-  .roomFull .roomCtl { position: fixed; left: 10px; top: calc(8px + env(safe-area-inset-top)); width: min(calc(100vw - 76px), 640px); z-index: 3; display: flex; flex-direction: column-reverse; }
-  .roomFull .roomCtl .row2 { gap: 8px; }
-  .roomFull .roomCtl .btn { margin: 0; padding: 8px 12px; font-size: 16px; opacity: .93; }
-  .roomFull .chest { background: rgba(255,250,240,.94); margin: 8px 0 0; padding: 6px 8px; }
+  .roomFull .roomCtl { position: fixed; left: 10px; top: calc(10px + env(safe-area-inset-top)); max-width: min(calc(100vw - 180px), 640px); z-index: 3; }
+  .roomFull .chest { display: inline-block; max-width: 100%; vertical-align: top; }
+  .roomFull .fsBtns { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 64px; display: flex; flex-direction: row-reverse; gap: 8px; z-index: 3; }
+  .fsBtn { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--ink); background: #fffdf7; font-size: 20px; line-height: 1; cursor: pointer; padding: 0; box-shadow: 2px 2px 0 rgba(0,0,0,.25); }
+  .fsBtn.gold { background: var(--mustard); color: #fff; font-weight: 700; }
+  .fsBtn[data-ask]::after { content: attr(data-ask); position: absolute; top: 50px; right: 0; white-space: nowrap; background: #fffdf7; border: 2px solid var(--ink); border-radius: 8px; padding: 3px 8px; font-size: 13px; color: var(--ink); }
+
+  .roomFull .chest { background: rgba(255,250,240,.94); margin: 0; padding: 6px 8px; }
   .roomFull .chestHead { display: none; }
   .roomFull .chestItems { flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; }
   .roomFull .chestItem { flex: 0 0 auto; width: 60px; }
@@ -719,7 +723,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3525,7 +3529,7 @@ function screenMap() {
 var mapFull = false, mapFullAnim = false;
 function mapFullToggle(on) { mapFull = !!on; mapFullAnim = !!on; fsSet(on); screenMap(); }
 /* Skutečná celá obrazovka prohlížeče (Mac, iPad, Android): schová lištu prohlížeče. Na celý dokument, ne na vrstvu,
-   protože překreslení (např. Přestavit pokoj) vrstvu vymění. Na iPhonu API není a aplikace z plochy je celá sama.
+   protože překreslení (např. Přestavět pokoj) vrstvu vymění. Na iPhonu API není a aplikace z plochy je celá sama.
    Zavření celé obrazovky prohlížeče (Esc, gesto) zavře i vrstvu. */
 var fsOurs = false;
 function fsSet(on) {
@@ -5092,7 +5096,7 @@ function imgClear() {
   imgMem = {};
   return imgDb().then(function (db) { if (!db) return; try { db.transaction("obrazky", "readwrite").objectStore("obrazky").clear(); } catch (e) {} });
 }
-/* Ložnice: předměty si dítě rozestaví prstem („Přestavit pokoj“), pozice v S.roomPos (% šířky / výšky).
+/* Ložnice: předměty si dítě rozestaví prstem („Přestavět pokoj“), pozice v S.roomPos (% šířky / výšky).
    Sbírky a legendární předměty přidávají efekty (hvězdný strop, jiskry, prapor koleje, svíčky, okno). */
 /* výchozí místa (střed, % zdola) podle ložnice uvnitř hradu: podlaha, dvě police na stěně, parapety oken */
 /* změřeno v obrázku 1536 × 1024: police x 29–45 %, horní hrana 70 % a 61 % zdola; parapety oken 47,5 % zdola; podlaha pod 37 %.
@@ -5142,10 +5146,14 @@ function screenTower() {
     (pet ? "S tebou bydlí " + esc(pet.n) + (acc ? (/^[sšzž]/i.test(acc.inst || acc.n) ? " se " : " s ") + esc(acc.inst || acc.n.toLowerCase()) : "") + "." :
       "V ložnici je zatím ticho — na Příčné ulici čekají mazlíčci!")) + '</p>' +
     '<div class="roomCtl">' + (roomEditing ? roomChestHTML(allDecos, off) : '') +
-    '<div class="row2">' + (roomEditing
-      ? '<button class="btn gold" onclick="roomEdit(false)">✓ Hotovo</button><button class="btn secondary" id="roomResetBtn" onclick="roomReset()">↺ Vrátit věci na místo</button>'
-      : '<button class="btn secondary" onclick="roomEdit(true)">✋ Přestavit pokoj</button><button class="btn secondary" onclick="roomFullToggle(' + (wantFull ? 'false' : 'true') + ')">' + (wantFull ? '✕ Zavřít' : '⛶ Celá obrazovka') + '</button>') +
-    (roomEditing && wantFull ? '<button class="btn secondary" onclick="roomFullToggle(false)">✕ Zavřít</button>' : '') + '</div></div>' +
+    (wantFull
+      /* celá obrazovka: jen malá kulatá tlačítka vedle křížku (zavírá se jen křížkem) */
+      ? '<div class="fsBtns">' + (roomEditing
+          ? '<button class="fsBtn gold" onclick="roomEdit(false)" aria-label="Hotovo" title="Hotovo">✓</button><button class="fsBtn" id="roomResetBtn" onclick="roomReset()" aria-label="Vrátit věci na místo" title="Vrátit věci na místo">↺</button>'
+          : '<button class="fsBtn" onclick="roomEdit(true)" aria-label="Přestavět pokoj" title="Přestavět pokoj">✋</button>') + '</div>'
+      : '<div class="row2">' + (roomEditing
+          ? '<button class="btn gold" onclick="roomEdit(false)">✓ Hotovo</button><button class="btn secondary" id="roomResetBtn" onclick="roomReset()">↺ Vrátit věci na místo</button>'
+          : '<button class="btn secondary" onclick="roomEdit(true)">✋ Přestavět pokoj</button><button class="btn secondary" onclick="roomFullToggle(true)">⛶ Celá obrazovka</button>') + '</div>') + '</div>' +
     '</div>' + navHTML("loznice"));
   roomFull = wantFull;
   if (wantFull) roomOpenFull(animFull);
@@ -5312,7 +5320,7 @@ function roomEdit(on) { roomEditing = !!on; screenTower(); }
 /* první klepnutí se zeptá, druhé vrátí věci na výchozí místa */
 function roomReset() {
   var b = document.getElementById("roomResetBtn");
-  if (b && !b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Opravdu? Klepni ještě jednou"; return; }
+  if (b && !b.classList.contains("armed")) { b.classList.add("armed"); if (b.classList.contains("fsBtn")) b.setAttribute("data-ask", "Opravdu? Klepni ještě jednou"); else b.textContent = "Opravdu? Klepni ještě jednou"; return; }
   S.roomPos = {}; saveState(); screenTower();
 }
 function roomWireDrag() {
