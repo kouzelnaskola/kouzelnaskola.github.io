@@ -253,7 +253,7 @@
     background: linear-gradient(180deg, var(--acc-pale) 0%, #f6efe0 55%, #eedfc4 100%);
   }
   .tower { transition: height .3s ease; }
-  .tower.photo { background-size: cover; background-position: center 78%; height: 400px; animation: screenIn .45s ease-out both; }
+  .tower.photo { background-size: cover; background-position: center; height: auto; aspect-ratio: 3 / 2; animation: screenIn .45s ease-out both; }
   .tower.photo .win, .tower.photo .twinkle { display: none; }
   .tower.photo .avatar, .tower.photo .pet, .tower.photo .deco, .tower.photo .avatarHat, .tower.photo .petAcc { filter: drop-shadow(0 2px 0 rgba(58,47,40,.35)); }
   .tower .twinkle { position: absolute; font-size: 15px; color: var(--mustard-d); animation: thinkPulse 2.2s infinite; }
@@ -466,11 +466,12 @@
   .tower .pet { transform-origin: 50% 100%; animation: breathe 3.2s ease-in-out infinite; }
   /* přesouvatelné prvky: left = střed, bottom = spodek (v %) */
   .tower .mover { position: absolute; translate: -50% 0; z-index: 2; touch-action: none; }
+  .tower .mover[data-move="avatar"], .tower .mover[data-move="pet"], .tower .mover[data-move="hat"], .tower .mover[data-move="acc"] { z-index: 3; }   /* postava a mazlíček vpředu, ať se dá chytit klobouk i mašle */
   .tower .mover .avatar, .tower .mover .pet { position: relative; left: auto; bottom: auto; }
   .tower .mover .avatarHat { position: absolute; left: 50%; bottom: auto; top: -0.55em; translate: -50% 0; }
-  .tower .mover .avatar.sticker + .avatarHat { top: -26px; font-size: 1.7em; }
+  .tower .mover .avatar.sticker + .avatarHat { top: clamp(-28px, -3.9cqw, -13px); font-size: 1.7em; }
   .tower .mover .petAcc { position: absolute; left: 50%; bottom: auto; top: -0.5em; translate: -50% 0; }
-  .tower .mover .pet.sticker + .petAcc { top: -16px; }
+  .tower .mover .pet.sticker + .petAcc { top: clamp(-17px, -2.4cqw, -8px); }
   .tower .mover.deco { font-size: 2em; }
   .tower .mover.legend { filter: drop-shadow(0 0 10px rgba(217,160,50,.8)); }
   .tower .mover.magicWin:not(.sticker) { width: 70px; height: 56px; font-size: 0; border: 3px solid #6e5636; border-radius: 30px 30px 4px 4px; background: linear-gradient(180deg, #2e4a8c, #8fb3d9 55%, #9ccf8f 56%, #5b9a5a); background-size: 100% 200%; animation: winSky 8s ease-in-out infinite alternate; }
@@ -513,10 +514,12 @@
   .setItem.own { opacity: 1; filter: none; border-style: solid; border-color: var(--ink); background: #fff; }
   .setItem.sticker { font-size: 0; } .setItem.sticker img { width: 42px; height: 42px; object-fit: contain; }
   .tower .sticker img { display: block; width: auto; animation: screenIn .4s ease-out both; }
-  .tower .pet.sticker img { height: 78px; } .tower .avatar.sticker img { height: 118px; }
+  /* velikost nálepek podle šířky pokoje (cqw), aby byl poměr k obrázku na každém displeji stejný */
+  .tower { container-type: inline-size; }
+  .tower .pet.sticker img { height: clamp(40px, 11.7cqw, 86px); } .tower .avatar.sticker img { height: clamp(60px, 17.7cqw, 130px); }
   .tower .avatar.sticker ~ .pet { left: 130px; }
   .tower .avatar.sticker + .avatarHat { bottom: 112px; left: 30px; font-size: 1.7em; }
-  .tower .avatarHat.sticker img { height: 46px; } .tower .petAcc.sticker img { height: 30px; } .tower .deco.sticker img { height: 58px; }
+  .tower .avatarHat.sticker img { height: clamp(24px, 6.9cqw, 50px); } .tower .petAcc.sticker img { height: clamp(16px, 4.5cqw, 32px); } .tower .deco.sticker img { height: clamp(30px, 8.7cqw, 64px); }
   .tower .pet.sticker + .petAcc { bottom: 86px; left: 146px; }
   .tower .avatar.sticker ~ .pet.sticker + .petAcc { left: 160px; }
   .tower .deco.sticker, .tower .avatarHat.sticker, .tower .petAcc.sticker { font-size: 0; }
@@ -614,7 +617,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11h";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11i";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -4548,7 +4551,7 @@ function shopById(id) { for (var i = 0; i < SHOP.length; i++) if (SHOP[i].id ===
    --------------------------------------------------------------------- */
 var IMG_BASE = SYNC_URL + "/storage/v1/object/public/obrazky/";
 var IMAGES = {
-  "loznice-g": { f: "loznice-g.webp", v: 1 },
+  "loznice-g": { f: "loznice-g-v2.webp", v: 2 },   /* 11. 10. 2026: ložnice uvnitř hradu (ChatGPT), malovaná jako Velká síň */
   "loznice-h": { f: "loznice-h.webp", v: 1 },
   "loznice-r": { f: "loznice-r.webp", v: 1 },
   "loznice-s": { f: "loznice-s.webp", v: 1 },
@@ -4662,7 +4665,10 @@ function imgClear() {
 }
 /* Ložnice: předměty si dítě rozestaví prstem („Přestavit pokoj“), pozice v S.roomPos (% šířky / výšky).
    Sbírky a legendární předměty přidávají efekty (hvězdný strop, jiskry, prapor koleje, svíčky, okno). */
-var ROOM_DEFAULTS = [[62, 5], [80, 5], [50, 34], [12, 44], [30, 60], [68, 44], [86, 34], [44, 5], [22, 26], [92, 58], [56, 62], [74, 24], [36, 40], [8, 22], [64, 76], [40, 76]];
+/* výchozí místa (střed, % zdola) podle ložnice uvnitř hradu: podlaha, dvě police na stěně, parapety oken */
+/* změřeno v obrázku 1536 × 1024: police x 29–45 %, horní hrana 70 % a 61 % zdola; parapety oken 47,5 % zdola; podlaha pod 37 %.
+   Pokoj s obrázkem má stejný poměr stran (3:2), takže procenta sedí na každém displeji. */
+var ROOM_DEFAULTS = [[51, 20], [64, 6], [33, 61], [41, 61], [80, 4], [16.5, 47.5], [56, 47.5], [33, 70.2], [41, 70.2], [30, 18], [70, 16], [90, 6], [8, 10], [86, 22], [60, 27], [44, 4]];
 var roomEditing = false;
 function roomPosOf(key, i, def) {
   var p = S.roomPos && S.roomPos[key];
@@ -4688,10 +4694,10 @@ function screenTower() {
     '<span class="twinkle" style="top:12%;left:14%">🕯️</span>' +
     '<span class="twinkle" style="top:26%;left:44%">✧</span>' +
     '<span class="twinkle" style="top:9%;left:66%">✦</span>' +
-    '<div class="mover" data-move="avatar" style="' + moverStyle(roomPosOf("avatar", 0, { x: 12, y: 5 })) + '"><div class="avatar" data-img="postava">🧙‍♀️</div>' +
+    '<div class="mover" data-move="avatar" style="' + moverStyle(roomPosOf("avatar", 0, { x: 20, y: 6 })) + '"><div class="avatar" data-img="postava">🧙‍♀️</div>' +
       (hat && !roomFree("hat") ? '<div class="avatarHat" data-move="hat" data-img="' + hat.id + '">' + hat.e + '</div>' : '') + '</div>' +
     (hat && roomFree("hat") ? '<div class="mover free" data-move="hat" style="' + moverStyle(S.roomPos.hat) + '"><div class="avatarHat" data-img="' + hat.id + '">' + hat.e + '</div></div>' : '') +
-    (pet ? '<div class="mover" data-move="pet" style="' + moverStyle(roomPosOf("pet", 0, { x: 30, y: 5 })) + '"><div class="pet" data-img="' + pet.id + '">' + pet.e + '</div>' +
+    (pet ? '<div class="mover" data-move="pet" style="' + moverStyle(roomPosOf("pet", 0, { x: 32, y: 5 })) + '"><div class="pet" data-img="' + pet.id + '">' + pet.e + '</div>' +
       (acc && !roomFree("acc") ? '<div class="petAcc" data-move="acc" data-img="' + acc.id + '">' + acc.e + '</div>' : '') + '</div>' : '') +
     (acc && (roomFree("acc") || !pet) ? '<div class="mover free" data-move="acc" style="' + moverStyle(roomFree("acc") ? S.roomPos.acc : { x: 40, y: 5 }) + '"><div class="petAcc" data-img="' + acc.id + '">' + acc.e + '</div></div>' : '');
   decos.forEach(function (d, i) {
