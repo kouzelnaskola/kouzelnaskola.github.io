@@ -417,6 +417,12 @@
   .stab.on { background: var(--acc); color: #fff; }
   /* ------- animace: vrstva částic, vjezd obrazovky, galeony, plamen, razítko ------- */
   #fx { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+  #pullInd { position: fixed; left: 50%; top: env(safe-area-inset-top, 0px); z-index: 70; transform: translate(-50%, -70px); display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px 8px 10px; background: #fffdf7; border: 2px solid var(--ink); border-radius: 22px; box-shadow: 3px 3px 0 var(--shadow); font-size: 16px; font-weight: 700;
+    color: var(--ink); pointer-events: none; opacity: 0; white-space: nowrap; }
+  #pullInd.show { opacity: 1; } #pullInd.hide { opacity: 0; transition: transform .3s ease, opacity .3s ease; }
+  #pullInd .pi { font-size: 24px; display: inline-block; } #pullInd.armed .pi { animation: thinkPulse .6s infinite; } #pullInd.busy .pi { animation: sway .5s ease-in-out infinite; }
+  #pullInd.done { background: var(--teal-pale); }
   @keyframes screenIn { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
   #app > * { animation: screenIn .28s ease-out both; }
   #app > *:nth-child(2) { animation-delay: .04s; } #app > *:nth-child(3) { animation-delay: .08s; } #app > *:nth-child(n+4) { animation-delay: .12s; }
@@ -608,7 +614,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11g";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11h";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -5307,10 +5313,85 @@ function updApplyIfIdle() {
   location.replace(location.pathname + "?v=" + encodeURIComponent(updPending) + (location.hash || ""));
 }
 function updWire() {
-  if (!isWeb() || typeof document === "undefined") return;
+  if (typeof document === "undefined") return;
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") refreshNow(false); });
+  pullWire();
+  if (!isWeb()) return;
   setTimeout(updCheck, 4000);
-  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") updCheck(); });
-  window.addEventListener("pageshow", function (e) { if (e.persisted) updCheck(); });
+  window.addEventListener("pageshow", function (e) { if (e.persisted) refreshNow(false); });
+}
+
+/* ---------------------------------------------------------------------
+   OBNOVENÍ POSTUPU
+   Synchronizace běží při spuštění, ~2,5 s po každém uložení, po návratu aplikace z pozadí
+   (nejvýš jednou za 20 s) a tažením obrazovky dolů. Tažení je vlastní jen v aplikaci z plochy
+   (tam prohlížeč žádné nemá); v Safari a v Chromu stránku obnoví prohlížeč sám a hra se při
+   startu synchronizuje. Během hodiny se nic nepřekresluje.
+   --------------------------------------------------------------------- */
+var refreshLast = 0, pullSt = { y0: null, dy: 0, armed: false, busy: false };
+var NAV_FNS = { screenHome: screenHome, screenMap: screenMap, screenShop: screenShop, screenTower: screenTower, screenProfile: screenProfile };
+function rerenderCurrent() {
+  if (session || typeof document === "undefined") return;
+  if (lastScreen === "home") return;   /* Velkou síň překreslí syncOnApplied */
+  var tabs = document.querySelectorAll(".tabbar .tab");
+  for (var i = 0; i < tabs.length; i++) if (tabs[i].classList.contains("on") && NAV_TABS[i] && NAV_FNS[NAV_TABS[i].f]) { NAV_FNS[NAV_TABS[i].f](); return; }
+}
+function refreshNow(manual) {
+  var now = Date.now();
+  if (manual) updLastCheck = 0;
+  if (isWeb()) updCheck();
+  if (!syncOn() || (!manual && now - refreshLast < 20000)) return Promise.resolve(null);
+  refreshLast = now;
+  return syncRun().then(function (changed) { if (changed) rerenderCurrent(); return changed; });
+}
+function pullInd() {
+  var d = document.getElementById("pullInd");
+  if (!d) { d = document.createElement("div"); d.id = "pullInd"; d.innerHTML = '<span class="pi">🦉</span><span class="pt"></span>'; document.body.appendChild(d); }
+  return d;
+}
+function pullShow(dy, text, cls) {
+  var d = pullInd();
+  d.className = cls || "";
+  d.style.transform = "translate(-50%, " + Math.round(dy - 60) + "px)";
+  d.querySelector(".pt").textContent = text;
+}
+function pullDone(text) {
+  pullShow(70, text, "show done");
+  setTimeout(function () { var d = document.getElementById("pullInd"); if (d) { d.className = "hide"; d.style.transform = "translate(-50%, -70px)"; } }, 1300);
+}
+/* Vlastní „potáhni pro aktualizaci“. Funkce runPull je i pro test. */
+function runPull() {
+  if (pullSt.busy) return Promise.resolve(null);
+  pullSt.busy = true;
+  pullShow(70, syncOn() ? "Sova letí pro novinky…" : "Hledám novou verzi hry…", "show busy");
+  var finish = function (changed) {
+    pullSt.busy = false;
+    pullDone(syncSt.err ? "Bez spojení — zkusím to později" : changed ? "Postup je aktualizovaný ✓" : syncOn() ? "Všechno je aktuální ✓" : "Hra je aktuální ✓");
+    return changed;
+  };
+  return refreshNow(true).then(finish, function () { return finish(false); });
+}
+function pullWire() {
+  if (typeof window === "undefined" || !("ontouchstart" in window)) return;
+  var ignore = function (tg) { return !tg || !tg.closest || !!tg.closest(".cmap, .tower.editing, input, textarea, select, .tabbar"); };
+  document.addEventListener("touchstart", function (e) {
+    pullSt.y0 = null;
+    if (!isStandalone() || session || pullSt.busy || e.touches.length !== 1 || (window.scrollY || 0) > 0 || ignore(e.target)) return;
+    pullSt.y0 = e.touches[0].clientY; pullSt.dy = 0; pullSt.armed = false;
+  }, { passive: true });
+  document.addEventListener("touchmove", function (e) {
+    if (pullSt.y0 === null) return;
+    var dy = e.touches[0].clientY - pullSt.y0;
+    if (dy <= 0 || (window.scrollY || 0) > 0) { pullSt.dy = 0; return; }
+    pullSt.dy = dy; pullSt.armed = dy > 110;
+    pullShow(Math.min(90, dy * 0.6), pullSt.armed ? "Pusť a sova přiletí s novinkami" : "Táhni dolů pro aktualizaci", "show" + (pullSt.armed ? " armed" : ""));
+  }, { passive: true });
+  document.addEventListener("touchend", function () {
+    if (pullSt.y0 === null) return;
+    pullSt.y0 = null;
+    if (pullSt.armed) { pullSt.armed = false; runPull(); }
+    else if (pullSt.dy > 0) { var d = document.getElementById("pullInd"); if (d) { d.className = "hide"; d.style.transform = "translate(-50%, -70px)"; } }
+  }, { passive: true });
 }
 
 /* Prostředí: aplikace z plochy (bez lišty prohlížeče), Safari na iPadu/iPhonu, nebo soubor na Macu. */
