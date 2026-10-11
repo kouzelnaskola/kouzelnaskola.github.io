@@ -308,6 +308,59 @@
   .celebrate h1 { font-size: 32px; }
 
   .syncLine { font-size: 14px; margin-top: 18px; }
+  /* ------- stálá navigace dole ------- */
+  #app { padding-bottom: 120px; }
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; justify-content: center; gap: 4px;
+    background: #fffdf7; border-top: 2px solid var(--ink); box-shadow: 0 -4px 0 var(--shadow); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  .tabbar .tab { flex: 1 1 0; max-width: 140px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 2px solid transparent;
+    border-radius: 10px; padding: 6px 4px 4px; font: inherit; font-size: 14px; font-weight: 700; color: var(--muted2); }
+  .tabbar .tab.on { color: var(--ink); background: var(--acc-pale); border-color: var(--ink); box-shadow: 2px 2px 0 var(--shadow); }
+  .tabbar .tab:active { transform: translate(1px, 1px); }
+  /* ------- Velká síň jako scéna ------- */
+  .hall { position: relative; height: 380px; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; box-shadow: 6px 6px 0 var(--shadow); margin-bottom: 18px;
+    background: linear-gradient(180deg, #1c2541 0%, #3a3f6b 38%, #8a6a5a 70%, #e9d3ae 100%); background-size: cover; background-position: center; }
+  .hall .ceiling { position: absolute; inset: 0 0 45% 0; overflow: hidden; }
+  .hall .stars { position: absolute; inset: 0; background-repeat: repeat; animation: twinkleSky 4s ease-in-out infinite; }
+  .hall .stars.s1 { background-image: radial-gradient(1.6px 1.6px at 20px 30px, #fff 50%, transparent), radial-gradient(1.2px 1.2px at 90px 70px, #f3e3c0 50%, transparent), radial-gradient(1.4px 1.4px at 150px 20px, #fff 50%, transparent), radial-gradient(1px 1px at 200px 95px, #fff 50%, transparent); background-size: 230px 120px; }
+  .hall .stars.s2 { background-image: radial-gradient(1.2px 1.2px at 60px 50px, #fff 50%, transparent), radial-gradient(1.8px 1.8px at 170px 85px, #f3e3c0 50%, transparent), radial-gradient(1px 1px at 120px 15px, #fff 50%, transparent); background-size: 260px 130px; animation-delay: -2s; animation-duration: 5.5s; }
+  @keyframes twinkleSky { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+  .hall .cloud { position: absolute; height: 34px; border-radius: 40px; background: rgba(255,255,255,.13); filter: blur(4px); animation: drift 38s linear infinite; }
+  .hall .cloud.c1 { width: 180px; top: 18%; left: -200px; } .hall .cloud.c2 { width: 120px; top: 42%; left: -140px; animation-duration: 52s; animation-delay: -20s; } .hall .cloud.c3 { width: 230px; top: 8%; left: -260px; animation-duration: 64s; animation-delay: -40s; }
+  @keyframes drift { to { translate: 1200px 0; } }
+  .hall .candles { position: absolute; inset: 0 0 50% 0; }
+  .hall .candle { position: absolute; width: 7px; height: 26px; border-radius: 2px; background: linear-gradient(90deg, #efe6d2, #fff8e8 60%, #d9cdb4); box-shadow: 0 0 0 1px rgba(58,47,40,.35); animation: floatC 5s ease-in-out infinite; }
+  .hall .candle i { position: absolute; left: 50%; top: -13px; width: 9px; height: 14px; margin-left: -4.5px; border-radius: 50% 50% 45% 45%; background: radial-gradient(circle at 50% 70%, #fff6c8 0, #ffd36b 35%, #e2694f 75%, transparent 76%);
+    box-shadow: 0 0 14px 6px rgba(255,200,90,.35); transform-origin: 50% 100%; animation: flickC .7s ease-in-out infinite alternate; }
+  @keyframes floatC { 0%, 100% { translate: 0 0; } 50% { translate: 0 -9px; } }
+  @keyframes flickC { from { scale: 1 1; rotate: -3deg; } to { scale: .9 1.12; rotate: 3deg; } }
+  .hall .banners { position: absolute; top: 46%; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 6%; }
+  .hall .hbanner { width: 46px; height: 70px; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; border: 2px solid var(--ink); border-top: none;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); box-shadow: inset 0 -6px 0 rgba(0,0,0,.12); animation: sway 6s ease-in-out infinite; transform-origin: 50% 0; opacity: .85; }
+  .hall .hbanner.mine { width: 54px; height: 84px; opacity: 1; }
+  .hall .hbanner svg { filter: drop-shadow(0 1px 0 rgba(255,255,255,.4)); }
+  .hall .hallCenter { position: absolute; left: 50%; bottom: 14px; translate: -50% 0; width: min(94%, 560px); text-align: center; background: rgba(255,253,247,.92); border: 2px solid var(--ink); border-radius: 10px; padding: 8px 10px 6px; box-shadow: 4px 4px 0 rgba(0,0,0,.25); }
+  .hall .hallCenter .mascot { margin-top: -54px; display: inline-block; filter: drop-shadow(0 0 18px rgba(255,190,90,.75)); }
+  .hall .hallCenter .flameNum { margin-top: 0; font-size: 26px; }
+  .hall .hallCenter .weekRow { margin: 8px 0 2px; }
+  .hall .goldNote { font-size: 14px; color: var(--mustard-d); font-weight: 700; }
+  .hall .stamp { top: 10px; right: 12px; }
+  .hall.photo .ceiling, .hall.photo .banners { display: none; }
+  .bigCta { font-size: 26px; padding: 18px 20px 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; animation: ctaGlow 2.6s ease-in-out infinite; }
+  .bigCta span { font-size: 15px; font-weight: 400; font-style: italic; opacity: .9; }
+  .bigCta.done { animation: none; background: var(--teal); }
+  @keyframes ctaGlow { 0%, 100% { box-shadow: 5px 5px 0 var(--shadow); } 50% { box-shadow: 5px 5px 0 var(--shadow), 0 0 22px rgba(217,160,50,.55); } }
+  .hallChips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 6px 0 2px; }
+  .hallChips .hourglass, .hchip { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 10px; font-size: 15px; border: 2px dashed var(--ink); border-radius: 20px; background: var(--acc-pale); }
+  .hchip { background: #fff; border-style: solid; }
+  .hallHint { font-size: 14px; margin-top: 10px; }
+  /* ------- Rozvrh ------- */
+  .examCard { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin: 6px 0 14px; padding: 12px 14px; background: var(--mustard-pale); border: 2px solid var(--ink); border-radius: 8px; box-shadow: 4px 4px 0 var(--shadow); font: inherit; font-size: 18px; color: var(--ink); }
+  .lockedSum { display: flex; align-items: center; gap: 8px; margin: 2px 0 14px 26px; padding: 8px 12px; border: 2px dashed #8a7a6a; border-radius: 8px; color: #8a7a6a; font-size: 15px; font-style: italic; background: var(--paper); }
+  /* ------- Příčná ulice: záložky ------- */
+  .shopTabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 10px; margin: 6px -4px 6px; scrollbar-width: none; }
+  .shopTabs::-webkit-scrollbar { display: none; }
+  .stab { flex: none; font: inherit; font-size: 16px; font-weight: 700; padding: 8px 14px; border: 2px solid var(--ink); border-radius: 20px; background: #fff; color: var(--ink); box-shadow: 2px 2px 0 var(--shadow); }
+  .stab.on { background: var(--acc); color: #fff; }
   /* ------- animace: vrstva částic, vjezd obrazovky, galeony, plamen, razítko ------- */
   #fx { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
   @keyframes screenIn { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
@@ -351,6 +404,45 @@
   @keyframes flicker { 0%, 100% { opacity: .55; scale: 1; } 30% { opacity: 1; scale: 1.15; } 60% { opacity: .7; scale: .95; } }
   @keyframes dropIn { 0% { translate: 0 -120px; opacity: 0; } 70% { translate: 0 6px; opacity: 1; } 100% { translate: 0 0; } }
   .tower .pet { transform-origin: 50% 100%; animation: breathe 3.2s ease-in-out infinite; }
+  /* přesouvatelné prvky: left = střed, bottom = spodek (v %) */
+  .tower .mover { position: absolute; translate: -50% 0; z-index: 2; touch-action: none; }
+  .tower .mover .avatar, .tower .mover .pet { position: relative; left: auto; bottom: auto; }
+  .tower .mover .avatarHat { position: absolute; left: 50%; bottom: auto; top: -0.55em; translate: -50% 0; }
+  .tower .mover .avatar.sticker + .avatarHat { top: -26px; font-size: 1.7em; }
+  .tower .mover .petAcc { position: absolute; left: 50%; bottom: auto; top: -0.5em; translate: -50% 0; }
+  .tower .mover .pet.sticker + .petAcc { top: -16px; }
+  .tower .mover.deco { font-size: 2em; }
+  .tower .mover.legend { filter: drop-shadow(0 0 10px rgba(217,160,50,.8)); }
+  .tower .mover.magicWin:not(.sticker) { width: 70px; height: 56px; font-size: 0; border: 3px solid #6e5636; border-radius: 30px 30px 4px 4px; background: linear-gradient(180deg, #2e4a8c, #8fb3d9 55%, #9ccf8f 56%, #5b9a5a); background-size: 100% 200%; animation: winSky 8s ease-in-out infinite alternate; }
+  @keyframes winSky { to { background-position: 0 100%; } }
+  .tower.editing .mover { outline: 2px dashed var(--acc-d); outline-offset: 3px; border-radius: 6px; cursor: grab; animation: none !important; }
+  .tower.editing .mover * { animation: none !important; }
+  .tower.editing .mover.dragging { cursor: grabbing; scale: 1.08; z-index: 5; filter: drop-shadow(0 8px 6px rgba(0,0,0,.3)); }
+  .tower .roomSky { position: absolute; inset: 0 0 55% 0; background: linear-gradient(180deg, rgba(28,37,65,.75), transparent); z-index: 1; pointer-events: none; }
+  .tower .roomSky .stars { position: absolute; inset: 0; }
+  .tower .roomSky .stars.s1 { background-image: radial-gradient(1.6px 1.6px at 20px 30px, #fff 50%, transparent), radial-gradient(1.2px 1.2px at 90px 60px, #f3e3c0 50%, transparent), radial-gradient(1.4px 1.4px at 150px 20px, #fff 50%, transparent); background-size: 190px 90px; animation: twinkleSky 4s ease-in-out infinite; }
+  .tower .roomSky .stars.s2 { background-image: radial-gradient(1.2px 1.2px at 60px 40px, #fff 50%, transparent), radial-gradient(1.8px 1.8px at 140px 70px, #f3e3c0 50%, transparent); background-size: 210px 100px; animation: twinkleSky 5.5s ease-in-out -2s infinite; }
+  .tower .roomSparks { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .tower .roomSparks i { position: absolute; bottom: 0; width: 6px; height: 6px; border-radius: 50%; background: #f3e3c0; box-shadow: 0 0 8px 3px rgba(217,160,50,.7); animation: sparkUp 6s linear infinite; }
+  @keyframes sparkUp { 0% { translate: 0 0; opacity: 0; } 10% { opacity: 1; } 100% { translate: 20px -320px; opacity: 0; } }
+  .tower .roomBanner { position: absolute; top: 0; right: 30%; width: 56px; height: 84px; display: flex; justify-content: center; padding-top: 10px; border: 2px solid var(--ink); border-top: none; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); z-index: 1; animation: sway 6s ease-in-out infinite; transform-origin: 50% 0; }
+  .tower .roomCandles { position: absolute; inset: 0 0 60% 0; z-index: 1; pointer-events: none; }
+  .tower .roomCandles .candle { position: absolute; width: 7px; height: 24px; border-radius: 2px; background: linear-gradient(90deg, #efe6d2, #fff8e8 60%, #d9cdb4); animation: floatC 5s ease-in-out infinite; }
+  .tower .roomCandles .candle i { position: absolute; left: 50%; top: -13px; width: 9px; height: 14px; margin-left: -4.5px; border-radius: 50% 50% 45% 45%; background: radial-gradient(circle at 50% 70%, #fff6c8 0, #ffd36b 35%, #e2694f 75%, transparent 76%); box-shadow: 0 0 14px 6px rgba(255,200,90,.35); animation: flickC .7s ease-in-out infinite alternate; }
+  /* obchod: vzácnost, sleva, sbírky */
+  .shopItem { position: relative; }
+  .shopItem.rar-v { border-color: var(--teal-d); box-shadow: 4px 4px 0 var(--shadow), 0 0 0 3px var(--teal-pale) inset; }
+  .shopItem.rar-l { border-color: var(--mustard-d); background: linear-gradient(180deg, #fffaf0, #f3e3c0); box-shadow: 4px 4px 0 var(--shadow), 0 0 16px rgba(217,160,50,.55); }
+  .rarTag, .saleTag { position: absolute; top: -10px; left: 10px; font-size: 12px; font-weight: 700; padding: 1px 8px; border: 2px solid var(--ink); border-radius: 10px; background: var(--teal); color: #fff; }
+  .rar-l .rarTag { background: var(--mustard); }
+  .saleTag { left: auto; right: 10px; background: var(--coral); }
+  .setNote { font-size: 13px; color: var(--muted2); font-style: italic; margin: -2px 0 4px; }
+  .setCard { border: 2px solid var(--ink); border-radius: 8px; padding: 10px 12px; margin: 10px 0; background: #fff; box-shadow: 3px 3px 0 var(--shadow); }
+  .setCard.done { background: var(--mustard-pale); }
+  .setHead { display: flex; align-items: center; gap: 8px; font-size: 18px; } .setE { font-size: 26px; } .setCount { margin-left: auto; font-weight: 700; }
+  .setItems { display: flex; gap: 8px; margin: 8px 0 6px; } .setItem { width: 52px; height: 52px; border: 2px dashed #8a7a6a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; opacity: .35; filter: grayscale(1); overflow: hidden; }
+  .setItem.own { opacity: 1; filter: none; border-style: solid; border-color: var(--ink); background: #fff; }
+  .setItem.sticker { font-size: 0; } .setItem.sticker img { width: 42px; height: 42px; object-fit: contain; }
   .tower .sticker img { display: block; width: auto; animation: screenIn .4s ease-out both; }
   .tower .pet.sticker img { height: 78px; } .tower .avatar.sticker img { height: 118px; }
   .tower .avatar.sticker ~ .pet { left: 130px; }
@@ -426,6 +518,7 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .confetti, .sparkle, #fx { display: none !important; }
+    .hall .cloud, .hall .candle, .hall .candle i, .hall .stars, .hall .hbanner, .bigCta { animation: none !important; }
   }
   .parentLink { text-align: center; margin-top: 26px; }
   .parentLink button { background: none; border: none; color: #8a7a6a; text-decoration: underline; font-size: .9em; font-style: italic; padding: 8px; }
@@ -452,7 +545,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-11a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-11b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2010,8 +2103,51 @@ var SHOP = [
   { id:"dec_kreslo", cat:"dec",    e:"🛋️", n:"Křeslo ze společenské místnosti", p:70 },
   { id:"dec_kotlik", cat:"dec",    e:"🫕", n:"Vlastní kotlík",         p:45 },
   { id:"dec_kufr",   cat:"dec",    e:"🧳", n:"Školní kufr",            p:35 },
+  /* --- 11. 10. 2026: nové zboží ve třech vzácnostech (r: b běžné, v vzácné, l legendární), sbírky (set) --- */
+  { id:"dec_svicky",  cat:"dec",    e:"🕯️", n:"Plovoucí svíčky",        p:70,  r:"b" },
+  { id:"dec_polstar", cat:"dec",    e:"🛏️", n:"Kolejní polštář",        p:60,  r:"b", set:"kolej" },
+  { id:"dec_plakat",  cat:"dec",    e:"🖼️", n:"Plakát famfrpálového týmu", p:80, r:"b", set:"kolej" },
+  { id:"hat_cepice",  cat:"hat",    e:"🧶", n:"Pletená kolejní čepice", p:90,  r:"b", set:"kolej" },
+  { id:"acc_satek",   cat:"petacc", e:"🔔", n:"Zvoneček na obojek",     p:70,  r:"b", inst:"zvonečkem" },
+  { id:"dec_globus",  cat:"dec",    e:"🌐", n:"Hvězdný glóbus",         p:110, r:"b", set:"astro" },
+  { id:"dec_mapa",    cat:"dec",    e:"🗺️", n:"Mapa hvězd",             p:100, r:"b", set:"astro" },
+  { id:"dec_lampa",   cat:"dec",    e:"🪔", n:"Lampa z astronomické věže", p:160, r:"v", set:"astro" },
+  { id:"dec_kniha",   cat:"dec",    e:"📖", n:"Kniha kouzel na stojanu", p:180, r:"v", set:"kouzelnik" },
+  { id:"dec_vitrina", cat:"dec",    e:"🪄", n:"Vitrína s hůlkou",       p:220, r:"v", set:"kouzelnik" },
+  { id:"hat_hvezdny", cat:"hat",    e:"🌟", n:"Hvězdný kouzelnický klobouk", p:200, r:"v" },
+  { id:"pet_jezek",   cat:"pet",    e:"🦔", n:"Ježek Bodlinka",          p:160, r:"v" },
+  { id:"dec_okno",    cat:"dec",    e:"🪟", n:"Kouzelné okno s krajinou", p:450, r:"l" },
+  { id:"dec_koste",   cat:"dec",    e:"🧹", n:"Závodní koště",           p:500, r:"l" },
+  { id:"dec_strop",   cat:"dec",    e:"🌌", n:"Začarovaný strop",        p:600, r:"l" },
+  { id:"pet_fenix",   cat:"pet",    e:"🔥", n:"Fénix Žárek",            p:800, r:"l" },
   { id:"amulet",     cat:"amulet", e:"❄️", n:"Ledový amulet",          p:80 }
 ];
+var RARITY = { b: "běžné", v: "vzácné", l: "legendární" };
+/* Sbírky: kompletní sada rozzáří ložnici. Starší předměty patří do sbírek také. */
+var SETS = {
+  astro:     { n: "Astronomická věž",    e: "🔭", items: ["dec_teleskop", "dec_globus", "dec_mapa", "dec_lampa"], fx: "Strop ložnice se rozzáří hvězdami.", fxDone: "Strop ložnice září hvězdami." },
+  kouzelnik: { n: "Kouzelníkův koutek",  e: "🔮", items: ["dec_knihy", "dec_koule", "dec_kniha", "dec_vitrina"], fx: "Ložnicí budou poletovat kouzelné jiskry.", fxDone: "Ložnicí poletují kouzelné jiskry." },
+  kolej:     { n: "Kolejní hrdost",      e: "🛡️", items: ["hat_sala", "hat_cepice", "dec_polstar", "dec_plakat"], fx: "Nad postelí bude viset prapor tvé koleje.", fxDone: "Nad postelí visí prapor tvé koleje." }
+};
+function setIcon(k, s) { return k === "kolej" && S.house ? houseIcon(S.house, s) : SETS[k].e; }
+function setDone(k) { return SETS[k].items.every(function (id) { return S.owned.indexOf(id) !== -1; }); }
+/* Týdenní nabídka: dva nevlastněné předměty se slevou 20 %, každé pondělí jiné (stejné na všech zařízeních). */
+function weekNo(d) { var x = parseDateUTC(mondayOf(d || todayStr())); return Math.floor(x / (7 * 86400000)); }
+/* Nabídka se vylosuje při prvním pohledu v týdnu a drží celý týden (S.offer), i když jednu věc koupí. */
+function weeklyOffer() {
+  var w = weekNo();
+  if (!S.offer || S.offer.week !== w) {
+    var pool = SHOP.filter(function (i) { return i.cat !== "amulet" && S.owned.indexOf(i.id) === -1; });
+    var ids = [];
+    if (pool.length) { var a = pool[(w * 7) % pool.length], b = pool[(w * 7 + 3) % pool.length]; ids = a === b ? [a.id] : [a.id, b.id]; }
+    S.offer = { week: w, ids: ids };
+  }
+  return S.offer.ids.map(shopById).filter(Boolean);
+}
+function itemPrice(it) {
+  var off = weeklyOffer().some(function (x) { return x.id === it.id; });
+  return off ? Math.max(5, Math.round(it.p * 0.8 / 5) * 5) : it.p;
+}
 
 /* =====================================================================
    ODZNAKY — nikdy odznak za nic. Id se nemění (S.badges).
@@ -2098,6 +2234,9 @@ function defaultState() {
     equipped: { pet: null, hat: null, petAcc: null },
     since: null,
     recentQ: {},
+    roomPos: {},      /* rozestavení ložnice: { klíč: {x, y} } v % */
+    offer: null,      /* týdenní nabídka: {week, ids} */
+    paid: {},         /* skutečně zaplacená cena předmětu (kvůli slevám a sloučení) */
     rewards: [],      /* rodinné odměny: {id, n, e, p, status: open|claimed|done, created, claimed} */
     mental: true,     /* počítání z hlavy (bonus) u učeben Lektvarů s aspoň jednou hvězdou */
     savedAt: null
@@ -2147,6 +2286,8 @@ function migrate(s) {
   if (!s.wordLv || typeof s.wordLv !== "object") s.wordLv = {};
   if (!s.recentQ || typeof s.recentQ !== "object") s.recentQ = {};
   if (!Array.isArray(s.rewards)) s.rewards = [];
+  if (!s.roomPos || typeof s.roomPos !== "object") s.roomPos = {};
+  if (!s.paid || typeof s.paid !== "object") s.paid = {};
   if (typeof s.mental !== "boolean") s.mental = true;
   if (!YEARS[s.year]) s.year = DEFAULT_YEAR;
   s.version = SAVE_VERSION;
@@ -2494,13 +2635,27 @@ function flameIcon(w) {
   if (S.streak.current <= 0) return svgFlame(w, "off");
   return svgFlame(w, isGoldWeek(S.streak, todayStr()) ? "gold" : "lit");
 }
-function topbarHTML(inQuest) {
+/* Stálá navigace dole (mimo hodinu a rodičovský panel). */
+var NAV_TABS = [
+  { k: "sin", n: "Síň", f: "screenHome", ico: function () { return svgCastle(26); } },
+  { k: "rozvrh", n: "Rozvrh", f: "screenMap", ico: function () { return svgMapIcon(26); } },
+  { k: "ulice", n: "Příčná", f: "screenShop", ico: function () { return svgShopIcon(26); } },
+  { k: "loznice", n: "Ložnice", f: "screenTower", ico: function () { return svgBedIcon(26); } },
+  { k: "ja", n: "Já", f: "screenProfile", ico: function () { return S.house ? houseIcon(S.house, 26) : svgBadgeIcon(26); } }
+];
+function navHTML(active) {
+  return '<nav class="tabbar">' + NAV_TABS.map(function (t) {
+    return '<button class="tab' + (t.k === active ? " on" : "") + '" onclick="' + t.f + '()">' + t.ico() + '<span>' + t.n + '</span></button>';
+  }).join("") + '</nav>';
+}
+function topbarHTML(inQuest, parentBtn) {
   var avatar = S.house ? houseIcon(S.house, 30) : svgCastle(28);
   var mid = inQuest ? '<button class="homeBtn" onclick="abortQuest()">' + svgHome(15) + ' Velká síň</button>' : "";
   return '<div class="topbar"><span class="who">' + avatar + ' <span>' + esc(S.name || "Bradavice") +
     '<br><span class="yr">' + yearLabel(S.year) + (S.house ? " · " + esc(HOUSES[S.house].n) : "") + '</span></span></span>' + mid +
     '<span class="chips"><span class="chip dust">' + svgCoin(18) + ' <span class="num">' + S.dust + '</span></span>' +
-    '<span class="chip flame">' + flameIcon(16) + ' ' + S.streak.current + '</span>' + sfxBtnHTML() + '</span></div>';
+    '<span class="chip flame">' + flameIcon(16) + ' ' + S.streak.current + '</span>' + sfxBtnHTML() +
+    (parentBtn ? '<button class="homeBtn sfxBtn" onclick="screenParentLock()" title="Pro rodiče" aria-label="Pro rodiče">' + svgLock(15) + '</button>' : '') + '</span></div>';
 }
 function applyHouseColors() {
   if (typeof document === "undefined") return;
@@ -2763,42 +2918,46 @@ function rewardLineHTML() {
       : '<span>' + esc(r.e || "🎁") + ' <b>' + esc(r.n) + '</b>: ' + Math.min(S.dust, r.p) + ' / ' + r.p + '</span>';
   }).join("") + '</div>';
 }
+/* Velká síň jako scéna: kouzelný strop (hvězdy, mraky), vznášející se svíčky, prapory kolejí.
+   Vše v CSS; s ilustrací „sin“ z cloudu se pod scénu doplní obrázek. Jedna velká výzva, stavy jako štítky. */
+function hallSceneHTML() {
+  var h = HOUSES[S.house], today = todayStr(), gold = isGoldWeek(S.streak, today);
+  var candles = "";
+  for (var i = 0; i < 11; i++) {
+    var x = 5 + i * 8.6 + (i % 2 ? 2 : -2), y = 10 + ((i * 37) % 26), d = (i * 0.37) % 2.6;
+    candles += '<span class="candle" style="left:' + x.toFixed(1) + '%;top:' + y + '%;animation-delay:-' + d.toFixed(2) + 's"><i style="animation-delay:-' + (d * 0.7).toFixed(2) + 's"></i></span>';
+  }
+  var banners = HOUSE_KEYS.map(function (k) {
+    return '<span class="hbanner' + (k === S.house ? " mine" : "") + '" style="background:' + HOUSES[k].c + '">' + houseIcon(k, 22) + '</span>';
+  }).join("");
+  return '<div class="hall" data-img="sin">' +
+    '<div class="ceiling"><span class="stars s1"></span><span class="stars s2"></span><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span></div>' +
+    '<div class="candles">' + candles + '</div>' +
+    '<div class="banners">' + banners + '</div>' +
+    (S.streak.current > 0 ? '<div class="stamp' + (gold ? " mustard" : "") + '">' + S.streak.current + '. den!</div>' : '') +
+    '<div class="hallCenter">' +
+    '<span class="mascot pulse">' + flameIcon(56 + Math.min(S.streak.current, 30)) + '</span>' +
+    '<div class="flameNum">' + (S.streak.current > 0 ? S.streak.current + " " + dayWord(S.streak.current) + " v řadě" : "Zapal svou svíčku ve Velké síni!") + '</div>' +
+    (gold ? '<div class="goldNote">' + svgStar(15) + ' Zlatý plamínek — celý týden bez amuletu!</div>' : '') +
+    weekDotsHTML() + '</div></div>';
+}
 function screenHome() {
   if (updPending && typeof updApplyIfIdle === "function") { updApplyIfIdle(); }
   applyHouseColors();
   if (S.pendingYear) { screenNewYear(S.pendingYear); return; }
   var today = todayStr();
   var doneToday = S.streak.history[today] === "done";
-  var gold = isGoldWeek(S.streak, today);
   var eb = S.streak.earnBack;
-  var freezeIcons = S.streak.freezes > 0 ? snowRow(S.streak.freezes, 15) : "žádný";
   var h = HOUSES[S.house];
-  var html = topbarHTML() +
-    '<div class="card center">' +
-    (S.streak.current > 0 ? '<div class="stamp' + (gold ? " mustard" : "") + '">' + S.streak.current + '. den!</div>' : '') +
-    '<div class="flameBox">' +
-    '<span class="mascot pulse">' + flameIcon(56 + Math.min(S.streak.current, 30)) + '</span>' +
-    '<div class="flameNum">' + (S.streak.current > 0
-      ? S.streak.current + " " + dayWord(S.streak.current) + " v řadě"
-      : "Zapal svou svíčku ve Velké síni!") + '</div>' +
-    (gold ? '<p class="muted">' + svgStar(15) + ' Zlatý plamínek — celý týden bez ledového amuletu!</p>' : "") +
-    (S.streak.goal ? '<p class="muted">Cíl: ' + Math.min(S.streak.current, S.streak.goal) + ' / ' + S.streak.goal + ' dní · ledové amulety: ' +
-      freezeIcons + '</p>'
-      : '<p class="muted">Ledové amulety: ' + freezeIcons + '</p>') +
-    weekDotsHTML() +
-    '<div class="hourglass">' + houseIcon(S.house, 26) + ' <span>Body pro <b>' + esc(h.n) + '</b>: <b>' + S.dustEarned + '</b></span></div>' +
-    rewardLineHTML() +
-    '</div></div>';
+  var html = topbarHTML(false, true) + hallSceneHTML();
 
   if (eb) {
     var prog = Math.min(S.streak.questsToday, 2);
     html += '<div class="card center">' +
-      '<div class="bigIcon">' + svgFlame(52, "lit") + '</div>' +
-      '<p class="qtext">Odpracuj si plamínek zpět!</p>' +
+      '<p class="qtext">' + svgFlame(28, "lit") + ' Odpracuj si plamínek zpět!</p>' +
       '<p>Dokonči <b>dnes 2 vyučování</b> a tvůj plamínek <b>' + eb.streak + ' dní</b> se vrátí. Zvládneš to!</p>' +
       '<p class="muted">Dnes hotovo: ' + prog + ' / 2</p></div>';
   }
-
   var sv = sessionSaved();
   if (sv) {
     html += '<div class="card center resumeCard"><p class="qtext">Máš rozdělanou hodinu</p>' +
@@ -2807,23 +2966,19 @@ function screenHome() {
       '<button class="btn teal" onclick="resumeSession()">Pokračovat v hodině</button>' +
       '<div id="abandonBox"><button class="btn secondary small" onclick="abandonAsk()">Opustit hodinu</button></div></div>';
   }
-  html += '<button class="btn" onclick="startDailyQuest()">' +
-    (doneToday ? "Ještě jedno vyučování? (dnešek už hoří)" : "Dnešní vyučování — 10 otázek") + '</button>' +
-    '<p class="muted center">' + (doneToday ? "Dnešní plamínek je zapálený — zítra zase! Další hodina dnes je jen pro radost." :
-      "Každý den jedno vyučování a plamínek roste. Vynechaný den ho zhasne, ledový amulet ho ochrání.") + '</p>' +
-    '<div class="subjectGrid">' +
-    '<button class="menuBtn t1" onclick="screenMap()">' + svgMapIcon(44) + '<b>Rozvrh hodin</b><span class="sub">učebny a hvězdy mistrovství</span></button>' +
-    '<button class="menuBtn t2" onclick="screenShop()">' + svgShopIcon(44) + '<b>Příčná ulice</b><span class="sub">mazlíčci a výbava za ' + svgCoin(12) + '</span></button>' +
-    '<button class="menuBtn t3" onclick="screenTower()">' + svgBedIcon(44) + '<b>Moje ložnice</b><span class="sub">tvůj koutek ve věži ' + esc(h.n) + 'u</span></button>' +
-    '<button class="menuBtn t4" onclick="screenBadges()">' + svgBadgeIcon(44) + '<b>Odznaky</b><span class="sub">' + S.badges.length + ' / ' + BADGES.length + '</span></button>' +
+  html += '<button class="btn bigCta' + (doneToday ? " done" : "") + '" onclick="startDailyQuest()">' +
+    (doneToday ? "✨ Ještě jedno vyučování" : "🕯️ Dnešní vyučování") + '<span>' + (doneToday ? "dnešní plamínek už hoří — tohle je jen pro radost" : "10 otázek · plamínek poroste") + '</span></button>' +
+    '<div class="hallChips">' +
+    '<span class="hourglass">' + houseIcon(S.house, 22) + ' <span>Body pro <b>' + esc(h.n) + '</b>: <b>' + S.dustEarned + '</b></span></span>' +
+    '<span class="hchip">' + svgSnow(16) + ' amulety: <b>' + S.streak.freezes + '</b></span>' +
+    (S.streak.goal ? '<span class="hchip">🎯 cíl <b>' + Math.min(S.streak.current, S.streak.goal) + ' / ' + S.streak.goal + '</b></span>' : '') +
     '</div>' +
-    '<button class="btn secondary" onclick="screenExamIntro()">' + svgTrophy(20) + ' Zkouška ' + yearLabel(S.year) + 'u' +
-    (S.exams[S.year] && S.exams[S.year].passed ? ' ' + svgCheck(18, "#2a7f7f") : '') + '</button>' +
-    '<button class="btn secondary" onclick="screenProfile()">🪪 Průkaz studenta</button>' +
-    syncHomeLine() +
-    '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button></div>';
+    rewardLineHTML() +
+    '<p class="muted center hallHint">Každý den jedno vyučování a plamínek roste. Vynechaný den ho zhasne, ledový amulet ho ochrání.</p>' +
+    syncHomeLine() + navHTML("sin");
   render(html);
   lastScreen = "home";
+  imgApply(".hall", "sin", function (el, url) { el.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
 }
 
 /* Nový školní rok — když táta posune ročník */
@@ -2889,19 +3044,28 @@ function nodeHTML(t, i) {
     '<span class="ns">' + svgLock(18, "#c8c8c8") + '</span></button>';
 }
 function screenMap() {
+  var ex = S.exams[S.year];
   var html = topbarHTML() + '<div class="card"><h2 class="center">' + svgMapIcon(28) + ' Rozvrh hodin</h2>' +
-    '<p class="muted center">Každá učebna skrývá jedno umění. Zamčené dveře se otevřou, až na ně přijde čas.</p>';
+    '<button class="examCard" onclick="screenExamIntro()">' + svgTrophy(34) + '<span><b>Zkouška ' + yearLabel(S.year) + 'u</b><br><span class="muted">' +
+    (ex && ex.passed ? "složena ✓ — můžeš si ji zkusit znovu" : ex ? "nejlépe " + ex.best + " / 15 — zkus to znovu" : "15 otázek ze všeho, co umíš") + '</span></span></button>';
   ["hp", "en", "m", "cj"].forEach(function (subj) {
+    var open = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && isUnlocked(t, S); });
+    var locked = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && !isUnlocked(t, S); });
     html += '<div class="subjHead">' + subjIcon(subj, 26) + ' ' + esc(SUBJECTS[subj].n) + ' <span class="muted">— ' + esc(SUBJECTS[subj].sub) + '</span></div><div class="path">';
-    var n = 0;
-    TOPIC_ORDER.forEach(function (t) { if (TOPICS[t].subj === subj) html += nodeHTML(t, n++); });
+    open.forEach(function (t, i) { html += nodeHTML(t, i); });
     html += '</div>';
+    if (locked.length) {
+      var later = subj === "hp" ? locked.filter(function (t) { return TOPICS[t].book > S.year; }).length : 0;
+      html += '<div class="lockedSum">' + svgLock(16) + ' ' + (subj === "hp" && later === locked.length
+        ? (later === 1 ? "Další díl se otevře" : "Dalších " + later + " dílů se otevře") + " v dalších ročnících"
+        : locked.length + " " + (locked.length === 1 ? "další učebna se otevře" : locked.length < 5 ? "další učebny se otevřou" : "dalších učeben se otevře") + ", až na ně přijde čas") + '</div>';
+    }
     if (subj === "en") {
       var sc = dictCounts(S);
       html += '<button class="btn secondary" onclick="screenDictionary()">📖 Můj slovníček — umím z hlavy ' + sc[2] + ' z ' + (sc[0] + sc[1] + sc[2]) + '</button>';
     }
   });
-  html += '<button class="btn secondary" onclick="screenHome()">Do Velké síně</button></div>';
+  html += '</div>' + navHTML("rozvrh");
   render(html);
   recentStars = {};
 }
@@ -2933,7 +3097,7 @@ function screenDictionary() {
     '<div class="dictHead">🌟 ' + WORD_LV_NAMES[2] + ' (' + c[2] + ')</div>' + dictListHTML(words, 2) +
     '<div class="dictHead">👀 ' + WORD_LV_NAMES[1] + ' (' + c[1] + ') <span class="muted">— poznáš je mezi možnostmi, z hlavy ještě ne vždycky</span></div>' + dictListHTML(words, 1) +
     '<div class="dictHead">🥚 ' + WORD_LV_NAMES[0] + ' (' + c[0] + ')</div>' + dictListHTML(words, 0) +
-    '<button class="btn secondary" onclick="screenMap()">Zpět k rozvrhu</button></div>';
+    '<button class="btn secondary" onclick="screenMap()">Zpět k rozvrhu</button></div>' + navHTML("rozvrh");
   render(html);
 }
 /* Průkaz studenta — profil „na fotku“. */
@@ -2971,8 +3135,7 @@ function screenProfile() {
     (gotBadges.length ? '<p style="margin-top:8px;font-size:24px;line-height:1.3">' + gotBadges.map(function (b) { return '<span title="' + esc(b.n) + '">' + b.e + '</span>'; }).join(" ") + '</p>' : '') +
     '</div>' +
     '<p class="muted center" style="margin-top:12px">Průkaz je jako fotka — ukaž ho, komu chceš!</p>' +
-    '<button class="btn secondary" onclick="screenTower()">Do ložnice</button>' +
-    '<button class="btn secondary" onclick="screenHome()">Do Velké síně</button></div>');
+    '<button class="btn secondary" onclick="screenBadges()">' + svgBadgeIcon(20) + ' Zeď odznaků — ' + S.badges.length + ' / ' + BADGES.length + '</button></div>' + navHTML("ja"));
 }
 function lockedNode() {
   render(topbarHTML() + '<div class="card center">' +
@@ -3400,8 +3563,10 @@ function mergeStates(a, b) {
   if (o.since && (!m.since || o.since < m.since)) m.since = o.since;
   var earned = Math.max(m.dustEarned || 0, o.dustEarned || 0), spentElsewhere = 0;
   (o.owned || []).forEach(function (id) {
-    if (m.owned.indexOf(id) === -1) { var it = shopById(id); if (it) spentElsewhere += it.p; m.owned.push(id); }
+    if (m.owned.indexOf(id) === -1) { var it = shopById(id); if (it) spentElsewhere += (o.paid && o.paid[id]) || it.p; m.owned.push(id); if (o.paid && o.paid[id]) { if (!m.paid) m.paid = {}; m.paid[id] = o.paid[id]; } }
   });
+  if (!m.roomPos || typeof m.roomPos !== "object") m.roomPos = {};
+  for (var rk in (o.roomPos || {})) if (!m.roomPos[rk]) m.roomPos[rk] = o.roomPos[rk];
   var RW_RANK = { open: 0, claimed: 1, done: 2 };
   if (!Array.isArray(m.rewards)) m.rewards = [];
   (o.rewards || []).forEach(function (r) {
@@ -3977,16 +4142,20 @@ function shopItemHTML(it) {
                  (it.cat === "hat" && S.equipped.hat === it.id) ||
                  (it.cat === "petacc" && S.equipped.petAcc === it.id);
   var visual = it.cat === "amulet" ? svgSnow(30) : it.e;
-  var html = '<div class="shopItem' + (owned ? " ownedItem" : "") + '">' +
-    '<div class="slot" data-img="' + it.id + '">' + visual + '</div><div class="sn">' + esc(it.n) + '</div>';
+  var price = itemPrice(it), sale = price !== it.p;
+  var priceHTML = '<div class="sp">' + (sale ? '<s class="muted">' + it.p + '</s> ' : '') + price + ' ' + svgCoin(15) + '</div>';
+  var html = '<div class="shopItem' + (owned ? " ownedItem" : "") + (it.r && it.r !== "b" ? " rar-" + it.r : "") + '">' +
+    (it.r && it.r !== "b" ? '<span class="rarTag">' + RARITY[it.r] + '</span>' : '') + (sale && !owned ? '<span class="saleTag">−20 %</span>' : '') +
+    '<div class="slot" data-img="' + it.id + '">' + visual + '</div><div class="sn">' + esc(it.n) + '</div>' +
+    (it.set ? '<div class="setNote">' + SETS[it.set].e + ' sbírka ' + esc(SETS[it.set].n) + '</div>' : '');
   if (it.cat === "amulet") {
-    html += '<div class="sp">' + it.p + ' ' + svgCoin(15) + '</div><div class="muted">Ochrání plamínek (max 2)</div>' +
+    html += priceHTML + '<div class="muted">Ochrání plamínek (max 2)</div>' +
       (S.streak.freezes >= 2
         ? '<button class="btn secondary small" disabled>Máš plný počet ' + svgSnow(14) + svgSnow(14) + '</button>'
-        : '<button class="btn small' + (S.dust >= it.p ? " gold" : " secondary") + '" onclick="buyItem(\'' + it.id + '\')">Koupit</button>');
+        : '<button class="btn small' + (S.dust >= price ? " gold" : " secondary") + '" onclick="buyItem(\'' + it.id + '\')">Koupit</button>');
   } else if (!owned) {
-    html += '<div class="sp">' + it.p + ' ' + svgCoin(15) + '</div>' +
-      '<button class="btn small' + (S.dust >= it.p ? " gold" : " secondary") + '" onclick="buyItem(\'' + it.id + '\')">Koupit</button>';
+    html += priceHTML +
+      '<button class="btn small' + (S.dust >= price ? " gold" : " secondary") + '" onclick="buyItem(\'' + it.id + '\')">Koupit</button>';
   } else if (it.cat === "dec") {
     html += '<div class="muted">' + svgCheck(14, "#2a7f7f") + ' Zdobí tvou ložnici</div>';
   } else {
@@ -3996,19 +4165,44 @@ function shopItemHTML(it) {
   }
   return html + '</div>';
 }
-function screenShop() {
-  var cats = [["pet", "Kouzelný zvěřinec — mazlíčci"], ["petacc", "Pro mazlíčka"], ["hat", "Módní salon — pro tebe"], ["dec", "Do ložnice"], ["amulet", "Lékárna — amulety"]];
-  var html = topbarHTML() + '<div class="card"><h2 class="center">' + svgShopIcon(28) + ' Příčná ulice</h2>' +
-    '<p class="muted center">Galeony v měšci: <b>' + S.dust + '</b> ' + svgCoin(15) + '</p>';
+var shopTab = null;
+var SHOP_TABS = [
+  { k: "nabidka", n: "🌟 Týdenní nabídka", cats: [] },
+  { k: "posta", n: "🦉 Soví pošta", cats: [] },
+  { k: "sbirky", n: "⭐ Sbírky", cats: [] },
+  { k: "zverinec", n: "🐾 Zvěřinec", cats: [["pet", "Kouzelný zvěřinec — mazlíčci"], ["petacc", "Pro mazlíčka"]] },
+  { k: "salon", n: "🎩 Salon", cats: [["hat", "Módní salon — pro tebe"]] },
+  { k: "byt", n: "🛋️ Do ložnice", cats: [["dec", "Do ložnice"]] },
+  { k: "lekarna", n: "❄️ Lékárna", cats: [["amulet", "Lékárna — amulety"]] }
+];
+function screenShop(tab) {
   var rw = (S.rewards || []).filter(function (r) { return r.status !== "done"; });
-  if (rw.length) html += '<h3>🦉 Soví pošta — balíčky z domova</h3><p class="muted">Na tom jste se domluvili s tátou. Až budeš mít dost galeonů, pošli sovu domů a táta balíček splní.</p><div class="shopGrid">' + rw.map(rewardItemHTML).join("") + '</div>';
-  cats.forEach(function (c) {
-    html += '<h3>' + c[1] + '</h3><div class="shopGrid">' +
-      SHOP.filter(function (i) { return i.cat === c[0]; }).map(shopItemHTML).join("") + '</div>';
+  var offer = weeklyOffer();
+  var offerOpen = offer.some(function (i) { return S.owned.indexOf(i.id) === -1; });
+  shopTab = tab || shopTab || (rw.length ? "posta" : offerOpen ? "nabidka" : "zverinec");
+  if (shopTab === "posta" && !rw.length) shopTab = "zverinec";
+  if (shopTab === "nabidka" && !offer.length) shopTab = "zverinec";
+  var tabs = SHOP_TABS.filter(function (x) { return (x.k !== "posta" || rw.length) && (x.k !== "nabidka" || offer.length); });
+  var html = topbarHTML() + '<div class="card"><h2 class="center">' + svgShopIcon(28) + ' Příčná ulice</h2>' +
+    '<p class="muted center">Galeony v měšci: <b>' + S.dust + '</b> ' + svgCoin(15) + '</p>' +
+    '<div class="shopTabs">' + tabs.map(function (x) { return '<button class="stab' + (x.k === shopTab ? " on" : "") + '" onclick="screenShop(\'' + x.k + '\')">' + x.n + '</button>'; }).join("") + '</div>';
+  if (shopTab === "posta") html += '<p class="muted">Na tom jste se domluvili s tátou. Až budeš mít dost galeonů, pošli sovu domů a táta balíček splní.</p><div class="shopGrid">' + rw.map(rewardItemHTML).join("") + '</div>';
+  if (shopTab === "nabidka") html += '<p class="muted">Tyhle věci jsou tento týden ve slevě. V pondělí přivezou něco jiného!</p><div class="shopGrid">' + offer.map(shopItemHTML).join("") + '</div>';
+  if (shopTab === "sbirky") html += '<p class="muted">Posbírej celou sadu a tvoje ložnice se promění.</p>' + Object.keys(SETS).map(function (k) {
+    var st = SETS[k], have = st.items.filter(function (id) { return S.owned.indexOf(id) !== -1; }).length, done = have === st.items.length;
+    return '<div class="setCard' + (done ? " done" : "") + '"><div class="setHead"><span class="setE">' + setIcon(k, 28) + '</span><b>' + esc(st.n) + '</b><span class="setCount">' + have + ' / ' + st.items.length + '</span></div>' +
+      '<div class="setItems">' + st.items.map(function (id) { var it = shopById(id); var own = S.owned.indexOf(id) !== -1; return '<span class="setItem' + (own ? " own" : "") + '" data-img="' + id + '" title="' + esc(it.n) + '">' + it.e + '</span>'; }).join("") + '</div>' +
+      '<div class="muted">' + (done ? "✨ Hotovo! " + esc(st.fxDone) : "Odměna: " + esc(st.fx)) + '</div></div>';
+  }).join("");
+  SHOP_TABS.filter(function (x) { return x.k === shopTab; }).forEach(function (x) {
+    x.cats.forEach(function (c) {
+      html += (x.cats.length > 1 ? '<h3>' + c[1] + '</h3>' : '') + '<div class="shopGrid">' +
+        SHOP.filter(function (i) { return i.cat === c[0]; }).map(shopItemHTML).join("") + '</div>';
+    });
   });
-  html += '<button class="btn secondary" onclick="screenHome()">Do Velké síně</button></div>';
+  html += '</div>' + navHTML("ulice");
   render(html);
-  imgApplyAll(".shopItem .slot");
+  imgApplyAll(".shopItem .slot, .setItem");
 }
 function rewardById(id) { for (var i = 0; i < (S.rewards || []).length; i++) if (S.rewards[i].id === id) return S.rewards[i]; return null; }
 function rewardItemHTML(r) {
@@ -4037,21 +4231,25 @@ function claimReward(id) {
 function buyItem(id) {
   var it = shopById(id);
   if (!it) return;
-  if (S.dust < it.p) {
+  var price = itemPrice(it);
+  if (S.dust < price) {
     render(topbarHTML() + '<div class="card center"><div class="bigIcon">' + svgCoin(56) + '</div>' +
-      '<h2>Ještě ti chybí ' + (it.p - S.dust) + ' ' + galeonWord(it.p - S.dust) + '</h2>' +
+      '<h2>Ještě ti chybí ' + (price - S.dust) + ' ' + galeonWord(price - S.dust) + '</h2>' +
       '<p class="qtext">Každé vyučování tě k tomu přiblíží!</p>' +
       '<button class="btn" onclick="screenShop()">Zpět na Příčnou ulici</button></div>');
     return;
   }
+  var setsBefore = Object.keys(SETS).filter(setDone);
   if (it.cat === "amulet") {
     if (S.streak.freezes >= 2) return;
-    S.dust -= it.p;
+    S.dust -= price;
     S.streak.freezes++;
   } else {
     if (S.owned.indexOf(id) !== -1) return;
-    S.dust -= it.p;
+    S.dust -= price;
     S.owned.push(id);
+    if (!S.paid || typeof S.paid !== "object") S.paid = {};
+    S.paid[id] = price;
     if (it.cat === "pet" && !S.equipped.pet) S.equipped.pet = id;
     if (it.cat === "hat" && !S.equipped.hat) S.equipped.hat = id;
     if (it.cat === "petacc" && !S.equipped.petAcc) S.equipped.petAcc = id;
@@ -4060,6 +4258,17 @@ function buyItem(id) {
   saveState();
   confettiRain(null, 20);
   sfx(it.cat === "amulet" ? "amulet" : "buy");
+  var newSet = Object.keys(SETS).filter(function (k) { return setDone(k) && setsBefore.indexOf(k) === -1; })[0];
+  if (newSet) {
+    var st = SETS[newSet];
+    confettiRain(null, 50); sfx("bell");
+    speakLine("Hurá, " + vok(S.name) + ", máš celou sbírku! " + st.n + " je kompletní.", 900);
+    render(topbarHTML() + '<div class="card center celebrate"><div class="mascotBig" style="font-size:80px">' + setIcon(newSet, 80) + '</div>' +
+      '<h1>Sbírka je kompletní!</h1>' + heroCardHTML(esc(st.n), 'Všechny ' + st.items.length + ' věci!') +
+      '<p class="qtext">' + esc(st.fxDone) + '</p>' +
+      '<button class="btn gold" onclick="screenTower()">Podívat se do ložnice</button><button class="btn secondary" onclick="screenShop()">Zpět na Příčnou ulici</button></div>');
+    return;
+  }
   screenShop();
 }
 function equipItem(cat, id) {
@@ -4089,6 +4298,7 @@ var IMAGES = {
   "loznice-h": { f: "loznice-h.webp", v: 1 },
   "loznice-r": { f: "loznice-r.webp", v: 1 },
   "loznice-s": { f: "loznice-s.webp", v: 1 },
+  "sin": { f: "velka-sin.webp", v: 1 },   /* ilustrace Velké síně (Runway) — zatím volitelná */
   /* nálepky: mazlíčci podle id v SHOP a postavička; bez souboru zůstane emoji */
   "pet_sova": { f: "pet-sova.webp", v: 1 }, "pet_dracek": { f: "pet-dracek.webp", v: 1 }, "pet_kocka": { f: "pet-kocka.webp", v: 1 },
   "pet_liska": { f: "pet-liska.webp", v: 1 }, "pet_ropucha": { f: "pet-ropucha.webp", v: 1 },
@@ -4098,7 +4308,13 @@ var IMAGES = {
   "hat_klobouk": { f: "hat-klobouk.webp", v: 1 }, "hat_venec": { f: "hat-venec.webp", v: 1 }, "hat_celenka": { f: "hat-celenka.webp", v: 1 }, "hat_sala": { f: "hat-sala.webp", v: 1 },
   "dec_koule": { f: "dec-koule.webp", v: 1 }, "dec_knihy": { f: "dec-knihy.webp", v: 1 }, "dec_teleskop": { f: "dec-teleskop.webp", v: 1 }, "dec_kytka": { f: "dec-kytka.webp", v: 1 },
   "dec_lucerna": { f: "dec-lucerna.webp", v: 1 }, "dec_kreslo": { f: "dec-kreslo.webp", v: 1 }, "dec_kotlik": { f: "dec-kotlik.webp", v: 1 }, "dec_kufr": { f: "dec-kufr.webp", v: 1 },
-  "amulet": { f: "amulet.webp", v: 1 }
+  "amulet": { f: "amulet.webp", v: 1 },
+  "dec_svicky": { f: "dec-svicky.webp", v: 1 }, "dec_polstar": { f: "dec-polstar.webp", v: 1 }, "dec_plakat": { f: "dec-plakat.webp", v: 1 },
+  "hat_cepice": { f: "hat-cepice.webp", v: 1 }, "acc_satek": { f: "acc-satek.webp", v: 1 }, "dec_globus": { f: "dec-globus.webp", v: 1 },
+  "dec_mapa": { f: "dec-mapa.webp", v: 1 }, "dec_lampa": { f: "dec-lampa.webp", v: 1 }, "dec_kniha": { f: "dec-kniha.webp", v: 1 },
+  "dec_vitrina": { f: "dec-vitrina.webp", v: 1 }, "hat_hvezdny": { f: "hat-hvezdny.webp", v: 1 }, "pet_jezek": { f: "pet-jezek.webp", v: 1 },
+  "dec_okno": { f: "dec-okno.webp", v: 1 }, "dec_koste": { f: "dec-koste.webp", v: 1 }, "dec_strop": { f: "dec-strop.webp", v: 1 },
+  "pet_fenix": { f: "pet-fenix.webp", v: 1 }
 };
 /* nálepka pro prvek: po vykreslení nahradí emoji obrázkem, pokud je k dispozici */
 function stickerInto(el, url) { el.innerHTML = '<img src="' + url + '" alt="">'; el.classList.add("sticker"); }
@@ -4186,42 +4402,83 @@ function imgClear() {
   imgMem = {};
   return imgDb().then(function (db) { if (!db) return; try { db.transaction("obrazky", "readwrite").objectStore("obrazky").clear(); } catch (e) {} });
 }
+/* Ložnice: předměty si dítě rozestaví prstem („Přestavit pokoj“), pozice v S.roomPos (% šířky / výšky).
+   Sbírky a legendární předměty přidávají efekty (hvězdný strop, jiskry, prapor koleje, svíčky, okno). */
+var ROOM_DEFAULTS = [[62, 5], [80, 5], [50, 34], [12, 44], [30, 60], [68, 44], [86, 34], [44, 5], [22, 26], [92, 58], [56, 62], [74, 24], [36, 40], [8, 22], [64, 76], [40, 76]];
+var roomEditing = false;
+function roomPosOf(key, i, def) {
+  var p = S.roomPos && S.roomPos[key];
+  return p ? p : def || { x: ROOM_DEFAULTS[i % ROOM_DEFAULTS.length][0], y: ROOM_DEFAULTS[i % ROOM_DEFAULTS.length][1] };
+}
+function moverStyle(p, i) { return 'left:' + p.x + '%;bottom:' + p.y + '%;animation-delay:' + (0.15 + (i || 0) * 0.1).toFixed(2) + 's'; }
 function screenTower() {
-  var decoPos = [
-    { left: "62%", bottom: "20px" }, { left: "80%", bottom: "20px" },
-    { left: "50%", bottom: "120px" }, { left: "12%", bottom: "150px" },
-    { left: "30%", bottom: "210px" }, { left: "68%", bottom: "150px" },
-    { left: "86%", bottom: "120px" }, { left: "44%", bottom: "20px" }
-  ];
   var decos = S.owned.map(shopById).filter(function (i) { return i && i.cat === "dec"; });
   var pet = S.equipped.pet ? shopById(S.equipped.pet) : null;
   var hat = S.equipped.hat ? shopById(S.equipped.hat) : null;
   var acc = S.equipped.petAcc ? shopById(S.equipped.petAcc) : null;
   var bgKey = "loznice-" + S.house, hasImg = !!IMAGES[bgKey];
-  var scene = '<div class="tower"' + (hasImg ? ' data-img="' + bgKey + '"' : '') + '>' +
+  var own = function (id) { return S.owned.indexOf(id) !== -1; };
+  var fx = "";
+  if (own("dec_strop") || setDone("astro")) fx += '<div class="roomSky"><span class="stars s1"></span><span class="stars s2"></span></div>';
+  if (setDone("kouzelnik")) fx += '<div class="roomSparks">' + [8, 22, 37, 51, 66, 80, 93].map(function (x, i) { return '<i style="left:' + x + '%;animation-delay:-' + (i * 0.9).toFixed(1) + 's"></i>'; }).join("") + '</div>';
+  if (setDone("kolej")) fx += '<div class="roomBanner" style="background:' + HOUSES[S.house].c + '">' + houseIcon(S.house, 30) + '</div>';
+  if (own("dec_svicky")) fx += '<div class="roomCandles">' + [18, 34, 50, 66].map(function (x, i) { return '<span class="candle" style="left:' + x + '%;top:' + (10 + (i % 2) * 8) + '%;animation-delay:-' + (i * 1.1) + 's"><i></i></span>'; }).join("") + '</div>';
+  var scene = '<div class="tower' + (roomEditing ? " editing" : "") + '"' + (hasImg ? ' data-img="' + bgKey + '"' : '') + '>' + fx +
     '<div class="win">' + svgMoon(28) + '</div>' +
     '<span class="twinkle" style="top:12%;left:14%">🕯️</span>' +
     '<span class="twinkle" style="top:26%;left:44%">✧</span>' +
     '<span class="twinkle" style="top:9%;left:66%">✦</span>' +
-    '<div class="avatar" data-img="postava">🧙‍♀️</div>' +
-    (hat ? '<div class="avatarHat" data-img="' + hat.id + '">' + hat.e + '</div>' : '') +
-    (pet ? '<div class="pet" data-img="' + pet.id + '">' + pet.e + '</div>' : '') +
-    (pet && acc ? '<div class="petAcc" data-img="' + acc.id + '">' + acc.e + '</div>' : '');
+    '<div class="mover" data-move="avatar" style="' + moverStyle(roomPosOf("avatar", 0, { x: 12, y: 5 })) + '"><div class="avatar" data-img="postava">🧙‍♀️</div>' +
+      (hat ? '<div class="avatarHat" data-img="' + hat.id + '">' + hat.e + '</div>' : '') + '</div>' +
+    (pet ? '<div class="mover" data-move="pet" style="' + moverStyle(roomPosOf("pet", 0, { x: 30, y: 5 })) + '"><div class="pet" data-img="' + pet.id + '">' + pet.e + '</div>' +
+      (acc ? '<div class="petAcc" data-img="' + acc.id + '">' + acc.e + '</div>' : '') + '</div>' : '');
   decos.forEach(function (d, i) {
-    var p = decoPos[i % decoPos.length];
-    scene += '<div class="deco" data-img="' + d.id + '" style="left:' + p.left + ';bottom:' + p.bottom + ';animation-delay:' + (0.15 + i * 0.12).toFixed(2) + 's">' + d.e + '</div>';
+    scene += '<div class="mover deco' + (d.r === "l" ? " legend" : "") + (d.id === "dec_okno" ? " magicWin" : "") + '" data-move="' + d.id + '" data-img="' + d.id + '" style="' + moverStyle(roomPosOf(d.id, i), i) + '">' + d.e + '</div>';
   });
   scene += '</div>';
   var h = HOUSES[S.house];
   render(topbarHTML() + '<div class="card">' +
     '<h2 class="center">' + svgBedIcon(28) + ' Ložnice ' + esc(h.n) + 'u</h2>' + scene +
-    '<p class="muted center" style="margin-top:10px">' +
-    (pet ? "S tebou bydlí " + esc(pet.n) + (acc ? " s " + esc(acc.inst || acc.n.toLowerCase()) : "") + "." :
-      "V ložnici je zatím ticho — na Příčné ulici čekají mazlíčci!") + '</p>' +
-    '<button class="btn secondary" onclick="screenShop()">Na Příčnou ulici</button>' +
-    '<button class="btn secondary" onclick="screenHome()">Do Velké síně</button></div>');
+    '<p class="muted center" style="margin-top:10px" id="roomNote">' + (roomEditing ? "✋ Přetáhni věci prstem, kam chceš. Až budeš hotová, klepni na Hotovo." :
+    (pet ? "S tebou bydlí " + esc(pet.n) + (acc ? (/^[sšzž]/i.test(acc.inst || acc.n) ? " se " : " s ") + esc(acc.inst || acc.n.toLowerCase()) : "") + "." :
+      "V ložnici je zatím ticho — na Příčné ulici čekají mazlíčci!")) + '</p>' +
+    '<div class="row2">' + (roomEditing
+      ? '<button class="btn gold" onclick="roomEdit(false)">✓ Hotovo</button><button class="btn secondary" id="roomResetBtn" onclick="roomReset()">↺ Vrátit věci na místo</button>'
+      : '<button class="btn secondary" onclick="roomEdit(true)">✋ Přestavit pokoj</button>') + '</div>' +
+    '</div>' + navHTML("loznice"));
   if (hasImg) imgApply(".tower", bgKey, function (el, url) { el.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
   imgApplyAll(".tower .avatar, .tower .pet, .tower .avatarHat, .tower .petAcc, .tower .deco");
+  if (roomEditing) roomWireDrag();
+}
+function roomEdit(on) { roomEditing = !!on; screenTower(); }
+/* první klepnutí se zeptá, druhé vrátí věci na výchozí místa */
+function roomReset() {
+  var b = document.getElementById("roomResetBtn");
+  if (b && !b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Opravdu? Klepni ještě jednou"; return; }
+  S.roomPos = {}; saveState(); screenTower();
+}
+function roomWireDrag() {
+  var box = document.querySelector(".tower"); if (!box) return;
+  Array.prototype.forEach.call(box.querySelectorAll(".mover"), function (m) {
+    m.addEventListener("pointerdown", function (ev) {
+      ev.preventDefault();
+      var r = box.getBoundingClientRect(), key = m.getAttribute("data-move");
+      m.setPointerCapture(ev.pointerId); m.classList.add("dragging");
+      var move = function (e2) {
+        var x = Math.max(4, Math.min(96, (e2.clientX - r.left) / r.width * 100));
+        var y = Math.max(0, Math.min(82, (r.bottom - e2.clientY) / r.height * 100 - 6));
+        m.style.left = x.toFixed(1) + "%"; m.style.bottom = y.toFixed(1) + "%";
+      };
+      var up = function () {
+        m.removeEventListener("pointermove", move); m.removeEventListener("pointerup", up); m.removeEventListener("pointercancel", up);
+        m.classList.remove("dragging");
+        if (!S.roomPos || typeof S.roomPos !== "object") S.roomPos = {};
+        S.roomPos[key] = { x: Math.round(parseFloat(m.style.left) * 10) / 10, y: Math.round(parseFloat(m.style.bottom) * 10) / 10 };
+        saveState(); sfx("tile");
+      };
+      m.addEventListener("pointermove", move); m.addEventListener("pointerup", up); m.addEventListener("pointercancel", up);
+    });
+  });
 }
 
 /* =====================================================================
@@ -4234,7 +4491,7 @@ function screenBadges() {
     html += '<div class="badge' + (got ? " got" : " locked") + '"><div class="be">' + b.e + '</div>' +
       '<div class="bn">' + esc(b.n) + '</div><div class="bd">' + esc(b.d) + '</div></div>';
   });
-  html += '</div><button class="btn secondary" onclick="screenHome()">Do Velké síně</button></div>';
+  html += '</div><button class="btn secondary" onclick="screenProfile()">Zpět na průkaz</button></div>' + navHTML("ja");
   render(html);
 }
 
@@ -4687,6 +4944,9 @@ W.buyItem = buyItem;
 W.equipItem = equipItem;
 W.routeHome = routeHome;
 W.screenProfile = screenProfile;
+W.roomEdit = roomEdit;
+W.roomReset = roomReset;
+W.screenBadges = screenBadges;
 W.sfxToggle = sfxToggle;
 W.resumeSession = resumeSession;
 W.abandonAsk = abandonAsk;
@@ -4709,7 +4969,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, SYNC_URL: SYNC_URL, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
