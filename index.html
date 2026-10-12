@@ -361,6 +361,25 @@
   .backMap { margin: 0 0 6px; }
   .subjTitle { margin-bottom: 0; }
   @media (prefers-reduced-motion: reduce) { .bld, .bld.news .bldArt, .cmCloud { animation: none !important; } }
+  /* průvodce se sovou */
+  #tut { position: fixed; inset: 0; z-index: 80; opacity: 0; transition: opacity .25s; }
+  #tut.on { opacity: 1; }
+  #tut .tutSpot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 200vmax rgba(24,18,12,.66), 0 0 0 3px #f3c74f, 0 0 22px 6px rgba(243,199,79,.55); transition: all .35s cubic-bezier(.3,1.2,.4,1); pointer-events: auto; }
+  #tut .tutCard { position: fixed; left: 50%; translate: -50% 0; width: min(calc(100vw - 24px), 440px); z-index: 1; background: #fffdf7; border: 2px solid var(--ink); border-radius: 14px; box-shadow: 5px 5px 0 rgba(0,0,0,.3);
+    padding: 14px 14px 10px 96px; min-height: 120px; transition: top .35s cubic-bezier(.3,1.2,.4,1); }
+  #tut .tutOwl { position: absolute; left: 6px; top: -22px; width: 88px; height: 88px; }
+  #tut .tutOwl img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 3px rgba(40,30,20,.3)); animation: poWave .6s ease-in-out; }
+  #tut .tutText { margin: 0 0 10px; font-size: 18px; line-height: 1.4; font-weight: 700; color: var(--ink); }
+  #tut .tutRow { display: flex; align-items: center; gap: 10px; }
+  #tut .tutRow .btn { margin: 0 0 0 auto; width: auto; padding: 8px 16px; font-size: 17px; }
+  #tut .tutSkip { background: none; border: none; font: inherit; font-size: 14px; color: var(--muted2); text-decoration: underline; cursor: pointer; padding: 4px; }
+  #tut .tutDots { font-size: 13px; color: var(--muted2); }
+  /* video u velkých momentů */
+  .vidMoment { position: fixed; inset: 0; z-index: 90; background: #0f0c09; display: flex; align-items: center; justify-content: center; animation: screenIn .35s ease-out; transition: opacity .45s; }
+  .vidMoment.out { opacity: 0; }
+  .vidMoment video { width: 100%; height: 100%; object-fit: contain; }
+  .vidSkip { position: absolute; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); padding: 8px 14px; border-radius: 20px; border: 2px solid #f3e3c0; background: rgba(0,0,0,.4); color: #f3e3c0; font: inherit; font-size: 15px; cursor: pointer; }
+  .welcomeVid { width: min(100%, 420px); aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--shadow); }
   /* sova maskot (owlPerchHTML) */
   .perchOwl { position: absolute; width: 62px; height: 62px; padding: 0; border: none; background: none; cursor: pointer; z-index: 4; -webkit-tap-highlight-color: transparent; }
   .perchOwl .poBody { display: block; width: 100%; height: 100%; transform-origin: 50% 100%; }
@@ -746,7 +765,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12g";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2446,6 +2465,7 @@ function defaultState() {
     rewards: [],      /* rodinné odměny: {id, n, e, p, status: open|claimed|done, created, claimed} */
     mental: true,     /* počítání z hlavy (bonus) u učeben Lektvarů s aspoň jednou hvězdou */
     avatar: null,     /* vlastní avatar: null = erb koleje, "postava" = kouzelnice, jinak id vlastněné věci */
+    tutorialDone: false,  /* průvodce se sovou už proběhl */
     savedAt: null
   };
 }
@@ -2497,6 +2517,7 @@ function migrate(s) {
   if (!Array.isArray(s.roomOff)) s.roomOff = [];
   if (!s.paid || typeof s.paid !== "object") s.paid = {};
   if (s.avatar === undefined) s.avatar = null;
+  if (s.tutorialDone === undefined) s.tutorialDone = !!((s.questsDone || 0) > 0 || (s.dustEarned || 0) > 0);   /* kdo už hraje, průvodce nepotřebuje */
   if (typeof s.mental !== "boolean") s.mental = true;
   if (!YEARS[s.year]) s.year = DEFAULT_YEAR;
   s.version = SAVE_VERSION;
@@ -2841,7 +2862,7 @@ function render(html) {
   if (typeof mentalStop === "function") mentalStop();
   var old = document.querySelectorAll(".confetti");
   for (var i = 0; i < old.length; i++) old[i].remove();
-  var oldSheets = document.querySelectorAll("body > .sheet, body > .roomFull");
+  var oldSheets = document.querySelectorAll("body > .sheet, body > .roomFull, body > #tut");
   for (var si = 0; si < oldSheets.length; si++) oldSheets[si].remove();
   var turn = pageTurnDir; pageTurnDir = 0;
   var snap = turn ? pageSnapshot() : null;
@@ -3127,7 +3148,7 @@ function giveDust(n) { S.dust += n; S.dustEarned += n; }
 function screenWelcome() {
   render(
     '<div class="card center">' +
-    '<div class="bigIcon">' + svgLetter(130) + '</div>' +
+    '<div class="bigIcon" id="welcomeArt">' + svgLetter(130) + '</div>' +
     '<h1>Bradavická škola</h1>' +
     '<p class="introFlavor">Na okenní římse přistála sova.<br>' +
     'V zobáku nese dopis s voskovou pečetí:</p>' +
@@ -3145,6 +3166,11 @@ function screenWelcome() {
     '</div>' +
     (isIOSWeb() && !isStandalone() ? '<p class="muted center">Tip pro rodiče: v Safari klepněte na Sdílet → <b>Přidat na plochu</b>. Hra pak poběží přes celou obrazovku a bude se sama aktualizovat. Postup v aplikaci na ploše je oddělený od Safari, proto začněte až tam.</p>' : '') +
     '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button></div>');
+  vidPrefetch(["klobouk"]);
+  if (!reducedMotion()) vidGet("dopis").then(function (url) {
+    var a = el("welcomeArt"); if (!url || !a) return;
+    a.innerHTML = '<video class="welcomeVid" src="' + url + '" autoplay muted playsinline></video>';
+  });
   el("nameBtn").onclick = function () {
     var n = el("nameInput").value.trim();
     if (!n) { el("nameInput").placeholder = "Napiš prosím své jméno…"; return; }
@@ -3180,7 +3206,11 @@ function screenSorting(i, tally) {
       '<p class="hatThinks">„Hmmm… zajímavé… kam tě jen dám…“</p>' +
       '</div>');
     sfx("drum"); setTimeout(function () { sfx("drum"); }, 800); setTimeout(function () { sfx("drum"); }, 1600);
-    setTimeout(function () { screenSortingReveal(best); }, 2600);
+    var tHat = Date.now();
+    vidReady("klobouk", 2200).then(function (url) {
+      if (url) videoMoment("klobouk", function () { screenSortingReveal(best); }, 100);
+      else setTimeout(function () { screenSortingReveal(best); }, Math.max(0, 2600 - (Date.now() - tHat)));
+    });
     return;
   }
   var q = SORTING[i];
@@ -3312,6 +3342,8 @@ function screenHome() {
   lastScreen = "home";
   imgApplyAll(".perchOwl .poEmoji"); owlPerchIdle();
   ambStart();
+  if (typeof setTimeout === "function") setTimeout(function () { if (ttsOnline()) vidPrefetch(["plaminek", "zkouska", "expres"]); }, 8000);
+  if (!S.tutorialDone && !session) setTimeout(function () { if (lastScreen === "home" && !session && !document.getElementById("tut")) tutStart(); }, 900);
   imgApply(".hall", "sin", function (el, url) { var bg = el.querySelector(".hallBg"); if (!bg) return; bg.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
 }
 
@@ -3405,6 +3437,72 @@ function owlVisit(target, gold) {
   a.onfinish = function () { clearInterval(tm); if (f.parentNode) f.parentNode.removeChild(f); land(); };
 }
 
+/* =====================================================================
+   PRŮVODCE SE SOVOU — pro nové hráče a ukázku bez přihlášení.
+   Spustí se sám jednou ve Velké síni (S.tutorialDone), v ukázce vždy; znovu tlačítkem na „Já“.
+   Ztmaví obrazovku, prosvítí jednu věc po druhé a sova k ní řekne jednu dvě věty. Jen DOM.
+   ===================================================================== */
+var TUT_STEPS = [
+  { sel: ".perchOwl.onHall", t: "Ahoj! Jsem tvoje sova pošťačka. Ukážu ti, jak to v Bradavicích chodí." },
+  { sel: ".hall", t: "Tohle je Velká síň. Svíčka uprostřed je tvůj plamínek. Roste, když každý den dokončíš vyučování." },
+  { sel: ".bigCta", t: "Tady začíná dnešní vyučování: deset otázek. A víš, kdo ti je bude nosit? Já!" },
+  { sel: ".hallChips .hourglass", t: "Za správné odpovědi dostáváš galeony. Každý galeon je zároveň bod pro tvou kolej. Když galeony utratíš, body ti zůstanou." },
+  { sel: ".hallChips .hchip", t: "Ledový amulet ochrání plamínek, když jeden den vynecháš." },
+  { sel: ".tabbar .tab:nth-child(2)", t: "V Rozvrhu je mapa hradu. Klepni na stavbu a vyber si učebnu, za správné odpovědi tam sbíráš hvězdy. V hradu na tebe čeká zkouška ročníku." },
+  { sel: ".tabbar .tab:nth-child(3)", t: "Na Příčné ulici si za galeony koupíš mazlíčky, čepice a věci do ložnice." },
+  { sel: ".tabbar .tab:nth-child(4)", t: "V ložnici si všechno rozestavíš, jak se ti líbí." },
+  { sel: ".tabbar .tab:nth-child(5)", t: "Tady je tvůj průkaz studenta a odznaky. Můžeš si tu vybrat i avatara." },
+  { sel: ".bigCta", t: "To je všechno. Klepni na vyučování a já ti přinesu první otázku. Hodně štěstí!", last: true }
+];
+var tutIdx = -1;
+function tutStart() {
+  if (typeof document === "undefined") return;
+  if (lastScreen !== "home") { screenHome(); }
+  tutIdx = -1; tutEnd(true);
+  var o = document.createElement("div"); o.id = "tut";
+  o.innerHTML = '<div class="tutSpot"></div><div class="tutCard"><div class="tutOwl"><img alt=""></div><p class="tutText"></p>' +
+    '<div class="tutRow"><button class="tutSkip">Přeskočit</button><span class="tutDots"></span><button class="btn gold tutNext">Dál ›</button></div></div>';
+  document.body.appendChild(o);
+  o.querySelector(".tutSkip").onclick = function () { tutEnd(); };
+  o.querySelector(".tutNext").onclick = function () { tutGo(tutIdx + 1); };
+  o.addEventListener("click", function (e) { if (e.target === o || e.target.classList.contains("tutSpot")) tutGo(tutIdx + 1); });
+  tutGo(0);
+}
+function tutGo(i) {
+  var o = document.getElementById("tut"); if (!o) return;
+  if (i >= TUT_STEPS.length) { tutEnd(); return; }
+  var st = TUT_STEPS[i], target = document.querySelector(st.sel);
+  if (!target) { tutGo(i + 1); return; }
+  tutIdx = i;
+  var img = o.querySelector(".tutOwl img"), pose = i === 0 || st.last ? "sova-mava" : i % 3 === 2 ? "sova-mrka" : "pet_sova";
+  img.src = owlImgs[pose] || owlImgs["pet_sova"] || ""; img.style.visibility = img.src ? "visible" : "hidden";
+  o.querySelector(".tutText").textContent = st.t;
+  o.querySelector(".tutNext").textContent = st.last ? "Jdu na to!" : "Dál ›";
+  o.querySelector(".tutDots").textContent = (i + 1) + " / " + TUT_STEPS.length;
+  /* posun stránky okamžitě (plynulý posun by zvýraznění změřil napůl cesty) */
+  if (!target.closest(".tabbar") && target.scrollIntoView) target.scrollIntoView({ block: "center" });
+  sfx("pop");
+  if (typeof speakLine === "function") speakLine(st.t, 250);
+  tutPlace(target); setTimeout(function () { tutPlace(target); }, 120);
+}
+function tutPlace(target) {
+  var o = document.getElementById("tut"); if (!o || !target.isConnected) return;
+  var r = target.getBoundingClientRect(), pad = 8, spot = o.querySelector(".tutSpot"), card = o.querySelector(".tutCard");
+  spot.style.left = (r.left - pad) + "px"; spot.style.top = (r.top - pad) + "px"; spot.style.width = (r.width + pad * 2) + "px"; spot.style.height = (r.height + pad * 2) + "px";
+  var ch = card.offsetHeight || 170, below = innerHeight - r.bottom, above = r.top, m = 12;
+  var top = below > ch + 24 ? r.bottom + pad + m : above > ch + 24 ? r.top - pad - m - ch : (innerHeight - ch) / 2;
+  top = Math.max(m, Math.min(innerHeight - ch - m, top));   /* karta vždy celá na obrazovce */
+  card.style.top = Math.round(top) + "px";
+  o.classList.add("on");
+}
+function tutEnd(silent) {
+  var o = document.getElementById("tut"); if (o) o.parentNode.removeChild(o);
+  if (silent) return;
+  tutIdx = -1;
+  if (!S.tutorialDone) { S.tutorialDone = true; saveState(); }
+}
+if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("resize", function () { if (tutIdx >= 0) { var st = TUT_STEPS[tutIdx], tg = st && document.querySelector(st.sel); if (tg) tutPlace(tg); } });
+
 /* Nový školní rok — když táta posune ročník */
 function svgTrain(w) {
   var h = Math.round(w * 0.5);
@@ -3426,6 +3524,9 @@ function svgTrain(w) {
 }
 function screenNewYear(y) {
   S.pendingYear = null; saveState();
+  videoMoment("expres", function () { screenNewYearCard(y); });
+}
+function screenNewYearCard(y) {
   render(topbarHTML() + '<div class="card center celebrate">' +
     '<div class="trainTrack"><div class="train">' + svgTrain(170) + '</div></div>' +
     '<div class="mascotBig">' + svgCastle(96) + '</div>' +
@@ -3793,7 +3894,8 @@ function screenProfile() {
     (gotBadges.length ? '<p style="margin-top:8px;font-size:24px;line-height:1.3">' + gotBadges.map(function (b) { return '<span title="' + esc(b.n) + '">' + b.e + '</span>'; }).join(" ") + '</p>' : '') +
     '</div>' +
     '<p class="muted center" style="margin-top:12px">Průkaz je jako fotka — ukaž ho, komu chceš!</p>' +
-    '<button class="btn secondary" onclick="screenBadges()">' + svgBadgeIcon(20) + ' Zeď odznaků — ' + S.badges.length + ' / ' + BADGES.length + '</button></div>' + navHTML("ja"));
+    '<button class="btn secondary" onclick="screenBadges()">' + svgBadgeIcon(20) + ' Zeď odznaků — ' + S.badges.length + ' / ' + BADGES.length + '</button>' +
+    '<button class="btn secondary" onclick="tutStart()">🦉 Provést hrou se sovou</button></div>' + navHTML("ja"));
 }
 function lockedNode() {
   render(topbarHTML() + '<div class="card center">' +
@@ -4316,6 +4418,7 @@ function mergeStates(a, b) {
   (o.owned || []).forEach(function (id) {
     if (m.owned.indexOf(id) === -1) { var it = shopById(id); if (it) spentElsewhere += (o.paid && o.paid[id]) || it.p; m.owned.push(id); if (o.paid && o.paid[id]) { if (!m.paid) m.paid = {}; m.paid[id] = o.paid[id]; } }
   });
+  m.tutorialDone = !!(m.tutorialDone || o.tutorialDone);
   if (!m.roomPos || typeof m.roomPos !== "object") m.roomPos = {};
   for (var rk in (o.roomPos || {})) if (!m.roomPos[rk]) m.roomPos[rk] = o.roomPos[rk];
   var RW_RANK = { open: 0, claimed: 1, done: 2 };
@@ -4824,7 +4927,8 @@ function questComplete() {
   }
   checkBadges();
   saveState();
-  screenQuestSummary(perfect);
+  if (session.mode === "exam" && session.examPassed) videoMoment("zkouska", function () { screenQuestSummary(perfect); });
+  else screenQuestSummary(perfect);
 }
 
 function screenQuestSummary(perfect) {
@@ -4942,6 +5046,9 @@ function heroCardHTML(big, sub) {
     '<div class="hcDate">' + yearLabel(S.year) + ' · ' + czDate() + '</div></div>';
 }
 function screenMilestone(days, isGoal) {
+  videoMoment("plaminek", function () { screenMilestoneCard(days, isGoal); });
+}
+function screenMilestoneCard(days, isGoal) {
   render(topbarHTML() + '<div class="card center celebrate">' +
     '<div class="mascotBig">' + svgFlame(92, "lit") + '</div>' +
     '<h1>Milník plamínku!</h1>' + heroCardHTML(days + ' DNÍ', 'v řadě') +
@@ -5194,6 +5301,62 @@ function shopById(id) { for (var i = 0; i < SHOP.length; i++) if (SHOP[i].id ===
    a verze (změna v = nové stažení). Zdroj: design/ai/, převod design/webp.mjs.
    --------------------------------------------------------------------- */
 var IMG_BASE = SYNC_URL + "/storage/v1/object/public/obrazky/";
+/* =====================================================================
+   VELKÉ MOMENTY JAKO VIDEO (ChatGPT/Sora → kbelík obrazky/video-*.mp4)
+   Krátké klipy u velkých chvil. Stahují se dopředu (uvítání: dopis a klobouk; Velká síň: zbytek),
+   ukládají se do IndexedDB jako obrázky. Když video není (offline poprvé, ještě nenahrané, omezený
+   pohyb), hra pokračuje dosavadní animací — videa jsou jen třešnička. Přeskočit jde klepnutím.
+   ===================================================================== */
+var VIDEOS = {
+  dopis:    { f: "video-dopis.mp4", v: 1 },      /* uvítání: sova přiletí s dopisem (v kartě, bez zvuku) */
+  klobouk:  { f: "video-klobouk.mp4", v: 1 },    /* Moudrý klobouk přemýšlí a zvolá */
+  expres:   { f: "video-expres.mp4", v: 1 },     /* nový ročník: Bradavický expres */
+  plaminek: { f: "video-plaminek.mp4", v: 1 },   /* milník plamínku: svíčka vzplane */
+  zkouska:  { f: "video-zkouska.mp4", v: 1 }     /* složená zkouška: vysvědčení s pečetí */
+};
+var vidMem = {}, vidPending = {};
+function vidGet(k) {
+  if (!VIDEOS[k] || !imgOk()) return Promise.resolve(null);
+  if (vidMem[k]) return Promise.resolve(vidMem[k]);
+  if (vidPending[k]) return vidPending[k];
+  var key = "vid:" + k + "|" + VIDEOS[k].v;
+  vidPending[k] = imgDb().then(function (db) {
+    if (!db) return null;
+    return new Promise(function (res) { try { var q = db.transaction("obrazky").objectStore("obrazky").get(key); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; } catch (e) { res(null); } });
+  }).then(function (blob) {
+    if (blob) return blob;
+    if (!ttsOnline() || typeof fetch !== "function") return null;
+    return fetch(IMG_BASE + VIDEOS[k].f + "?v=" + VIDEOS[k].v).then(function (r) { return r.ok ? r.blob() : null; }).then(function (b) {
+      if (!b || !/^video\//.test(b.type)) return null;
+      imgDb().then(function (db) { if (db) try { db.transaction("obrazky", "readwrite").objectStore("obrazky").put(b, key); } catch (e) {} });
+      return b;
+    }, function () { return null; });
+  }).then(function (blob) { delete vidPending[k]; if (!blob) return null; vidMem[k] = URL.createObjectURL(blob); return vidMem[k]; });
+  return vidPending[k];
+}
+function vidPrefetch(keys) { keys.forEach(function (k, i) { setTimeout(function () { vidGet(k); }, i * 1500); }); }
+/* počká na video nejvýš ms; vrátí URL, nebo null */
+function vidReady(k, ms) {
+  return new Promise(function (res) { var done = false; setTimeout(function () { if (!done) { done = true; res(null); } }, ms); vidGet(k).then(function (u) { if (!done) { done = true; res(u); } }); });
+}
+/* přehraje video přes celou obrazovku; then() se zavolá po skončení, přeskočení, nebo hned, když video není */
+function videoMoment(k, then, waitMs) {
+  if (typeof document === "undefined" || reducedMotion()) { then(); return; }
+  vidReady(k, waitMs || 2500).then(function (url) {
+    if (!url) { then(); return; }
+    var ov = document.createElement("div"); ov.className = "vidMoment";
+    ov.innerHTML = '<video playsinline autoplay preload="auto"></video><button class="vidSkip">Přeskočit ›</button>';
+    document.body.appendChild(ov);
+    var v = ov.querySelector("video"), finished = false, t0 = Date.now();
+    var end = function () { if (finished) return; finished = true; ov.classList.add("out"); setTimeout(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); }, 450); then(); };
+    v.muted = !sfxOn(); v.src = url;
+    var p = v.play(); if (p && p.catch) p.catch(function () { v.muted = true; var p2 = v.play(); if (p2 && p2.catch) p2.catch(end); });
+    v.onended = end; v.onerror = end;
+    ov.querySelector(".vidSkip").onclick = function (e) { e.stopPropagation(); end(); };
+    ov.addEventListener("click", function () { if (Date.now() - t0 > 900) end(); });
+    setTimeout(end, 20000);
+  });
+}
 var IMAGES = {
   "loznice-g": { f: "loznice-g-v2.webp", v: 2 },   /* 11. 10. 2026: ložnice uvnitř hradu (ChatGPT), malovaná jako Velká síň */
   "loznice-h": { f: "loznice-h.webp", v: 1 },
@@ -6061,6 +6224,7 @@ W.roomFullToggle = roomFullToggle;
 W.screenAvatar = screenAvatar;
 W.avatarPick = avatarPick;
 W.mapFullToggle = mapFullToggle;
+W.tutStart = tutStart;
 W.startDemo = startDemo;
 W.demoEnd = demoEnd;
 W.screenDemoInfo = screenDemoInfo;
@@ -6124,6 +6288,7 @@ function demoState() {
   s.stats.M1 = { c: 22, w: 3 }; s.stats.M2 = { c: 13, w: 4 }; s.stats.C1 = { c: 14, w: 2 }; s.stats.C2 = { c: 6, w: 1 }; s.stats.E1 = { c: 8, w: 2 }; s.stats.H1 = { c: 5, w: 0 };
   s.rewards = [{ id: "demo1", n: "Výlet do zoo", e: "🦁", p: 900, status: "open", created: addDays(today, -5) }];
   s.badges = ["vyprava1", "plamen3", "prach500", "mazlicek", "vyprav10"];
+  s.tutorialDone = false;   /* návštěvu provede sova */
   return s;
 }
 function startDemo() {
@@ -6136,7 +6301,7 @@ function screenDemoInfo() {
   render(topbarHTML() + '<div class="card center"><div class="bigIcon">👀</div><h2>Tohle je ukázka</h2>' +
     '<p class="qtext">Hraješ za ukázkovou studentku. Můžeš zkusit všechno: vyučování, Rozvrh s mapou hradu, Příčnou ulici, ložnici i panel pro rodiče.</p>' +
     '<p class="muted">Nic se neukládá a nic se neposílá na server. Po zavření nebo obnovení stránky ukázka zmizí.</p>' +
-    '<button class="btn gold" onclick="demoEnd()">✨ Založit vlastní profil</button><button class="btn secondary" onclick="screenHome()">Pokračovat v ukázce</button></div>' + navHTML("ja"));
+    '<button class="btn gold" onclick="demoEnd()">✨ Založit vlastní profil</button><button class="btn secondary" onclick="tutStart()">🦉 Provést hrou se sovou</button><button class="btn secondary" onclick="screenHome()">Pokračovat v ukázce</button></div>' + navHTML("ja"));
 }
 function routeHome() {
   if (!S.name) { screenWelcome(); return; }
