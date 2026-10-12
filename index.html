@@ -746,7 +746,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2836,6 +2836,7 @@ function setKeys(fn) {
 }
 function render(html) {
   lastScreen = null;
+  if (typeof ambStop === "function") ambStop();
   setKeys(null);
   if (typeof mentalStop === "function") mentalStop();
   var old = document.querySelectorAll(".confetti");
@@ -2910,6 +2911,7 @@ function pageTurnPlay(s, dir) {
 /* šustnutí papíru: krátký šum přes pásmovou propust, která se posouvá nahoru */
 function sfxPage() {
   if (!sfxOn()) return;
+  if (sndPlay("page")) return;
   var ctx = sfxCtxGet(); if (!ctx) return;
   try {
     var len = Math.floor(ctx.sampleRate * 0.42), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
@@ -3309,6 +3311,7 @@ function screenHome() {
   render(html);
   lastScreen = "home";
   imgApplyAll(".perchOwl .poEmoji"); owlPerchIdle();
+  ambStart();
   imgApply(".hall", "sin", function (el, url) { var bg = el.querySelector(".hallBg"); if (!bg) return; bg.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
 }
 
@@ -4113,8 +4116,72 @@ var SFX = {
   buy:     [N(2637, .07, "sine", .11), N(2637, .07, "sine", .11, .08), N(2637, .07, "sine", .11, .16)],
   amulet:  [N(3951, .22, "sine", .09), N(3136, .3, "sine", .06, .1)]
 };
+/* ---------------------------------------------------------------------
+   ZVUKY Z ELEVENLABS — vyrobené jednou (design/zvuky.mjs) a uložené v kbelíku hlas/sfx/<název>.mp3.
+   Hra je stáhne na pozadí, uloží do IndexedDB (stejná databáze jako obrázky, klíč „snd:<název>|v“)
+   a přehrává přes WebAudio. Dokud zvuk není stažený (nebo offline poprvé), hraje původní tón z SFX.
+   Atmosféra Velké síně („sin“) hraje potichu ve smyčce jen ve Velké síni, se zvukem zapnutým.
+   Nový zvuk = řádek v design/zvuky.mjs + položka tady; přegenerovat = nový název nebo vyšší v.
+   --------------------------------------------------------------------- */
+var SOUNDS = {   /* vol podle naměřené síly souboru (12. 10. 2026), ať jsou zvuky vyrovnané */
+  ok: { v: 1, vol: .55 }, bad: { v: 1, vol: .45 }, coin: { v: 1, vol: .6 }, tile: { v: 1, vol: .55 }, tileBad: { v: 1, vol: .35, f: "tile-bad" },
+  built: { v: 1, vol: .4 }, fanfare: { v: 1, vol: .3 }, bell: { v: 1, vol: .4 }, badge: { v: 1, vol: .5, f: "badge2" }, star: { v: 1, vol: .4 },
+  drum: { v: 1, vol: .35 }, buy: { v: 1, vol: .6 }, amulet: { v: 1, vol: .6 }, pop: { v: 1, vol: .6, f: "pop3" }, page: { v: 1, vol: .45 },
+  wings: { v: 1, vol: .25 }, sin: { v: 1, vol: .9, loop: true }
+};
+var sndBuf = {}, sndPending = {}, sndAmb = null;
+function sndUrl(k) { return syncCfg().url + "/storage/v1/object/public/hlas/sfx/" + (SOUNDS[k].f || k) + ".mp3?v=" + SOUNDS[k].v; }
+function sndLoad(k) {
+  if (!SOUNDS[k] || sndBuf[k]) return Promise.resolve(sndBuf[k] || null);
+  if (sndPending[k]) return sndPending[k];
+  var ctx = sfxCtxGet(); if (!ctx || typeof fetch !== "function") return Promise.resolve(null);
+  var key = "snd:" + k + "|" + SOUNDS[k].v;
+  var fromDb = imgDb().then(function (db) {
+    if (!db) return null;
+    return new Promise(function (res) { try { var q = db.transaction("obrazky").objectStore("obrazky").get(key); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; } catch (e) { res(null); } });
+  });
+  sndPending[k] = fromDb.then(function (ab) {
+    if (ab) return ab;
+    if (!ttsOnline()) return null;
+    return fetch(sndUrl(k)).then(function (r) { return r.ok ? r.arrayBuffer() : null; }).then(function (b) {
+      if (b) imgDb().then(function (db) { if (db) try { db.transaction("obrazky", "readwrite").objectStore("obrazky").put(b.slice(0), key); } catch (e) {} });
+      return b;
+    }, function () { return null; });
+  }).then(function (ab) {
+    if (!ab) { delete sndPending[k]; return null; }
+    return new Promise(function (res) {
+      try { var pr = ctx.decodeAudioData(ab, function (buf) { sndBuf[k] = buf; res(buf); }, function () { res(null); }); if (pr && pr.catch) pr.catch(function () { res(null); }); }
+      catch (e) { res(null); }
+    });
+  });
+  return sndPending[k];
+}
+function sndPreload() { Object.keys(SOUNDS).forEach(function (k, i) { setTimeout(function () { sndLoad(k); }, 300 + i * 120); }); }
+function sndPlay(k) {
+  var buf = sndBuf[k], ctx = sfxCtxGet(); if (!buf || !ctx) return false;
+  try { var s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; g.gain.value = SOUNDS[k].vol; s.connect(g); g.connect(ctx.destination); s.start(); return true; } catch (e) { return false; }
+}
+function ambStart() {
+  if (sndAmb || !sfxOn() || reducedMotion()) return;
+  var ctx = sfxCtxGet(); if (!ctx) return;
+  sndLoad("sin").then(function (buf) {
+    if (!buf || sndAmb || !sfxOn() || lastScreen !== "home") return;
+    try {
+      var s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.loop = true;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(SOUNDS.sin.vol, ctx.currentTime + 2);
+      s.connect(g); g.connect(ctx.destination); s.start(); sndAmb = { s: s, g: g };
+    } catch (e) {}
+  });
+}
+function ambStop() {
+  if (!sndAmb) return;
+  var a = sndAmb, ctx = sfxCtxGet(); sndAmb = null;
+  try { a.g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.25); setTimeout(function () { try { a.s.stop(); } catch (e) {} }, 1200); } catch (e) {}
+}
 function sfx(name) {
-  if (!sfxOn() || !SFX[name]) return;
+  if (!sfxOn()) return;
+  if (sndPlay(name)) return;
+  if (!SFX[name]) return;
   var ctx = sfxCtxGet(); if (!ctx) return;
   var t0 = ctx.currentTime + 0.01;
   SFX[name].forEach(function (n) {
@@ -4136,10 +4203,11 @@ function sfxToggle() {
   var b = typeof document !== "undefined" && document.querySelector(".sfxBtn");
   if (b) { b.textContent = sfxOn() ? "🔈" : "🔇"; b.title = sfxOn() ? "Zvuky zapnuté — klepnutím vypneš" : "Zvuky vypnuté — klepnutím zapneš"; }
   var c = typeof document !== "undefined" && document.getElementById("pSfx"); if (c) c.checked = sfxOn();
-  if (sfxOn()) sfx("ok");
+  if (sfxOn()) { sfx("ok"); sndPreload(); if (lastScreen === "home") ambStart(); } else ambStop();
 }
 function sfxBtnHTML() { return '<button type="button" class="homeBtn sfxBtn" onclick="sfxToggle()" title="' + (sfxOn() ? "Zvuky zapnuté — klepnutím vypneš" : "Zvuky vypnuté — klepnutím zapneš") + '">' + (sfxOn() ? "🔈" : "🔇") + '</button>'; }
-if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("click", function () { if (sfxOn()) sfxCtxGet(); }, { once: true, capture: true });
+/* první klepnutí odemkne zvuk (prohlížeče jinak zvuk nepustí), stáhne zvuky a ve Velké síni pustí atmosféru */
+if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("pointerdown", function () { if (sfxOn()) { sfxCtxGet(); sndPreload(); setTimeout(function () { if (lastScreen === "home") ambStart(); }, 300); } }, { once: true, capture: true });
 
 /* --- Synchronizace mezi zařízeními (Supabase) --------------------------
    Volitelná online funkce. Postup (celý objekt S) se ukládá pod „rodinným
@@ -4542,6 +4610,7 @@ function owlSparks(x, y, gold) {
 /* mávání křídel: pár měkkých šumových „fuků“ */
 function sfxWings(n) {
   if (!sfxOn()) return;
+  if (sndPlay("wings")) return;
   var ctx = sfxCtxGet(); if (!ctx) return;
   try {
     var t0 = ctx.currentTime + .02;
