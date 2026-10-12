@@ -754,6 +754,7 @@
   .welcomeAlt .btn { margin-bottom: 4px; }
   @media (max-width: 480px) { .demoChip span { display: none; } }
   .demoChip { border: 2px dashed var(--ink); border-radius: 14px; background: var(--mustard-pale); font: inherit; font-size: 14px; font-weight: 700; padding: 3px 9px; cursor: pointer; color: var(--ink); white-space: nowrap; }
+  .parentLink a { color: #8a7a6a; font-size: .9em; font-style: italic; }
   .parentLink button { background: none; border: none; color: #8a7a6a; text-decoration: underline; font-size: .9em; font-style: italic; padding: 8px; }
   hr { border: none; border-top: 2px dashed var(--shadow); margin: 16px 0; }
   .hidden { display: none !important; }
@@ -778,7 +779,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12r";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12s";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3312,7 +3313,7 @@ function screenWelcome() {
     '<button class="btn secondary" onclick="screenJoinCode()">🔑 Máme rodinný kód — připojit postup</button>' +
     '</div>' +
     (isIOSWeb() && !isStandalone() ? '<p class="muted center">Tip pro rodiče: v Safari klepněte na Sdílet → <b>Přidat na plochu</b>. Hra pak poběží přes celou obrazovku a bude se sama aktualizovat. Postup v aplikaci na ploše je oddělený od Safari, proto začněte až tam.</p>' : '') +
-    '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button></div>');
+    '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button>' + (isWeb() ? ' · <a href="pro-rodice.html">Co hra umí a proč funguje</a>' : '') + '</div>');
   vidPrefetch(["klobouk"]);
   if (!reducedMotion()) vidGet("dopis").then(function (url) {
     var a = el("welcomeArt"); if (!url || !a) return;
