@@ -369,6 +369,11 @@
   .charSay .csWho { display: block; font-size: 14px; font-weight: 700; color: var(--acc-d); margin-bottom: 2px; }
   .charSay .csText { font-size: 18px; font-style: italic; line-height: 1.4; }
   .charSay.inSheet { margin: 6px 0 8px; max-width: none; }
+  .altBox { text-align: left; background: #fffaf0; border: 2px dashed var(--ink); border-radius: 8px; padding: 8px 12px; margin: 0 0 10px; max-height: 40vh; overflow-y: auto; }
+  .altBox p { margin: 4px 0; }
+  .altRow { font-size: 18px; letter-spacing: 1px; line-height: 1.25; }
+  .altSpell { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .altSpell span { min-width: 34px; height: 40px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--ink); border-radius: 6px; background: #fff; font: 700 24px "Helvetica Neue", Arial, sans-serif; }
+  #altBtn { margin-bottom: 8px; }
   .joyRow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .joyRow .btn { width: auto; margin: 0; }
   #bonusBtn { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 8px; } #bonusBtn span { font-size: 14px; font-style: italic; opacity: .9; }
   /* mřížka násobilky */
@@ -797,7 +802,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12w";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12x";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2730,7 +2735,7 @@ function makeQuestion(t, state, usedIds) {
   state.recentQ[t] = rq;
   var hint = mathHint(g);
   var fk = (t === "M2" || t === "M3") && g.dbg ? factKey(g.dbg.a, g.dbg.b) : null;
-  return { topic: t, kind:"choice", q: g.q, opts: shuffle(g.opts), correct: g.correct, why: hint || g.why, hint: hint ? hintOpen(hint) : "", fact: fk };
+  return { topic: t, kind:"choice", q: g.q, opts: shuffle(g.opts), correct: g.correct, why: hint || g.why, hint: hint ? hintOpen(hint) : "", fact: fk, dbg: g.dbg };
 }
 /* Klíč příkladu z ladicích údajů generátoru (bez výsledku); 3×7 a 7×3 je týž příklad. */
 function genKey(t, g) {
@@ -2857,6 +2862,19 @@ function charLine(kind) {
   var jm = S.name ? vok(S.name) : "čarodějko", c = L[i][0];
   var text = L[i][1].replace("{Jm}", jm.charAt(0).toUpperCase() + jm.slice(1)).replace("{jm}", jm).replace("{kolej}", S.house ? HOUSES[S.house].n : "tvou kolej");
   return { c: c, ch: CHARS[c], text: text };
+}
+/* OSOBNÍ ÚVOD (Lenny's: Gustav Söderström, Spotify DJ): postava ví, co se včera povedlo. Jen u opravdového profilu,
+   ne v ukázce (ta mluví jen předem namluvenými větami). Věta se mění den ode dne, takže se namlouvá jednou denně. */
+function personalNote() {
+  if (DEMO) return "";
+  var today = todayStr(), y = addDays(today, -1), s = S.streak || {};
+  var facts = Object.keys(S.factLv || {}).filter(function (k) { var x = S.factLv[k]; return x.l === 2 && x.last === y; });
+  if (facts.length) return "Včera jsi zvládla " + facts[0].replace("x", " krát ") + ". Teď už to umíš!";
+  var words = Object.keys(S.wordLv || {}).filter(function (k) { var x = S.wordLv[k]; return x.l === 2 && x.last === y; });
+  if (words.length) return "Včera ses naučila z hlavy slovíčko " + words[0] + ".";
+  if (s.goal && s.current === s.goal - 1 && s.history && s.history[y] === "done") return "Dnes můžeš splnit svůj cíl!";
+  if (s.current >= 2 && s.history && s.history[y] === "done") return "Dnes je to tvůj " + (s.current + 1) + ". den v řadě!";
+  return "";
 }
 function charSayHTML(cl) { return '<div class="charSay"><span class="csWho">' + cl.ch.e + ' ' + esc(cl.ch.n) + '</span><span class="csText">„' + esc(cl.text) + '“</span></div>'; }
 function speakAs(cl, delay) {
@@ -4151,7 +4169,8 @@ function lockedNode() {
 var session = null;
 
 function startDailyQuest() {
-  var intro = pick(QUEST_INTROS), cl = charLine("daily");
+  var intro = pick(QUEST_INTROS), cl = charLine("daily"), pn = personalNote();
+  if (pn) cl.text += " " + pn;
   render(topbarHTML(true) +
     '<div class="card center">' +
     '<div class="bigIcon"><span class="mascot pulse">' + svgFlame(56, "lit") + '</span></div>' +
@@ -5230,6 +5249,7 @@ function answerQ(it, chosen, btn) {
       (it.why ? '<br>' + esc(it.why) : '') + '</div>' + (it.word ? '<div class="sayRow">' + sayBtnHTML(it.word) + '</div>' : '') + note +
       '<button class="btn red" id="nextBtn">Pokračovat</button></div></div>';
   }
+  if (!correct && it.retry) altExplainWire(it);
   sheetToBody();
   checkBadges();
   saveState();
@@ -5333,6 +5353,49 @@ function screenQuestSummary(perfect) {
   el("nextBtn").onclick = processPostQueue;
 }
 
+/* VYSVĚTLI MI TO JINAK (Lenny's: Bret Taylor, Kevin Weil): po druhé chybě u stejné otázky nabídnout jiný způsob
+   vysvětlení než pravidlo z „why“: obrázek (násobilka, dělení), skoky po číselné ose (sčítání), pomůcku a seznam
+   (čeština), slovo po písmenkách (angličtina). Vše předpřipravené, bez AI a bez sítě. */
+var ALT_CJ = {
+  C1: "Tvrdé souhlásky jsou jako tvrdý kámen: h, ch, k, r, d, t, n. Po nich píšeme v českých slovech tvrdé y. Měkké jsou jako polštář: ž, š, č, ř, c, j, ď, ť, ň. Po nich píšeme měkké i. Pozor: když slyšíš ďi, ťi, ňi (ticho, nic, divadlo), píšeš di, ti, ni.",
+  C2: "Zazpívej si abecedu pomalu a ukazuj si na prstech. Pozor na jednu past: ch patří hned za h.",
+  C3: "Slovo prodluž nebo změň tak, aby za souhláskou byla samohláska: dub → duby, had → hady, sníh → sněhu. Pak už slyšíš, co tam patří.",
+  C4: "Po B píšeme y jen ve vyjmenovaných slovech a slovech od nich: by, být, bydlit, obyvatel, byt, příbytek, nábytek, dobytek, obyčej, bystrý, bylina, kobyla, býk, Přibyslav.",
+  C5: "Po L píšeme y jen ve vyjmenovaných slovech a slovech od nich: slyšet, mlýn, blýskat se, polykat, plynout, plýtvat, vzlykat, lysý, lýko, lýtko, lyže, pelyněk, plyš.",
+  C6: "Po M píšeme y jen ve vyjmenovaných slovech a slovech od nich: my, mýt, myslit, mýlit se, hmyz, myš, hlemýžď, mýtit, zamykat, smýkat, dmýchat, chmýří, nachomýtnout se, Litomyšl.",
+  C7: "Po P píšeme y jen ve vyjmenovaných slovech a slovech od nich: pýcha, pytel, pysk, netopýr, slepýš, pyl, kopyto, klopýtat, třpytit se, zpytovat, pykat, pýr, pýřit se, čepýřit se.",
+  C8: "Po S píšeme y jen ve vyjmenovaných slovech a slovech od nich: syn, sytý, sýr, syrový, sychravý, usychat, sýkora, sýček, sysel, syčet, sypat.",
+  C9: "Po V píšeme y jen ve vyjmenovaných slovech a slovech od nich: vy, vysoký, výt, výskat, zvykat, žvýkat, vydra, výr, vyžle, povyk, výheň. A když slovo začíná předponou vy- nebo vý-, která znamená ven nebo hotovo: vyletět, výlet, vyhrát.",
+  C10: "Po Z píšeme y jen ve vyjmenovaných slovech a slovech od nich: brzy, jazyk, nazývat se (a Ruzyně).",
+  C11: "Zeptej se slova: kdo? co? → podstatné jméno. Jaký? Jaká? Jaké? → přídavné jméno. Co dělá? → sloveso.",
+  C12: "Spočítej, kolikrát ve větě někdo něco dělá (běží, napsal, bude číst). Jednou je to věta, dvakrát a víc souvětí. Pozor: chci si hrát i bude číst počítáme jen jednou."
+};
+function altExplainHTML(it) {
+  var d = it.dbg || {}, t = it.topic, row = function (n, e) { return new Array(n + 1).join(e); };
+  if ((t === "M2" || t === "M3") && d.a && d.b) {
+    var rows = ""; for (var i = 0; i < d.a; i++) rows += '<div class="altRow">' + row(d.b, "🔮") + '</div>';
+    return '<p>' + d.a + ' × ' + d.b + ' je ' + d.a + ' řad po ' + d.b + ' kuličkách:</p>' + rows + '<p>Spočítej je: <b>' + (d.a * d.b) + '</b>.</p>';
+  }
+  if (t === "M4" && d.n && d.d) {
+    var g = ""; for (var j = 0; j < d.d; j++) g += '<div class="altRow">🫕 ' + row(d.n / d.d, "💎") + '</div>';
+    return '<p>' + d.n + ' kamínků rozdělíme do ' + d.d + ' kotlíků, do každého stejně:</p>' + g + '<p>V každém kotlíku je <b>' + (d.n / d.d) + '</b>, proto ' + d.n + ' : ' + d.d + ' = ' + (d.n / d.d) + '.</p>';
+  }
+  if (t === "M1" && d.a != null && d.b != null) {
+    if (d.op === "+") { var up = 10 - d.a % 10; return up < 10 && d.b > up ? '<p>Skákej po číselné ose. Začni na <b>' + d.a + '</b>, skoč o ' + up + ' na desítku <b>' + (d.a + up) + '</b>, pak ještě o ' + (d.b - up) + ' na <b>' + (d.a + d.b) + '</b>.</p>' : '<p>Začni na <b>' + d.a + '</b> a přičti ' + d.b + ': <b>' + (d.a + d.b) + '</b>.</p>'; }
+    var dn = d.a % 10; return dn > 0 && d.b > dn ? '<p>Skákej po číselné ose dolů. Začni na <b>' + d.a + '</b>, skoč o ' + dn + ' na desítku <b>' + (d.a - dn) + '</b>, pak ještě o ' + (d.b - dn) + ' na <b>' + (d.a - d.b) + '</b>.</p>' : '<p>Začni na <b>' + d.a + '</b> a uber ' + d.b + ': <b>' + (d.a - d.b) + '</b>.</p>';
+  }
+  if (ALT_CJ[t]) return '<p>' + esc(ALT_CJ[t]) + '</p>';
+  if (TOPICS[t] && TOPICS[t].subj === "en" && /^[a-z' ]+$/i.test(String(it.correct)) && String(it.correct).length <= 16)
+    return '<p>Slovo po písmenkách. Řekni si každé nahlas a pak ho napiš prstem do vzduchu:</p><div class="altSpell">' + String(it.correct).split("").map(function (c) { return c === " " ? "&nbsp;" : '<span>' + esc(c) + '</span>'; }).join("") + '</div>' + (it.word ? sayBtnHTML(it.word) : "");
+  if (it.hint) return '<p>' + esc(mathHint({ dbg: d }) || "") + '</p>';
+  return "";
+}
+function altExplainWire(it) {
+  var html = altExplainHTML(it); if (!html) return;
+  var nb = el("nextBtn"); if (!nb) return;
+  nb.insertAdjacentHTML("beforebegin", '<button class="btn secondary" id="altBtn">🔄 Vysvětli mi to jinak</button><div class="altBox" id="altBox" hidden>' + html + '</div>');
+  el("altBtn").onclick = function () { el("altBox").hidden = false; el("altBtn").hidden = true; sfx("page"); };
+}
 /* TĚŽŠÍ KOUZLO NA POZVÁNÍ (Lenny's: Matthew Dicks, Dr. Becky Kennedy): po třech správných za sebou v Lektvarech
    jednou za hodinu nabídka otázky z nejtěžší odemčené učebny matematiky (nikdy nad odemčené meze). Dobrovolné,
    chyba nic nestojí (žádné opakování, statistika ani záznam chyby), správně = 4 galeony. */
@@ -6664,7 +6727,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, altExplainHTML: altExplainHTML, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
