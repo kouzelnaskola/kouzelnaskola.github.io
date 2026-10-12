@@ -369,6 +369,12 @@
   .charSay .csWho { display: block; font-size: 14px; font-weight: 700; color: var(--acc-d); margin-bottom: 2px; }
   .charSay .csText { font-size: 18px; font-style: italic; line-height: 1.4; }
   .charSay.inSheet { margin: 6px 0 8px; max-width: none; }
+  /* souhrn: nejlepší kouzla / kde jsem zaváhala */
+  .revBox { text-align: left; margin: 12px 0; border: 2px solid var(--ink); border-radius: 10px; background: #fffdf7; padding: 10px 14px; box-shadow: 3px 3px 0 var(--shadow); }
+  .revBox summary { cursor: pointer; font-weight: 700; }
+  .revBox .revHead { font-weight: 700; margin-bottom: 6px; }
+  .revRow { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px dashed #c9bba6; font-size: 16px; }
+  .revRow b { white-space: nowrap; } .revRow.good b { color: #1f6363; } .revRow.miss b { color: var(--coral-d); }
   /* průvodce se sovou */
   #tut { position: fixed; inset: 0; z-index: 80; opacity: 0; transition: opacity .25s; }
   #tut.on { opacity: 1; }
@@ -779,7 +785,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12s";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12t";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -5063,6 +5069,8 @@ function answerQ(it, chosen, btn) {
   var st = S.stats[it.topic];
   var isSpell = (it.kind === "build" && !it.tokens) || (it.kind === "type" && !it.csInput);
   var note = wordNote(it, correct);
+  /* zápis odpovědi pro souhrn (nejlepší kouzla / kde jsem zaváhala); jen první pokus */
+  if (!it.retry) { if (!session.log) session.log = []; session.log.push({ q: it.q, a: String(it.correct), ok: !!correct, kind: it.kind, recall: !!it.recall, topic: it.topic, mental: !!it.mental }); }
   if (correct) {
     var gained = it.retry ? 1 : (it.recall && it.kind !== "card") ? 3 : 2;
     if (it.mental) gained += 1;   /* bonus za výsledek z hlavy */
@@ -5178,6 +5186,7 @@ function screenQuestSummary(perfect) {
     html += '<p class="qtext">' + flameIcon(20) + ' Plamínek: <b>' + S.streak.current + '</b> ' + dayWord(S.streak.current) + ' v řadě</p>';
   }
   html += summaryTopicsHTML();
+  html += summaryReviewHTML();
   var flipAt = 1.0 + (session.newStarCount || 0) * 0.45;
   if (session.newWords && session.newWords.length) {
     html += '<div class="feedback ok flipIn" style="animation-delay:' + flipAt.toFixed(2) + 's">🌟 Nově umíš z hlavy: <b class="qword">' + session.newWords.map(esc).join(", ") + '</b></div>';
@@ -5209,6 +5218,24 @@ function screenQuestSummary(perfect) {
   el("nextBtn").onclick = processPostQueue;
 }
 
+/* Souhrn podle Chess.com (Lenny's, Albert Cheng): po povedené hodině nabídnout rozbor zaváhání (tehdy ho děti chtějí
+   vidět), po slabší nejdřív ukázat nejlepší kouzla dne a povzbudit. Jen ze zápisu session.log (první pokusy). */
+function summaryReviewHTML() {
+  var log = session.log || []; if (!log.length) return "";
+  var miss = log.filter(function (x) { return !x.ok; }), good = log.filter(function (x) { return x.ok; });
+  var rate = good.length / log.length;
+  var weight = function (x) { return (x.recall ? 3 : 0) + (x.kind === "type" ? 2 : 0) + (x.kind === "build" ? 1 : 0) + (x.mental ? 2 : 0) + (/^M/.test(x.topic) ? 0.5 : 0); };
+  var row = function (x, cls) { return '<div class="revRow ' + cls + '"><span class="rq">' + esc(x.q) + '</span><b>' + esc(x.a) + '</b></div>'; };
+  if (rate >= 0.8) {
+    if (!miss.length) return "";
+    return '<details class="revBox"><summary>🔍 Podívat se, kde jsem zaváhala (' + miss.length + ')</summary>' + miss.map(function (x) { return row(x, "miss"); }).join("") +
+      '<p class="muted">Tyhle otázky se ještě vrátí. Teď už víš, jak na ně.</p></details>';
+  }
+  var best = good.slice().sort(function (a, b) { return weight(b) - weight(a); }).slice(0, 3);
+  if (!best.length) return '<div class="revBox open"><p class="qtext">Dnes to bylo těžké, a ty jsi to dokončila. Na tom záleží nejvíc.</p></div>';
+  return '<div class="revBox open"><div class="revHead">✨ Tvoje nejlepší kouzla dnes</div>' + best.map(function (x) { return row(x, "good"); }).join("") +
+    '<p class="muted">Těžké otázky se ještě vrátí a příště už je budeš znát.</p></div>';
+}
 var recentStars = {};
 /* Souhrn po učebnách: kolik napoprvé z kolika, hvězdy a nově získané hvězdy mistrovství. */
 function summaryTopicsHTML() {
