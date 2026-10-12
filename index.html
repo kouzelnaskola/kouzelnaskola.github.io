@@ -768,7 +768,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12h";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12i";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -4038,6 +4038,7 @@ function questionHeader(it) {
    aby se kredity neplatily za stejné slovo dvakrát. */
 var TTS_KEY = "bradaviceHlas";
 var TTS_DEFAULT_VOICE = "Xb7hH8MSUJpSbSDYk0k2";   /* Alice — britská angličtina */
+var TTS_DEFAULT_VOICE_CS = "XOgpjkYNnVH5W7ZAlLYg";   /* vybráno tátou 12. 10. 2026 */   /* český hlas pro hlášky pro všechna zařízení (ID z ElevenLabs); prázdné = Alice; pole v panelu ho na zařízení přebije */
 var TTS_MODEL = "eleven_multilingual_v2";
 function ttsCfg() {
   try { var c = JSON.parse(localStorage.getItem(TTS_KEY) || "{}"); return { key: c.key || "", voice: c.voice || "", voiceCs: c.voiceCs || "" }; }
@@ -4163,7 +4164,7 @@ function ttsPlayBlob(blob) {
 function ttsSay(word, cfgOverride, lang) {
   var cfg = cfgOverride || ttsCfg();
   /* angličtina: Alice (nebo zvolený hlas); čeština: český hlas z panelu, jinak tentýž hlas */
-  var voice = lang === "cs" ? (cfg.voiceCs || cfg.voice || TTS_DEFAULT_VOICE) : (cfg.voice || TTS_DEFAULT_VOICE);
+  var voice = lang === "cs" ? (cfg.voiceCs || TTS_DEFAULT_VOICE_CS || cfg.voice || TTS_DEFAULT_VOICE) : (cfg.voice || TTS_DEFAULT_VOICE);
   var hasCloud = !!cfg.key, hasProxy = !cfgOverride && ttsProxyOk();
   if (!hasCloud && !hasProxy) return ttsSpeak(word, lang);
   var id = voice + "|" + word.toLowerCase();
@@ -5946,7 +5947,7 @@ function screenParent(section) {
       '<p class="muted">Hra promluví česky při zařazení do koleje, po dokončeném vyučování, u milníků plamínku a v novém školním roce (nikdy u jednotlivých odpovědí). Platí pro toto zařízení.</p>' +
       '<div class="chkRow"><input type="checkbox" id="pMluveni"' + (mluveniOn() ? " checked" : "") + '><span><b>Mluvené hlášky zapnuté</b></span></div>' +
       '<div class="row"><div><label>ID českého hlasu (ElevenLabs, nepovinné)</label><input type="text" id="pTtsVoiceCs" autocomplete="off" value="' + esc(ttsCfg().voiceCs) + '" placeholder="např. Jana, Anet — ID z knihovny hlasů"></div></div>' +
-      '<p class="muted">Bez českého hlasu mluví česky Alice s britským přízvukem. V ElevenLabs: Voices → český hlas → ⋮ → Copy voice ID.</p>' +
+      '<p class="muted">Bez vyplnění mluví vybraný český hlas hry (společný pro všechna zařízení). Jiný hlas jen pro toto zařízení: ElevenLabs → Voices → hlas → ⋮ → Copy voice ID.</p>' +
       '<button class="btn small" id="saveVoiceCs">Uložit český hlas</button> <button class="btn small secondary" id="testMluveni">Vyzkoušet hlášku</button> <span class="muted" id="mluvMsg"></span>' +
       '<h3>🔔 Zvuky ve hře</h3>' +
       '<p class="muted">Zvuky z ElevenLabs: správně, špatně (měkce), mince, skládání slova, fanfára, zvon u milníků, třpyt u odznaku, šustnutí stránky, křídla sovy. Nikdy před odpovědí. Vypínač je i v horní liště (🔈/🔇) a platí jen pro toto zařízení.</p>' +
