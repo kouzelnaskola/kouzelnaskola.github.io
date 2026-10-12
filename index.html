@@ -768,7 +768,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12j";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12k";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -4087,8 +4087,10 @@ function ttsSpeak(word, lang) {
       var v = ttsPickVoice(lang);
       if (v) u.voice = v;
       u.lang = (v && v.lang) || (lang === "cs" ? "cs-CZ" : "en-GB"); u.rate = lang === "cs" ? 0.95 : 0.85; u.pitch = 1.05;
-      u.onend = function () { res(); }; u.onerror = function (e) { rej(e.error || new Error("speech")); };
-      speechSynthesis.speak(u);
+      var ducked = true; ambDuck(true);
+      var undo = function () { if (ducked) { ducked = false; ambDuck(false); } };
+      u.onend = function () { undo(); res(); }; u.onerror = function (e) { undo(); rej(e.error || new Error("speech")); };
+      speechSynthesis.speak(u); setTimeout(undo, 8000);
       setTimeout(res, 4000); /* pojistka, kdyby onend nepřišel */
     } catch (e) { rej(e); }
   });
@@ -4157,8 +4159,12 @@ function ttsPlayBlob(blob) {
   if (ttsAudio) { try { ttsAudio.pause(); } catch (e) {} }
   var url = URL.createObjectURL(blob);
   ttsAudio = new Audio(url);
-  ttsAudio.onended = function () { URL.revokeObjectURL(url); };
-  return ttsAudio.play();
+  var a = ttsAudio, ducked = true; ambDuck(true);
+  var undo = function () { if (ducked) { ducked = false; ambDuck(false); } };
+  a.onended = function () { URL.revokeObjectURL(url); undo(); };
+  a.onpause = undo; a.onerror = undo;
+  var p = a.play(); if (p && p.catch) p.catch(undo);
+  return p;
 }
 /* Pořadí: cache → přímý klíč (pokud je) → server s rodinným kódem → vestavěný hlas zařízení. lang: "en" (výchozí) | "cs". */
 function ttsSay(word, cfgOverride, lang) {
@@ -4255,7 +4261,7 @@ var SOUNDS = {   /* vol podle naměřené síly souboru (12. 10. 2026), ať jsou
   ok: { v: 1, vol: .55 }, bad: { v: 1, vol: .45 }, coin: { v: 1, vol: .6 }, tile: { v: 1, vol: .55 }, tileBad: { v: 1, vol: .35, f: "tile-bad" },
   built: { v: 1, vol: .4 }, fanfare: { v: 1, vol: .3 }, bell: { v: 1, vol: .4 }, badge: { v: 1, vol: .5, f: "badge2" }, star: { v: 1, vol: .4 },
   drum: { v: 1, vol: .35 }, buy: { v: 1, vol: .6 }, amulet: { v: 1, vol: .6 }, pop: { v: 1, vol: .6, f: "pop3" }, page: { v: 1, vol: .45 },
-  wings: { v: 1, vol: .25 }, sin: { v: 1, vol: .9, loop: true }
+  wings: { v: 1, vol: .25 }, sin: { v: 1, vol: .28, loop: true }   /* atmosféra: praskání má ostré špičky, proto tiše (táta 12. 10.: bylo moc nahlas) */
 };
 var sndBuf = {}, sndPending = {}, sndAmb = null;
 function sndUrl(k) { return syncCfg().url + "/storage/v1/object/public/hlas/sfx/" + (SOUNDS[k].f || k) + ".mp3?v=" + SOUNDS[k].v; }
@@ -4296,10 +4302,21 @@ function ambStart() {
     if (!buf || sndAmb || !sfxOn() || lastScreen !== "home") return;
     try {
       var s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.loop = true;
-      g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(SOUNDS.sin.vol, ctx.currentTime + 2);
-      s.connect(g); g.connect(ctx.destination); s.start(); sndAmb = { s: s, g: g };
+      g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(SOUNDS.sin.vol * (ambDucks ? 0.2 : 1), ctx.currentTime + 2);
+      /* praskání má ostré špičky: zjemnit (dolní propust) a srovnat (kompresor), ať šum nebije do uší */
+      var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600;
+      var cp = ctx.createDynamicsCompressor(); cp.threshold.value = -32; cp.ratio.value = 10; cp.attack.value = 0.002; cp.release.value = 0.25;
+      s.connect(lp); lp.connect(cp); cp.connect(g); g.connect(ctx.destination); s.start(); sndAmb = { s: s, g: g };
     } catch (e) {}
   });
+}
+/* Když mluví hlas, atmosféra se ztiší na pětinu a pak se plynule vrátí (aby se hlas a praskání nepraly). */
+var ambDucks = 0;
+function ambDuck(on) {
+  ambDucks = Math.max(0, ambDucks + (on ? 1 : -1));
+  if (!sndAmb) return;
+  var ctx = sfxCtxGet(); if (!ctx) return;
+  try { sndAmb.g.gain.setTargetAtTime(ambDucks ? SOUNDS.sin.vol * 0.2 : SOUNDS.sin.vol, ctx.currentTime, ambDucks ? 0.12 : 0.6); } catch (e) {}
 }
 function ambStop() {
   if (!sndAmb) return;
