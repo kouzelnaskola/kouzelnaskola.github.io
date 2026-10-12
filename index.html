@@ -90,6 +90,7 @@
     border: 2px solid var(--ink); border-radius: 5px; box-shadow: 4px 4px 0 var(--shadow);
   }
   .opt.bigOpt { font-size: 1.5em; text-align: center; }
+  .opt.emojiOpt { font-size: 2.6em; line-height: 1.1; padding-top: 10px; padding-bottom: 10px; }   /* poslech: obrázky */
   .opt.enOpt { font-size: 1.35em; text-align: center; letter-spacing: 1px; font-family: "Helvetica Neue", Arial, sans-serif; }
   .opt:not([disabled]):active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--shadow); }
   .opt.correct { background: var(--teal); color: #fff; }
@@ -775,7 +776,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12o";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12p";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2078,6 +2079,18 @@ function wordRecord(state, en, how, dir, ok, day) {
 function isLongPhrase(en) { return /[^a-z']/.test(en) && (en.length > 12 || en.split(" ").length > 3); }
 function isPhrase(en) { return /[^a-z']/.test(en) || en.length > 9; }
 
+/* POSLECH: Alice řekne anglické slovo nebo větu, slovo není vidět; vybírá se obrázek (emoji), u vět česká věta.
+   Poznávání (how "rec"), jen když zařízení umí mluvit (listenOk); v node testu se negeneruje samo. */
+function listenOk() { return typeof ttsLocalOk === "function" && typeof window !== "undefined" && (ttsLocalOk() || ttsProxyOk() || ttsCloudOk()); }
+function vocabListenQ(w, pool, all) {
+  var ph = w.en.indexOf(" ") !== -1, opts, correct;
+  var withE = shuffle(all).filter(function (x) { return x.e && x.en !== w.en && x.e !== w.e; });
+  var seenE = {}; withE = withE.filter(function (x) { if (seenE[x.e]) return false; seenE[x.e] = true; return true; });
+  if (w.e && !ph && withE.length >= 3) { correct = w.e; opts = shuffle([w.e].concat(withE.slice(0, 3).map(function (x) { return x.e; }))); }
+  else { var m = vocabMeaningQ(w, pool, all); correct = m.correct; opts = m.opts; }
+  return { kind:"choice", how:"rec", listen:true, sayPre:true, bigOpts: correct === w.e, word:w.en, q:(ph ? "Poslechni si a vyber, co znamená:" : "Poslechni si a vyber, co slyšíš:"), cue:"",
+    opts: opts, correct: correct, why: w.en + " = " + w.cs + (w.e ? " " + w.e : "") + "." };
+}
 function vocabMeaningQ(w, pool, all) {
   var seen = {}; seen[w.cs] = true;
   /* špatné možnosti stejného druhu: k větě věty, ke slovu slova — jinak se dá uhodnout podle tvaru */
@@ -2172,7 +2185,7 @@ function genVocab(t, state, usedIds) {
     q = r < 0.5 ? vocabTypeQ(w) : vocabRecallCsQ(w);
   } else if (lvl === 0) {
     /* učení: poznávání a skládání */
-    if (r < 0.28) q = vocabMeaningQ(w, pool, all);
+    if (r < 0.28) q = (Math.random() < 0.45 && listenOk()) ? vocabListenQ(w, pool, all) : vocabMeaningQ(w, pool, all);
     else if (r < 0.52) q = vocabSpellChoiceQ(w, pool, all);
     else if (r < 0.72 && !hasSpace) q = vocabMissingLetterQ(w, pool, all);
     else if (!ph || hasSpace) q = vocabBuildQ(w);
@@ -2187,7 +2200,7 @@ function genVocab(t, state, usedIds) {
     /* opakování toho, co už umí */
     if (r < 0.5) q = vocabTypeQ(w);
     else if (r < 0.85) q = vocabRecallCsQ(w);
-    else q = vocabSpellChoiceQ(w, pool, all);
+    else q = listenOk() ? vocabListenQ(w, pool, all) : vocabSpellChoiceQ(w, pool, all);
   }
   q.dbg = { t:t, word:w.en, kind:q.kind, lvl:lvl };
   return q;
@@ -4680,7 +4693,7 @@ function showQuestion() {
       '<button class="hintBtn" id="showOpts">Raději vybrat z možností</button></div>' +
       '<p class="muted hidden" id="mentalNote">Vyber správný výsledek:</p>';
     it.opts.forEach(function (o, idx) {
-      html += '<button class="opt' + (shortOpts ? " bigOpt" : "") + (it.enOpts ? " enOpt" : "") + (mental && !mentalQuiet ? " hidden" : "") + '" data-i="' + idx + '">' + esc(o) + '</button>';
+      html += '<button class="opt' + (shortOpts ? " bigOpt" : "") + (it.listen && it.bigOpts ? " emojiOpt" : "") + (it.enOpts ? " enOpt" : "") + (mental && !mentalQuiet ? " hidden" : "") + '" data-i="' + idx + '">' + esc(o) + '</button>';
     });
   }
   html += '<div id="fb"></div></div>';
@@ -4736,6 +4749,7 @@ function showQuestion() {
     btn.onclick = function () { answerQ(it, it.opts[parseInt(btn.getAttribute("data-i"), 10)], btn); };
   });
   owlDeliver(it);
+  if (it.listen && it.word) setTimeout(function () { if (session && session.queue[session.index] === it) ttsSay(it.word).catch(function () {}); }, 1100);
 }
 
 /* =====================================================================
@@ -6390,7 +6404,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, vocabMeaningQ: vocabMeaningQ, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
