@@ -42,6 +42,10 @@
   .topbar .who .yr { font-size: 13px; color: var(--muted2); font-style: italic; font-weight: 400; }
   .topbar .chips { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
   .chip { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+  .backHome { white-space: nowrap; font-weight: 700; }
+  .resumeCard.justBack { animation: pop .5s ease-out; outline: 3px solid var(--mustard); }
+  .backHome .bhShort { display: none; }
+  @media (max-width: 480px) { .backHome .bhFull { display: none; } .backHome .bhShort { display: inline; } }
   .homeBtn {
     background: var(--paper); color: var(--ink); font-weight: 700;
     border: 2px solid var(--ink); border-radius: 4px; box-shadow: 3px 3px 0 var(--shadow);
@@ -827,7 +831,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-13a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-13b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3265,7 +3269,8 @@ function navHTML(active) {
 }
 function topbarHTML(inQuest, parentBtn) {
   var avatar = S.house ? avatarHTML(30) : svgCastle(28);   /* zvolený avatar (Já), jinak erb koleje */
-  var mid = inQuest ? '<button class="homeBtn" onclick="abortQuest()">' + svgHome(15) + ' Velká síň</button>' : "";
+  /* během hodiny: jasné „zpět“ — hodina se nezahodí, ve Velké síni jde pokračovat */
+  var mid = inQuest ? '<button class="homeBtn backHome" onclick="abortQuest()" title="Zpět do Velké síně — hodina počká, můžeš v ní pak pokračovat" aria-label="Zpět do Velké síně">← ' + svgHome(15) + '<span class="bhFull"> Zpět do Velké síně</span><span class="bhShort"> Zpět</span></button>' : "";
   return '<div class="topbar' + (inQuest ? " inQuest" : "") + '"><span class="who">' + avatar + ' <span>' + esc(S.name || "Bradavice") +
     '<br><span class="yr">' + yearLabel(S.year) + (S.house ? " · " + esc(HOUSES[S.house].n) : "") + '</span></span></span>' + mid +
     '<span class="chips"><span class="chip dust">' + svgCoin(18) + ' <span class="num">' + S.dust + '</span></span>' +
@@ -4560,6 +4565,7 @@ function abortQuest() {
   /* návrat okamžitě, bez potvrzování — body se ukládají po každé odpovědi;
      rozdělaná hodina zůstává uložená a Velká síň nabídne pokračování */
   session = null; screenHome();
+  var rc = document.querySelector(".resumeCard"); if (rc) { rc.classList.add("justBack"); rc.scrollIntoView({ block: "center" }); }
 }
 
 function questionHeader(it) {
