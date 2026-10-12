@@ -768,7 +768,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12i";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12j";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -5325,7 +5325,7 @@ var VIDEOS = {
 };
 var vidMem = {}, vidPending = {};
 function vidGet(k) {
-  if (!VIDEOS[k] || !imgOk()) return Promise.resolve(null);
+  if (!VIDEOS[k] || !imgOk() || (typeof window !== "undefined" && window.BRAD_NO_VIDEO)) return Promise.resolve(null);   /* BRAD_NO_VIDEO: prohlížečový test */
   if (vidMem[k]) return Promise.resolve(vidMem[k]);
   if (vidPending[k]) return vidPending[k];
   var key = "vid:" + k + "|" + VIDEOS[k].v;
@@ -6483,6 +6483,11 @@ function boot() {
   applyHouseColors();
   fsWire();
   fxInit();
+  /* odkaz …/#ukazka spustí ukázku bez přihlášení i na zařízení, kde už někdo hraje (ukázka nic neukládá, profil se nedotkne) */
+  if (typeof location !== "undefined" && /^#ukazka/.test(location.hash || "")) {
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    startDemo(); return;
+  }
   var joinCode = joinFromLink();
   if (joinCode && joinCode !== syncCfg().code) { if (isIOSWeb() && !isStandalone()) screenAddToHome(joinCode); else screenJoin(joinCode); return; }
   updWire();
