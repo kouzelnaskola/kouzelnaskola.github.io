@@ -90,6 +90,8 @@
     border: 2px solid var(--ink); border-radius: 5px; box-shadow: 4px 4px 0 var(--shadow);
   }
   .opt.bigOpt { font-size: 1.5em; text-align: center; }
+  .opt.waitSay { visibility: hidden; }
+  .opt.sayReveal { animation: pop .3s ease-out both; }
   .opt.emojiOpt { font-size: 2.6em; line-height: 1.1; padding-top: 10px; padding-bottom: 10px; }   /* poslech: obrázky */
   .opt.enOpt { font-size: 1.35em; text-align: center; letter-spacing: 1px; font-family: "Helvetica Neue", Arial, sans-serif; }
   .opt:not([disabled]):active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--shadow); }
@@ -776,7 +778,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12p";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12q";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2424,7 +2426,7 @@ var BADGES = [
   { id:"mistryne",  e:"⭐", n:"Mistryně učebny",     d:"20 správných odpovědí v jedné učebně",
     test:function(s){ for (var k in s.stats) if (s.stats[k].c >= 20) return true; return false; } },
   { id:"prach500",  e:"💰", n:"Gringottův trezor",   d:"Získej celkem 500 galeonů",
-    test:function(s){ return s.dustEarned >= 500; } },
+    test:function(s){ return housePoints(s) >= 500; } },
   { id:"mazlicek",  e:"🐾", n:"Kamarádka zvířat",    d:"Pořiď si na Příčné ulici mazlíčka",
     test:function(s){ return hasPet(s); } },
   { id:"vyprav10",  e:"🗺️", n:"Deset vyučování",     d:"Dokonči 10 denních vyučování",
@@ -2466,6 +2468,7 @@ function defaultState() {
     wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
     dustEarned: 0,
+    dustLost: 0,      /* galeony z opuštěných hodin (odečtou se z bodů pro kolej i z měšce; jen roste, slučuje se maximem) */
     unlocked: unlocked,
     stats: stats,
     mistakes: [],
@@ -2540,6 +2543,7 @@ function migrate(s) {
   if (!Array.isArray(s.roomOff)) s.roomOff = [];
   if (!s.paid || typeof s.paid !== "object") s.paid = {};
   if (s.avatar === undefined) s.avatar = null;
+  if (typeof s.dustLost !== "number") s.dustLost = 0;
   if (s.tutorialDone === undefined) s.tutorialDone = !!((s.questsDone || 0) > 0 || (s.dustEarned || 0) > 0);   /* kdo už hraje, průvodce nepotřebuje */
   if (typeof s.mental !== "boolean") s.mental = true;
   if (!YEARS[s.year]) s.year = DEFAULT_YEAR;
@@ -3234,6 +3238,18 @@ function checkBadges() {
   });
 }
 function giveDust(n) { S.dust += n; S.dustEarned += n; }
+/* body pro kolej = vše získané mínus galeony z opuštěných hodin */
+function housePoints(s) { return Math.max(0, (s.dustEarned || 0) - (s.dustLost || 0)); }
+/* Opuštěná hodina se nepočítá: galeony za její odpovědi zmizí z měšce i z bodů pro kolej. */
+function revokeSessionDust(sess, st) {
+  st = st || S;
+  var n = (sess && sess.dustGained) || 0;
+  if (n <= 0) return 0;
+  st.dust = Math.max(0, (st.dust || 0) - n);
+  st.dustLost = (st.dustLost || 0) + n;
+  sess.dustGained = 0;
+  return n;
+}
 
 /* =====================================================================
    PRVNÍ SPUŠTĚNÍ — dopis z Bradavic a jméno
@@ -3424,7 +3440,7 @@ function screenHome() {
   html += '<button class="btn bigCta' + (doneToday ? " done" : "") + '" onclick="startDailyQuest()">' +
     (doneToday ? "✨ Ještě jedno vyučování" : "🕯️ Dnešní vyučování") + '<span>' + (doneToday ? "dnešní plamínek už hoří — tohle je jen pro radost" : "10 otázek · plamínek poroste") + '</span></button>' +
     '<div class="hallChips">' +
-    '<span class="hourglass">' + houseIcon(S.house, 22) + ' <span>Body pro <b>' + esc(h.n) + '</b>: <b>' + S.dustEarned + '</b></span></span>' +
+    '<span class="hourglass">' + houseIcon(S.house, 22) + ' <span>Body pro <b>' + esc(h.n) + '</b>: <b>' + housePoints(S) + '</b></span></span>' +
     '<span class="hchip">' + svgSnow(16) + ' amulety: <b>' + S.streak.freezes + '</b></span>' +
     (S.streak.goal ? '<span class="hchip">🎯 cíl <b>' + Math.min(S.streak.current, S.streak.goal) + ' / ' + S.streak.goal + '</b></span>' : '') +
     '</div>' +
@@ -3978,7 +3994,7 @@ function screenProfile() {
     '<div class="idGrid">' +
     row(flameIcon(17) + ' Plamínek teď', S.streak.current + ' ' + dayWord(S.streak.current)) +
     row('🏆 Nejdelší plamínek', S.streak.best + ' ' + dayWord(S.streak.best)) +
-    row(houseIcon(S.house, 17) + ' Body pro ' + esc(h.n), S.dustEarned) +
+    row(houseIcon(S.house, 17) + ' Body pro ' + esc(h.n), housePoints(S)) +
     row(svgCoin(16) + ' V měšci', S.dust) +
     row('📚 Dokončených vyučování', S.questsDone) +
     row('✨ Bez jediné chyby', S.perfectQuests) +
@@ -4017,6 +4033,7 @@ function startDailyQuest() {
     '</div>');
   speakAs(cl);
   el("beginBtn").onclick = function () {
+    sessionDropUnfinished(true);
     session = newSession("daily", buildQuestItems(S, 10), 10);
     showQuestion();
   };
@@ -4043,6 +4060,16 @@ function sessionSaved() {
   return null;
 }
 function sessionClear() { try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
+/* Nedokončená hodina, která se už nedohraje (jiný den, nebo začala nová hodina), se počítá jako opuštěná. */
+function sessionDropUnfinished(includeToday) {
+  try {
+    var x = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    if (!x || !x.s || !Array.isArray(x.s.queue)) return;
+    if (x.day === todayStr() && !includeToday) return;
+    if (revokeSessionDust(x.s)) saveState();
+    sessionClear();
+  } catch (e) {}
+}
 function resumeSession() {
   var s = sessionSaved();
   if (!s) { screenHome(); return; }
@@ -4053,10 +4080,14 @@ function resumeSession() {
    galeony za už zodpovězené otázky zůstávají, ukládají se hned při odpovědi. */
 function abandonAsk() {
   var b = el("abandonBox"); if (!b) return;
-  b.innerHTML = '<div class="feedback bad" style="text-align:left"><b>Opravdu hodinu opustit?</b><br><span class="muted">Rozehraná hodina se zahodí a nepočítá se. Galeony, které už máš, ti zůstanou.</span><br>' +
+  b.innerHTML = '<div class="feedback bad" style="text-align:left"><b>Opravdu hodinu opustit?</b><br><span class="muted">Rozehraná hodina se zahodí a nepočítá se, ani galeony, které v ní zatím získáš.</span><br>' +
     '<div class="row2" style="margin-top:8px"><button class="btn small red" onclick="abandonSession()">Ano, opustit</button><button class="btn small secondary" onclick="screenHome()">Ne, nechat</button></div></div>';
 }
-function abandonSession() { sessionClear(); session = null; screenHome(); }
+function abandonSession() {
+  var s = session || sessionSaved();
+  if (s) revokeSessionDust(s);
+  sessionClear(); session = null; saveState(); screenHome();
+}
 function startTopicQuest(t) {
   var intro = pick(TOPIC_INTROS), cl = charLine(TOPICS[t].subj);
   render(topbarHTML(true) +
@@ -4069,6 +4100,7 @@ function startTopicQuest(t) {
     '</div>');
   speakAs(cl);
   el("beginBtn").onclick = function () {
+    sessionDropUnfinished(true);
     session = newSession("topic", buildTopicItems(t, S, 10), 10);
     session.topic = t;
     showQuestion();
@@ -4091,6 +4123,7 @@ function screenExamIntro() {
     '</div>');
   speakAs(examCl);
   el("beginBtn").onclick = function () {
+    sessionDropUnfinished(true);
     session = newSession("exam", buildExamItems(S, 15), 15);
     showQuestion();
   };
@@ -4252,10 +4285,12 @@ function ttsPlayBlob(blob) {
   ttsAudio = new Audio(url);
   var a = ttsAudio, ducked = true; ambDuck(true);
   var undo = function () { if (ducked) { ducked = false; ambDuck(false); } };
-  a.onended = function () { URL.revokeObjectURL(url); undo(); };
-  a.onpause = undo; a.onerror = undo;
-  var p = a.play(); if (p && p.catch) p.catch(undo);
-  return p;
+  /* slib se splní až po dořečení (sayFirst ukazuje možnosti až po slově), chyba přehrání = odmítnutí */
+  return new Promise(function (res, rej) {
+    a.onended = function () { URL.revokeObjectURL(url); undo(); res(); };
+    a.onpause = function () { undo(); res(); }; a.onerror = function () { undo(); rej(new Error("audio")); };
+    var p = a.play(); if (p && p.catch) p.catch(function (e) { undo(); rej(e); });
+  });
 }
 /* Pořadí: cache → přímý klíč (pokud je) → server s rodinným kódem → vestavěný hlas zařízení. lang: "en" (výchozí) | "cs". */
 function ttsSay(word, cfgOverride, lang, voiceForce) {
@@ -4533,6 +4568,7 @@ function mergeStates(a, b) {
   if (!m.house && o.house) m.house = o.house;
   if (o.since && (!m.since || o.since < m.since)) m.since = o.since;
   var earned = Math.max(m.dustEarned || 0, o.dustEarned || 0), spentElsewhere = 0;
+  var lost = Math.max(m.dustLost || 0, o.dustLost || 0);   /* opuštěné hodiny: odečet z druhého zařízení se doplní */
   (o.owned || []).forEach(function (id) {
     if (m.owned.indexOf(id) === -1) { var it = shopById(id); if (it) spentElsewhere += (o.paid && o.paid[id]) || it.p; m.owned.push(id); if (o.paid && o.paid[id]) { if (!m.paid) m.paid = {}; m.paid[id] = o.paid[id]; } }
   });
@@ -4546,8 +4582,8 @@ function mergeStates(a, b) {
     if (!mine) { m.rewards.push(r); if (r.status !== "open") spentElsewhere += r.p || 0; }
     else if ((RW_RANK[r.status] || 0) > (RW_RANK[mine.status] || 0)) { if (mine.status === "open" && r.status !== "open") spentElsewhere += r.p || 0; mine.status = r.status; mine.claimed = r.claimed || mine.claimed; }
   });
-  m.dust = Math.max(0, (m.dust || 0) + (earned - (m.dustEarned || 0)) - spentElsewhere);
-  m.dustEarned = earned;
+  m.dust = Math.max(0, (m.dust || 0) + (earned - (m.dustEarned || 0)) - spentElsewhere - (lost - (m.dustLost || 0)));
+  m.dustEarned = earned; m.dustLost = lost;
   (o.badges || []).forEach(function (id) { if (m.badges.indexOf(id) === -1) m.badges.push(id); });
   ["pet", "hat", "petAcc"].forEach(function (k) { if (!m.equipped[k] && o.equipped && o.equipped[k] && m.owned.indexOf(o.equipped[k]) !== -1) m.equipped[k] = o.equipped[k]; });
   for (var t in o.stats) {
@@ -4749,7 +4785,31 @@ function showQuestion() {
     btn.onclick = function () { answerQ(it, it.opts[parseInt(btn.getAttribute("data-i"), 10)], btn); };
   });
   owlDeliver(it);
-  if (it.listen && it.word) setTimeout(function () { if (session && session.queue[session.index] === it) ttsSay(it.word).catch(function () {}); }, 1100);
+  sayFirst(it);
+}
+/* Otázky s výslovností (poslech, „Co znamená…“, z hlavy anglicky→česky): hra slovo nejdřív sama řekne
+   a možnosti se ukážou až po něm (nebo nejpozději po 4 s, kdyby se zvuk nenačetl), ať se neodpovídá
+   bez poslechu. Bez hlasu na zařízení se možnosti ukážou hned. */
+function sayFirst(it) {
+  if (!(it.sayPre || it.listen) || !it.word) return;
+  var canSpeak = typeof ttsLocalOk === "function" && (ttsLocalOk() || ttsProxyOk() || ttsCloudOk());
+  var opts = document.querySelectorAll(".opt");
+  if (!canSpeak) return;
+  var shown = false, show = function () {
+    if (shown) return; shown = true;
+    Array.prototype.forEach.call(opts, function (o, i) { o.classList.remove("waitSay"); o.style.animationDelay = (i * 0.06) + "s"; o.classList.add("sayReveal"); });
+    var h = el("sayWait"); if (h) h.parentNode.removeChild(h);
+  };
+  if (opts.length) {
+    Array.prototype.forEach.call(opts, function (o) { o.classList.add("waitSay"); });
+    var sr = document.querySelector(".card .sayRow");
+    if (sr) sr.insertAdjacentHTML("afterend", '<p class="muted center" id="sayWait">👂 Poslouchej…</p>');
+    setTimeout(show, 4500);
+  }
+  setTimeout(function () {
+    if (!session || session.queue[session.index] !== it) return;
+    ttsSay(it.word).then(function () { setTimeout(show, 250); }, show);
+  }, 900);
 }
 
 /* =====================================================================
@@ -5015,6 +5075,7 @@ function answerQ(it, chosen, btn) {
   sheetToBody();
   checkBadges();
   saveState();
+  sessionPersist();   /* galeony z rozdělané hodiny musí být v záznamu, kdyby se hodina opustila */
   el("nextBtn").onclick = function () { session.index++; showQuestion(); };
   el("nextBtn").focus();
 }
@@ -6635,6 +6696,7 @@ function boot() {
 }
 function bootLocal() {
   applyHouseColors();
+  if (!DEMO) sessionDropUnfinished(false);
   if (typeof setTimeout === "function") setTimeout(function () { if (ttsOnline()) imgPrefetchAll(); }, 2500);
   var before = JSON.stringify(S.streak);
   var res = streakOnLoad(S.streak, todayStr());
