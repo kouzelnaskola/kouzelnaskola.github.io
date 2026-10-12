@@ -393,6 +393,9 @@
   @keyframes snowFall { to { transform: translateY(420px) translateX(30px); } }
   .ssn.bdayBanner { z-index: 4; top: 10px; left: 50%; translate: -50% 0; padding: 6px 16px; border: 2px solid var(--ink); border-radius: 20px; background: var(--mustard); color: #fff; font-weight: 700; white-space: nowrap; box-shadow: 3px 3px 0 rgba(0,0,0,.3); }
   .hall.bday .candle i { filter: hue-rotate(-10deg) saturate(1.6) brightness(1.2); }
+  .puzzleCard, .radioCard { animation: none; background: #fff; }
+  .charSay.onAir { outline: 3px solid var(--mustard); }
+  .noteOut { min-height: 48px; font: 700 26px "Helvetica Neue", Arial, sans-serif; padding: 10px; margin: 8px 0; border: 2px dashed var(--ink); border-radius: 8px; background: #fffaf0; }
   .joyRow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .joyRow .btn { width: auto; margin: 0; }
   #bonusBtn { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 8px; } #bonusBtn span { font-size: 14px; font-style: italic; opacity: .9; }
   /* mřížka násobilky */
@@ -824,7 +827,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12z";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-13a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2623,6 +2626,8 @@ function defaultState() {
     joy: [],          /* co ji rozzářilo (rodič klepne v panelu): [{ d, k }] */
     mail: [],         /* soví pošta rodiny: [{ id, from, text, gift, sent, read, reply: { k, text, d } }] */
     birthday: "",     /* narozeniny "MM-DD" (rodič v panelu), oslava ve Velké síni */
+    puzzle: null,     /* hlavolam týdne: { w, solved, tries } */
+    radioHeard: 0,    /* týden (weekNo), kdy už slyšela Bradavický rozhlas */
     bdayYear: 0,      /* rok, kdy už byl narozeninový dárek */
     exams: {},
     pendingYear: null,
@@ -2688,6 +2693,8 @@ function migrate(s) {
   if (!Array.isArray(s.mail)) s.mail = [];
   if (typeof s.birthday !== "string") s.birthday = "";
   if (typeof s.bdayYear !== "number") s.bdayYear = 0;
+  if (s.puzzle === undefined) s.puzzle = null;
+  if (typeof s.radioHeard !== "number") s.radioHeard = 0;
   if (!s.recentQ || typeof s.recentQ !== "object") s.recentQ = {};
   if (!Array.isArray(s.rewards)) s.rewards = [];
   if (!s.roomPos || typeof s.roomPos !== "object") s.roomPos = {};
@@ -2862,10 +2869,18 @@ var FLAVOR = {
 /* POSTAVY S HLASEM (ElevenLabs, vybral táta 12. 10. 2026). Úvody hodin, zkouška, milníky, nový ročník.
    {jm} = oslovení (5. pád jména). Jen postavy a věci z 1.–2. dílu a dočtené části 3. dílu, krátké věty pro 8 let.
    Text je vidět v bublině s jménem postavy a zazní jejím hlasem (jen se zapnutými mluvenými hláškami). */
+/* Karty identity postav (Lenny's: Claire Vo — postava působí živě díky stálé identitě). Podle nich se píšou
+   VŠECHNY nové hlášky; kontrolor je hlídá. „ví“ = jen svět z 1.–2. dílu a dočtené části 3. dílu. */
 var CHARS = {
-  brumbal: { n: "Brumbál", e: "🧙‍♂️", voice: "A4QaWrc6j9wnj1l191pm" },
-  mcg:     { n: "Profesorka McGonagallová", e: "🎓", voice: "bF7C2fCv7Zf30iT84wZ1" },
-  hagrid:  { n: "Hagrid", e: "🧔", voice: "VG5NcsmIedYE75ow5Dmn" }
+  brumbal: { n: "Brumbál", e: "🧙‍♂️", voice: "A4QaWrc6j9wnj1l191pm",
+    povaha: "laskavý, moudrý, klidný, trochu hravý; věří v dítě", mluvi: "spisovně, krátké moudré věty, občas vtipná poznámka; nikdy nekáže",
+    vi: "ředitel Bradavic; Velká síň, body pro koleje, čokoládové žabky, citronová zmrzlina, fénix Fawkes" },
+  mcg:     { n: "Profesorka McGonagallová", e: "🎓", voice: "bF7C2fCv7Zf30iT84wZ1",
+    povaha: "přísná, ale spravedlivá a vlídná; ocení pečlivost", mluvi: "spisovně, věcně, stručně; pochvala je od ní vzácná a o to cennější",
+    vi: "učí přeměňování, ředitelka Nebelvíru, famfrpál fandí Nebelvíru, přeměna brouka v knoflík (2. díl)" },
+  hagrid:  { n: "Hagrid", e: "🧔", voice: "VG5NcsmIedYE75ow5Dmn",
+    povaha: "hodný velikán s velkým srdcem, nadšený, rychle dojatý", mluvi: "hovorově (teda, jo, anglický slovíčka), zvolání „No ne!“, „Páni!“",
+    vi: "šafář a strážce klíčů, hájenka, pes Tesák, kouzelná zvířata, draci (Norbert, 1. díl); NEUČÍ žádný předmět" }
 };
 var CHAR_LINES = {
   daily: [
@@ -3610,7 +3625,7 @@ function screenHome() {
     '<span class="hchip">' + svgSnow(16) + ' amulety: <b>' + S.streak.freezes + '</b></span>' +
     (S.streak.goal ? '<span class="hchip">🎯 cíl <b>' + Math.min(S.streak.current, S.streak.goal) + ' / ' + S.streak.goal + '</b></span>' : '') +
     '</div>' +
-    mailHomeHTML() + rewardLineHTML() +
+    mailHomeHTML() + radioHomeHTML() + puzzleHomeHTML() + rewardLineHTML() +
     '<p class="muted center hallHint">Každý den jedno vyučování a plamínek roste. Vynechaný den ho zhasne, ledový amulet ho ochrání.</p>' +
     syncHomeLine() + navHTML("sin");
   render(html);
@@ -4127,7 +4142,8 @@ function screenMail(id) {
     '<p class="ltFrom">Dopis ' + esc(mailFromLabel(m.from)) + '</p><p class="ltText">„' + esc(m.text) + '“</p>' +
     (m.gift ? '<p class="ltGift">+' + m.gift + ' ' + svgCoin(18) + ' ' + galeonWord(m.gift) + ' do měšce</p>' : '') + '</div>';
   if (m.reply) html += '<p class="muted">Sovu už jsi poslala zpátky: <b>' + esc(m.reply.text) + '</b></p><button class="btn" onclick="screenHome()">Zpět do Velké síně</button>';
-  else html += '<h3>Pošli sovu zpátky</h3><div class="replyGrid">' + replyOpts.map(function (r) { return '<button class="btn secondary" data-reply="' + esc(r[0]) + '">' + esc(r[1]) + '</button>'; }).join("") + '</div>' +
+  else html += '<h3>Pošli sovu zpátky</h3><div class="replyGrid">' + replyOpts.map(function (r) { return '<button class="btn secondary" data-reply="' + esc(r[0]) + '">' + esc(r[1]) + '</button>'; }).join("") +
+    '<button class="btn gold" onclick="screenNoteBuilder(\'' + m.id + '\')">✍️ Napsat anglický vzkaz</button></div>' +
     '<button class="btn secondary small" onclick="screenHome()">Odpovím později</button>';
   html += '</div>' + navHTML("sin");
   render(html);
@@ -4190,6 +4206,120 @@ function birthdayCheck() {
     confettiRain(null, 60); sfx("fanfare");
     speakAs({ c: "brumbal", ch: CHARS.brumbal, text: "Všechno nejlepší k narozeninám, " + vok(S.name || "čarodějko") + "! Celé Bradavice ti přejí krásný den. Posílám ti dvacet galeonů." }, 900);
   }, 600);
+}
+
+/* =====================================================================
+   HLAVOLAM TÝDNE (Lenny's: Mark Pincus, „daddy math“): jedna dobrovolná hádanka týdně z Brumbálovy pracovny,
+   klidně na řešení s rodičem. Bez hvězd a bez tlaku; vyřešení = 15 galeonů jednou za týden, nápověda po 2 pokusech.
+   ===================================================================== */
+var PUZZLES = [
+  { q: "Hagrid má 3 kotlíky. V každém jsou 4 dračí vejce a ještě 2 vejce leží u krbu. Kolik vajec má celkem?", o: [14, 12, 9, 16], h: "Nejdřív spočítej vejce v kotlících: 3 × 4. Pak přidej ta u krbu." },
+  { q: "Jaké číslo patří na konec řady? 2, 4, 8, 16, …", o: [32, 18, 24, 20], h: "Podívej se, co se s číslem pokaždé stane. Zvětší se o kolik? Nebo kolikrát?" },
+  { q: "Harry, Ron a Hermiona sedí v řadě. Hermiona nesedí na kraji. Ron sedí hned vlevo od Hermiony. Kdo sedí úplně vpravo?", o: ["Harry", "Ron", "Hermiona", "nikdo"], h: "Hermiona sedí uprostřed. Kdo zbyl na pravý kraj?" },
+  { q: "Neville má o 3 čokoládové žabky víc než Ron. Ron má 5 žabek. Kolik žabek mají dohromady?", o: [13, 8, 10, 11], h: "Nejdřív zjisti, kolik má Neville: 5 + 3. Pak sečti oba." },
+  { q: "Fred a George jsou dvojčata. Za 4 roky jim bude dohromady 38 let. Kolik let je teď jednomu z nich?", o: [15, 19, 17, 34], h: "Za 4 roky bude každému polovina z 38. Kolik je to teď, o 4 roky dřív?" },
+  { q: "Myslím si číslo. Když ho vynásobím dvěma a přičtu 3, vyjde 17. Jaké číslo si myslím?", o: [7, 10, 8, 14], h: "Jdi pozpátku: od 17 odečti 3, a co zbude, vyděl dvěma." },
+  { q: "Bradavické koleje jsou Nebelvír, Zmijozel, Mrzimor a Havraspár. Která by byla poslední, kdybychom je seřadili podle abecedy?", o: ["Zmijozel", "Havraspár", "Nebelvír", "Mrzimor"], h: "Seřaď je podle prvního písmene: H, M, N, Z. Která je poslední?" },
+  { q: "Na první polici v knihovně je 10 knih a na každé další o 5 knih víc než na předchozí. Kolik knih je na prvních třech policích dohromady?", o: [45, 30, 35, 40], h: "Na druhé je 15, na třetí 20. Teď je sečti." },
+  { q: "Kolik nohou mají dohromady 3 sovy a 2 kočky?", o: [14, 10, 12, 20], h: "Sova má 2 nohy, kočka 4. Spočítej zvlášť sovy a zvlášť kočky." },
+  { q: "Brumbál rozdělil 23 čokoládových žabek mezi 4 studenty. Každý dostal stejně a co nejvíc. Kolik žabek zbylo?", o: [3, 2, 5, 1], h: "Kolikrát se vejde 4 do 23? 4 × 5 = 20. Kolik chybí do 23?" },
+  { q: "Na šachovnici je 8 řad a v každé řadě 8 polí. Kolik polí má celá šachovnice?", o: [64, 16, 56, 72], h: "Je to 8 × 8. Pomůže 8 × 4 a ještě jednou 8 × 4." },
+  { q: "Malá ručička na hodinách ve Velké síni ukazuje na 3. Na které číslo bude ukazovat za 10 hodin?", o: [1, 13, 7, 10], h: "Ručička obejde 12 a začne znovu. 3 + 10 = 13, ale na ciferníku je to…" }
+];
+function puzzleOfWeek() { var w = weekNo(); return { w: w, p: PUZZLES[((w % PUZZLES.length) + PUZZLES.length) % PUZZLES.length] }; }
+function puzzleState() { var pw = puzzleOfWeek(); if (!S.puzzle || S.puzzle.w !== pw.w) S.puzzle = { w: pw.w, solved: false, tries: 0 }; return S.puzzle; }
+function puzzleHomeHTML() {
+  if (!S.house) return "";
+  var st = puzzleState();
+  return '<button class="mailCard puzzleCard" onclick="screenPuzzle()"><span class="mcOwl">🧩</span><span><b>Hlavolam týdne</b><br><span class="muted">' + (st.solved ? "vyřešeno ✓ — v pondělí přijde nový" : "z Brumbálovy pracovny · klidně s tátou") + '</span></span></button>';
+}
+function screenPuzzle() {
+  var pw = puzzleOfWeek(), st = puzzleState(), p = pw.p;
+  var html = topbarHTML() + '<div class="card center"><div class="bigIcon">🧩</div><h2>Hlavolam týdne</h2><p class="muted">Z Brumbálovy pracovny. Klidně ho řeš s tátou nebo s mámou.</p>' +
+    '<p class="qtext">' + esc(p.q) + '</p>';
+  if (st.solved) html += '<div class="feedback ok">✓ Vyřešeno! Správně je <b>' + esc(String(p.o[0])) + '</b>. V pondělí přinese sova nový hlavolam.</div>';
+  else html += shuffle(p.o.slice()).map(function (o) { return '<button class="opt" data-pz="' + esc(String(o)) + '">' + esc(String(o)) + '</button>'; }).join("") +
+    (st.tries >= 2 ? '<div class="hintBox">💡 ' + esc(p.h) + '</div>' : '') + '<div id="pzFb"></div>';
+  html += '<button class="btn secondary" onclick="screenHome()">Zpět do Velké síně</button></div>' + navHTML("sin");
+  render(html);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-pz]"), function (b) {
+    b.onclick = function () {
+      if (String(p.o[0]) === b.getAttribute("data-pz")) { st.solved = true; giveDust(15); saveState(); confettiRain(null, 40); sfx("fanfare"); screenPuzzle();
+        var f = document.querySelector(".feedback.ok"); if (f) f.insertAdjacentHTML("beforeend", "<br>+15 " + svgCoin(16) + " galeonů!"); }
+      else { st.tries++; saveState(); sfx("bad"); b.classList.add("wrong"); b.disabled = true; if (st.tries === 2) screenPuzzle(); else { var fb = el("pzFb"); if (fb) fb.innerHTML = '<p class="muted">Zkus to ještě jednou, chyba nic nestojí.</p>'; } }
+    };
+  });
+}
+
+/* =====================================================================
+   BRADAVICKÝ ROZHLAS (Lenny's: Josh Woodward — NotebookLM; Matthew Dicks — příběh proměny): od pondělí do středy
+   ve Velké síni krátká relace o minulém týdnu: McGonagallová shrne, Hagrid pochválí. Hlasy postav, text i na obrazovce.
+   Jen pro opravdový profil (věty se mění každý týden). Proměna: co bylo minulý týden „nové“ a teď „umíš“.
+   ===================================================================== */
+function weekStats() {
+  var today = todayStr(), mon = mondayOf(today), from = addDays(mon, -7), to = addDays(mon, -1), days = 0;
+  for (var i = 0; i < 7; i++) if (S.streak.history[addDays(from, i)] === "done") days++;
+  var inWeek = function (x) { return x && x.l === 2 && x.last && x.last >= from && x.last <= to; };
+  var words = Object.keys(S.wordLv || {}).filter(function (k) { return inWeek(S.wordLv[k]); });
+  var facts = Object.keys(S.factLv || {}).filter(function (k) { return /^\d+x\d+$/.test(k) && inWeek(S.factLv[k]); });
+  var vyj = Object.keys(S.factLv || {}).filter(function (k) { return /^v:/.test(k) && inWeek(S.factLv[k]); });
+  return { days: days, words: words, facts: facts, vyj: vyj, streak: S.streak.current };
+}
+function radioLines() {
+  var w = weekStats(), jm = vok(S.name || "čarodějko"), L = [];
+  L.push(["mcg", "Dobrý den, tady Bradavický rozhlas." + (w.days ? " Minulý týden měla " + (S.name || "naše studentka") + " vyučování " + w.days + " " + (w.days === 1 ? "den" : w.days >= 2 && w.days <= 4 ? "dny" : "dní") + " ze sedmi." : "")]);
+  if (w.facts.length) L.push(["mcg", "Nově umí z násobilky " + w.facts.slice(0, 3).map(function (k) { return k.replace("x", " krát "); }).join(", ") + ". Velmi dobře."]);
+  if (w.words.length) L.push(["hagrid", "Páni, " + jm + "! Minulý týden ses naučila z hlavy " + (w.words.length === 1 ? "nové anglické slovíčko" : w.words.length + (w.words.length <= 4 ? " nová anglická slovíčka" : " nových anglických slovíček")) + ". Teď je umíš napsat!"]);
+  if (w.vyj.length) L.push(["mcg", "Vyjmenovaná slova: nově umí najisto " + w.vyj.length + " " + (w.vyj.length === 1 ? "slovo" : w.vyj.length <= 4 ? "slova" : "slov") + "."]);
+  if (w.days === 7) L.push(["hagrid", "Každý den! To by i Tesák zavrtěl ocasem."]);
+  else if (w.days >= 5) L.push(["hagrid", "Skoro každý den! To by i Tesák zavrtěl ocasem."]);
+  else if (w.days === 0) L.push(["hagrid", "Minulý týden bylo v Bradavicích nějak ticho. Tak se do toho zase pustíme, jo?"]);
+  L.push(["mcg", "To je pro tento týden vše. Hodně štěstí, " + jm + "."]);
+  return L;
+}
+function radioOn() { if (DEMO || !S.house) return false; var dow = (new Date(todayStr() + "T12:00:00")).getDay(); return dow >= 1 && dow <= 3 && (S.questsDone || 0) > 0; }
+function radioHomeHTML() {
+  if (!radioOn()) return "";
+  return '<button class="mailCard radioCard" onclick="screenRadio()"><span class="mcOwl">📻</span><span><b>Bradavický rozhlas</b><br><span class="muted">Co se povedlo minulý týden · ' + (S.radioHeard === weekNo() ? "poslechnuto ✓" : "nová relace") + '</span></span></button>';
+}
+function screenRadio() {
+  var L = radioLines();
+  render(topbarHTML() + '<div class="card"><h2 class="center">📻 Bradavický rozhlas</h2>' + L.map(function (x) { return charSayHTML({ c: x[0], ch: CHARS[x[0]], text: x[1] }); }).join("") +
+    '<button class="btn gold" id="radioPlay">▶ Pustit relaci</button><button class="btn secondary" onclick="screenHome()">Zpět do Velké síně</button></div>' + navHTML("sin"));
+  S.radioHeard = weekNo(); saveState();
+  el("radioPlay").onclick = function () {
+    var i = 0, bubbles = document.querySelectorAll(".charSay");
+    (function next() {
+      if (i >= L.length || !document.getElementById("radioPlay")) return;
+      Array.prototype.forEach.call(bubbles, function (b, k) { b.classList.toggle("onAir", k === i); });
+      var x = L[i++]; ttsSay(x[1], null, "cs", CHARS[x[0]].voice).then(function () { setTimeout(next, 350); }, function () { setTimeout(next, 1500); });
+    })();
+  };
+}
+
+/* ANGLICKÝ VZKAZ DOMŮ (Lenny's: tvořit, ne jen odpovídat): v odpovědi na dopis dítě poskládá krátký vzkaz
+   z anglických slov, která poznává nebo umí, a pomocných slov. Rodič ho uvidí v panelu. */
+var NOTE_HELPERS = ["hi", "mum", "dad", "I", "love", "you", "my", "is", "this", "a", "and", "the", "!"];
+function screenNoteBuilder(mailId) {
+  var words = Object.keys(S.wordLv || {}).filter(function (k) { return S.wordLv[k].l >= 1 && k.split(" ").length <= 2 && !/[?.]/.test(k); }).slice(0, 18);
+  var tiles = NOTE_HELPERS.concat(words), cur = [];
+  var draw = function () {
+    el("noteOut").textContent = cur.length ? cur.join(" ").replace(/ !/g, "!") : "…";
+    el("noteSend").disabled = cur.length < 2;
+  };
+  render(topbarHTML() + '<div class="card center"><h2>✍️ Anglický vzkaz domů</h2><p class="muted">Poskládej vzkaz ze slov, která už znáš. Klepnutím slovo přidáš.</p>' +
+    '<div class="noteOut" id="noteOut">…</div><div class="letterRow">' + tiles.map(function (w, i) { return '<button class="tile wide" data-nt="' + i + '">' + esc(w) + '</button>'; }).join("") + '</div>' +
+    '<div class="row2"><button class="btn secondary" id="noteBack">⌫ Smazat slovo</button><button class="btn gold" id="noteSend" disabled>🦉 Poslat sovu</button></div>' +
+    '<button class="btn secondary small" onclick="screenMail(\'' + mailId + '\')">Zpět k dopisu</button></div>' + navHTML("sin"));
+  Array.prototype.forEach.call(document.querySelectorAll("[data-nt]"), function (b) { b.onclick = function () { if (cur.length < 12) { cur.push(tiles[+b.getAttribute("data-nt")]); sfx("tile"); draw(); } }; });
+  el("noteBack").onclick = function () { cur.pop(); draw(); };
+  el("noteSend").onclick = function () {
+    var m = (S.mail || []).filter(function (x) { return x.id === mailId; })[0]; if (!m) return;
+    var txt = cur.join(" ").replace(/ !/g, "!"); txt = txt.charAt(0).toUpperCase() + txt.slice(1);
+    m.reply = { k: "note", text: "✍️ " + txt, d: todayStr() }; saveState(); sfxWings(4); sfx("built");
+    render(topbarHTML() + '<div class="card center"><div class="bigIcon">🦉</div><h2>Sova letí s anglickým vzkazem!</h2><p class="qtext">„' + esc(txt) + '“</p><button class="btn gold" onclick="screenHome()">Zpět do Velké síně</button></div>' + navHTML("sin"));
+  };
+  draw();
 }
 
 /* CO JI DNES ROZZÁŘILO (Lenny's: Josh Woodward, „metrika jsou oči“): jedno klepnutí rodiče po hodině,
@@ -4893,6 +5023,8 @@ function mergeStates(a, b) {
   });
   if (!m.birthday && o.birthday) m.birthday = o.birthday;
   m.bdayYear = Math.max(m.bdayYear || 0, o.bdayYear || 0);
+  if (o.puzzle && (!m.puzzle || o.puzzle.w > m.puzzle.w || (o.puzzle.w === m.puzzle.w && o.puzzle.solved && !m.puzzle.solved))) m.puzzle = o.puzzle;
+  m.radioHeard = Math.max(m.radioHeard || 0, o.radioHeard || 0);
   (o.joy || []).forEach(function (x) { if (!(m.joy || []).some(function (y) { return y.d === x.d && y.k === x.k; })) { if (!m.joy) m.joy = []; m.joy.push(x); } });
   if (!m.roomPos || typeof m.roomPos !== "object") m.roomPos = {};
   for (var rk in (o.roomPos || {})) if (!m.roomPos[rk]) m.roomPos[rk] = o.roomPos[rk];
@@ -6863,6 +6995,9 @@ W.screenAvatar = screenAvatar;
 W.avatarPick = avatarPick;
 W.mapFullToggle = mapFullToggle;
 W.screenMail = screenMail;
+W.screenPuzzle = screenPuzzle;
+W.screenRadio = screenRadio;
+W.screenNoteBuilder = screenNoteBuilder;
 W.bonusGo = bonusGo;
 W.joyTap = joyTap;
 W.tutStart = tutStart;
@@ -6897,7 +7032,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, vyjWord: vyjWord, BANKS_VYJ: VYJ_TOPICS, altExplainHTML: altExplainHTML, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, PUZZLES: PUZZLES, vyjWord: vyjWord, BANKS_VYJ: VYJ_TOPICS, altExplainHTML: altExplainHTML, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
