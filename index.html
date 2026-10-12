@@ -369,6 +369,16 @@
   .charSay .csWho { display: block; font-size: 14px; font-weight: 700; color: var(--acc-d); margin-bottom: 2px; }
   .charSay .csText { font-size: 18px; font-style: italic; line-height: 1.4; }
   .charSay.inSheet { margin: 6px 0 8px; max-width: none; }
+  /* mřížka násobilky */
+  .factGrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; max-width: 520px; margin: 8px auto 6px; font-family: "Helvetica Neue", Arial, sans-serif; }
+  .factGrid span { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(10px, 2.6vw, 15px); border-radius: 5px; }
+  .factGrid .fgH { font-weight: 700; color: var(--muted2); }
+  .fg { border: 1.5px solid #b9ad97; background: #fff; color: var(--ink); }
+  .fg.l1 { background: var(--mustard-pale); border-color: var(--mustard-d); }
+  .fg.l2 { background: var(--teal); border-color: var(--teal-d); color: #fff; font-weight: 700; }
+  .fg.new { color: #b9ad97; }
+  .fgLegend { text-align: center; font-size: 14px; color: var(--muted2); display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .fgLegend .fg { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-left: 8px; }
   /* souhrn: nejlepší kouzla / kde jsem zaváhala */
   .revBox { text-align: left; margin: 12px 0; border: 2px solid var(--ink); border-radius: 10px; background: #fffdf7; padding: 10px 14px; box-shadow: 3px 3px 0 var(--shadow); }
   .revBox summary { cursor: pointer; font-weight: 700; }
@@ -785,7 +795,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12t";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12u";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1558,9 +1568,40 @@ function genM1() {
     why: c + " − " + d + " = " + ans2, dbg: { t:"M1", op:"-", a:c, b:d, ans:ans2 } };
 }
 
+/* MISTROVSTVÍ NÁSOBILKY (Lenny's: mistrovství po jednotlivých příkladech, 12. 10. 2026)
+   Každý příklad (3×7 = 7×3) má v S.factLv stupeň jako slovíčka: 0 Nový → 1 Jde mi (2× za sebou správně napoprvé)
+   → 2 Umím (správně napoprvé ve 2 různé dny na stupni 1). Chyba z „Umím“ vrací na „Jde mi“. Opakování po chybě se nepočítá.
+   Výběr příkladu: přednost „Jde mi“, pak nové, „Umím“ jen občas na opakování (jako pickWordWeighted). */
+function factKey(a, b) { return Math.min(a, b) + "x" + Math.max(a, b); }
+function factLvGet(state, k) { if (!state.factLv) state.factLv = {}; return state.factLv[k] || (state.factLv[k] = { l: 0, r: 0, d: [] }); }
+function factLevel(state, k) { var x = state && state.factLv && state.factLv[k]; return x ? x.l : 0; }
+function factRecord(state, k, ok, day) {
+  var x = factLvGet(state, k), from = x.l;
+  if (ok) {
+    x.r = (x.r || 0) + 1;
+    if (x.l === 0 && x.r >= 2) { x.l = 1; x.d = []; }
+    else if (x.l >= 1) { if (x.d.indexOf(day) === -1) x.d.push(day); if (x.d.length > 3) x.d = x.d.slice(-3); if (x.l === 1 && x.d.length >= 2) x.l = 2; }
+  } else { x.r = 0; x.d = []; if (x.l === 2) x.l = 1; }
+  x.last = day;
+  return { from: from, to: x.l };
+}
+function pickFact(state, aMin, aMax) {
+  var today = todayStr(), list = [], w = [];
+  for (var a = aMin; a <= aMax; a++) for (var b = 2; b <= 10; b++) {
+    var x = state && state.factLv && state.factLv[factKey(a, b)], l = x ? x.l : 0, base;
+    if (l === 0) base = 3; else if (l === 1) base = 5; else { var ago = x.last ? dateDiffDays(x.last, today) : 99; base = ago >= 3 ? 1.5 : 0.4; }
+    list.push([a, b]); w.push(base);
+  }
+  var sum = w.reduce(function (p, c) { return p + c; }, 0), r = Math.random() * sum;
+  for (var i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; }
+  return list[list.length - 1];
+}
+var FACT_LV_NAMES = ["Nový", "Jde mi", "Umím"];
+
 /* M2: násobilka 2–5 */
-function genM2() {
-  var a = rnd(2, 5), b = rnd(2, 10), ans = a * b;
+function genM2(state) {
+  var f = state && state.factLv ? pickFact(state, 2, 5) : [rnd(2, 5), rnd(2, 10)];
+  var a = f[0], b = f[1], ans = a * b;
   var swap = Math.random() < 0.5;
   var q = (swap ? b + " × " + a : a + " × " + b) + " = ?";
   return { q: q, opts: numOptions(ans, [a, -a, b, -b, 1, -1, 2, -2]), correct: ans,
@@ -1568,8 +1609,9 @@ function genM2() {
 }
 
 /* M3: násobilka 6–10 */
-function genM3() {
-  var a = rnd(6, 10), b = rnd(2, 10), ans = a * b;
+function genM3(state) {
+  var f = state && state.factLv ? pickFact(state, 6, 10) : [rnd(6, 10), rnd(2, 10)];
+  var a = f[0], b = f[1], ans = a * b;
   var swap = Math.random() < 0.5;
   var q = (swap ? b + " × " + a : a + " × " + b) + " = ?";
   return { q: q, opts: numOptions(ans, [a, -a, b, -b, 10, -10, 1, -1]), correct: ans,
@@ -2523,6 +2565,7 @@ function defaultState() {
     perfectQuests: 0,
     spelledOk: 0,
     wordLv: {},
+    factLv: {},       /* mistrovství násobilky: { "3x7": { l, r, d, last } } */
     exams: {},
     pendingYear: null,
     owned: [],
@@ -2582,6 +2625,7 @@ function migrate(s) {
   if (!Array.isArray(s.mistakes)) s.mistakes = [];
   if (!s.exams || typeof s.exams !== "object") s.exams = {};
   if (!s.wordLv || typeof s.wordLv !== "object") s.wordLv = {};
+  if (!s.factLv || typeof s.factLv !== "object") s.factLv = {};
   if (!s.recentQ || typeof s.recentQ !== "object") s.recentQ = {};
   if (!Array.isArray(s.rewards)) s.rewards = [];
   if (!s.roomPos || typeof s.roomPos !== "object") s.roomPos = {};
@@ -2681,7 +2725,8 @@ function makeQuestion(t, state, usedIds) {
   rq.push(key); if (rq.length > 20) rq.splice(0, rq.length - 20);
   state.recentQ[t] = rq;
   var hint = mathHint(g);
-  return { topic: t, kind:"choice", q: g.q, opts: shuffle(g.opts), correct: g.correct, why: hint || g.why, hint: hint ? hintOpen(hint) : "" };
+  var fk = (t === "M2" || t === "M3") && g.dbg ? factKey(g.dbg.a, g.dbg.b) : null;
+  return { topic: t, kind:"choice", q: g.q, opts: shuffle(g.opts), correct: g.correct, why: hint || g.why, hint: hint ? hintOpen(hint) : "", fact: fk };
 }
 /* Klíč příkladu z ladicích údajů generátoru (bez výsledku); 3×7 a 7×3 je týž příklad. */
 function genKey(t, g) {
@@ -3977,10 +4022,26 @@ function subjectRoomsHTML(subj) {
   }
   return html;
 }
+/* Mřížka násobilky 2–10 obarvená podle stupňů (Lektvary a rodičovský panel). */
+function factGridHTML(state) {
+  var cnt = [0, 0, 0], h = '<div class="factGrid"><span class="fgH">×</span>';
+  for (var c = 2; c <= 10; c++) h += '<span class="fgH">' + c + '</span>';
+  for (var a = 2; a <= 10; a++) {
+    h += '<span class="fgH">' + a + '</span>';
+    for (var b = 2; b <= 10; b++) {
+      var k = factKey(a, b), x = state.factLv && state.factLv[k], l = x ? x.l : 0, seen = !!x;
+      if (a <= b) cnt[l]++;
+      h += '<span class="fg l' + l + (seen ? "" : " new") + '" title="' + a + ' × ' + b + ' = ' + (a * b) + ' · ' + FACT_LV_NAMES[l] + '">' + (a * b) + '</span>';
+    }
+  }
+  h += '</div><div class="fgLegend"><span class="fg l2"></span> Umím ' + cnt[2] + ' <span class="fg l1"></span> Jde mi ' + cnt[1] + ' <span class="fg l0"></span> Zatím ne ' + cnt[0] + '</div>';
+  return h;
+}
 function screenMapSubject(subj) {
   var html = topbarHTML() + '<div class="card"><button class="btn secondary small backMap" onclick="screenMap()">← Mapa hradu</button>' +
     '<h2 class="center subjTitle">' + subjIcon(subj, 30) + ' ' + esc(SUBJECTS[subj].n) + '</h2><p class="muted center">' + esc(SUBJECTS[subj].sub) + '</p>' +
-    subjectRoomsHTML(subj) + '</div>' + navHTML("rozvrh");
+    subjectRoomsHTML(subj) + (subj === "m" && (isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3 class="center" style="margin-top:18px">🧪 Moje násobilka</h3><p class="muted center">Příklad umíš, když ho spočítáš správně ve dva různé dny.</p>' + factGridHTML(S) : '') +
+    '</div>' + navHTML("rozvrh");
   render(html);
   TOPIC_ORDER.forEach(function (t) { if (TOPICS[t].subj === subj) delete recentStars[t]; });
 }
@@ -4646,6 +4707,11 @@ function mergeStates(a, b) {
     if (!me) m.exams[ey] = oe;
     else { me.best = Math.max(me.best || 0, oe.best || 0); me.passed = !!(me.passed || oe.passed); me.tries = Math.max(me.tries || 0, oe.tries || 0); }
   }
+  if (!m.factLv) m.factLv = {};
+  for (var fk in (o.factLv || {})) {
+    var of = o.factLv[fk], mf = m.factLv[fk];
+    if (!mf || (of.l || 0) > (mf.l || 0) || ((of.l || 0) === (mf.l || 0) && (of.d || []).length > (mf.d || []).length)) m.factLv[fk] = of;
+  }
   for (var w in o.wordLv) {
     var ow = o.wordLv[w], mw = m.wordLv[w];
     if (!mw || (ow.l || 0) > (mw.l || 0) || ((ow.l || 0) === (mw.l || 0) && (ow.d || []).length > (mw.d || []).length)) m.wordLv[w] = ow;
@@ -5069,6 +5135,10 @@ function answerQ(it, chosen, btn) {
   var st = S.stats[it.topic];
   var isSpell = (it.kind === "build" && !it.tokens) || (it.kind === "type" && !it.csInput);
   var note = wordNote(it, correct);
+  if (it.fact && !it.retry) {
+    var fch = factRecord(S, it.fact, !!correct, todayStr());
+    if (fch.to === 2 && fch.from < 2 && session) { if (!session.newFacts) session.newFacts = []; session.newFacts.push(it.fact.replace("x", " × ")); }
+  }
   /* zápis odpovědi pro souhrn (nejlepší kouzla / kde jsem zaváhala); jen první pokus */
   if (!it.retry) { if (!session.log) session.log = []; session.log.push({ q: it.q, a: String(it.correct), ok: !!correct, kind: it.kind, recall: !!it.recall, topic: it.topic, mental: !!it.mental }); }
   if (correct) {
@@ -5188,6 +5258,10 @@ function screenQuestSummary(perfect) {
   html += summaryTopicsHTML();
   html += summaryReviewHTML();
   var flipAt = 1.0 + (session.newStarCount || 0) * 0.45;
+  if (session.newFacts && session.newFacts.length) {
+    html += '<div class="feedback ok flipIn" style="animation-delay:' + flipAt.toFixed(2) + 's">🧪 Nově umíš násobilku: <b>' + session.newFacts.map(esc).join(", ") + '</b></div>';
+    flipAt += 0.45;
+  }
   if (session.newWords && session.newWords.length) {
     html += '<div class="feedback ok flipIn" style="animation-delay:' + flipAt.toFixed(2) + 's">🌟 Nově umíš z hlavy: <b class="qword">' + session.newWords.map(esc).join(", ") + '</b></div>';
     flipAt += 0.45;
@@ -6123,6 +6197,7 @@ function screenParent(section) {
       '<table class="weekTable">' + weekRows + '</table>' +
       '<p class="muted">Plamínek prodlouží jen dokončené denní vyučování (10 otázek). Při vynechaném dnu se spotřebuje amulet; bez amuletu hra do dvou dnů nabídne odpracování (2 vyučování v jednom dni) — nikdy výčitky.</p>' +
       '<h3>Jak jí to jde</h3>' + (statRows || '<p class="muted">Zatím nehráno.</p>') +
+      ((isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3>🧪 Násobilka po příkladech</h3><p class="muted">Tyrkysová = umí (správně ve dva různé dny), žlutá = jde jí (2× za sebou správně), bílá = ještě ne. Hra přednostně procvičuje žluté a nové.</p>' + factGridHTML(S) : '') +
       (examRows ? '<p class="muted" style="margin-top:8px">Zkoušky ročníku:</p><ul style="margin-left:20px;font-size:15px">' + examRows + '</ul>' : '') +
       '<h3>Chyby</h3>' +
       (mistakes ? '<p class="muted">Posledních ' + S.mistakes.length + ' chyb (hra si pamatuje 50).</p>' +
@@ -6531,7 +6606,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
