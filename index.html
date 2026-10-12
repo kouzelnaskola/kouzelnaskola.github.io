@@ -737,6 +737,9 @@
     .confetti, .sparkle, #fx { display: none !important; }
     .hall .cloud, .hall .candle, .hall .candle i, .hall .stars, .hall .hbanner, .hall .hallBg, .bigCta { animation: none !important; }
   }
+  /* vypínač animací v rodičovském panelu (devCfg().anim) */
+  html.noAnim *, html.noAnim *::before, html.noAnim *::after { animation: none !important; transition: none !important; }
+  html.noAnim .confetti, html.noAnim .sparkle, html.noAnim #fx { display: none !important; }
   .parentLink { text-align: center; margin-top: 26px; }
   .welcomeAlt .btn { margin-bottom: 4px; }
   @media (max-width: 480px) { .demoChip span { display: none; } }
@@ -765,7 +768,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12g";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12h";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3007,7 +3010,12 @@ function applyHouseColors() {
   document.body.style.setProperty("--acc-pale", h ? h.pale : "#f2d5d0");
 }
 
-function reducedMotion() { return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches; }
+/* Nastavení zařízení (mimo postup, localStorage bradaviceNastaveni): anim = animace a videa, amb = atmosféra Velké síně. */
+var DEV_KEY = "bradaviceNastaveni";
+function devCfg() { try { var c = JSON.parse(localStorage.getItem(DEV_KEY) || "{}"); return { anim: c.anim !== false, amb: c.amb !== false }; } catch (e) { return { anim: true, amb: true }; } }
+function devSet(k, v) { var c = devCfg(); c[k] = !!v; try { localStorage.setItem(DEV_KEY, JSON.stringify(c)); } catch (e) {} devApply(); }
+function devApply() { if (typeof document !== "undefined" && document.documentElement) document.documentElement.classList.toggle("noAnim", !devCfg().anim); }
+function reducedMotion() { return !devCfg().anim || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches); }
 
 /* ---------------------------------------------------------------------
    ČÁSTICE — jeden <canvas id="fx"> přes celou obrazovku, vedle #app, takže
@@ -4281,7 +4289,7 @@ function sndPlay(k) {
   try { var s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; g.gain.value = SOUNDS[k].vol; s.connect(g); g.connect(ctx.destination); s.start(); return true; } catch (e) { return false; }
 }
 function ambStart() {
-  if (sndAmb || !sfxOn() || reducedMotion()) return;
+  if (sndAmb || !sfxOn() || !devCfg().amb) return;
   var ctx = sfxCtxGet(); if (!ctx) return;
   sndLoad("sin").then(function (buf) {
     if (!buf || sndAmb || !sfxOn() || lastScreen !== "home") return;
@@ -5941,8 +5949,12 @@ function screenParent(section) {
       '<p class="muted">Bez českého hlasu mluví česky Alice s britským přízvukem. V ElevenLabs: Voices → český hlas → ⋮ → Copy voice ID.</p>' +
       '<button class="btn small" id="saveVoiceCs">Uložit český hlas</button> <button class="btn small secondary" id="testMluveni">Vyzkoušet hlášku</button> <span class="muted" id="mluvMsg"></span>' +
       '<h3>🔔 Zvuky ve hře</h3>' +
-      '<p class="muted">Krátké tóny: správně, špatně (měkce), mince, skládání slova, fanfára, zvon u milníků, třpyt u odznaku. Nikdy před odpovědí. Vypínač je i v horní liště (🔈/🔇) a platí jen pro toto zařízení.</p>' +
-      '<div class="chkRow"><input type="checkbox" id="pSfx"' + (sfxOn() ? " checked" : "") + '><span><b>Zvuky zapnuté</b></span></div>';
+      '<p class="muted">Zvuky z ElevenLabs: správně, špatně (měkce), mince, skládání slova, fanfára, zvon u milníků, třpyt u odznaku, šustnutí stránky, křídla sovy. Nikdy před odpovědí. Vypínač je i v horní liště (🔈/🔇) a platí jen pro toto zařízení.</p>' +
+      '<div class="chkRow"><input type="checkbox" id="pSfx"' + (sfxOn() ? " checked" : "") + '><span><b>Zvuky zapnuté</b></span></div>' +
+      '<div class="chkRow"><input type="checkbox" id="pAmb"' + (devCfg().amb ? " checked" : "") + '><span><b>Atmosféra Velké síně</b> <span class="muted">— tiché praskání pochodní ve Velké síni</span></span></div>' +
+      '<h3>✨ Animace</h3>' +
+      '<p class="muted">Létající sova, otáčení stránek, konfety, kolébání mapy a videa u velkých momentů. Vypnutím hra zklidní a zrychlí na starších zařízeních. Platí pro toto zařízení.</p>' +
+      '<div class="chkRow"><input type="checkbox" id="pAnim"' + (devCfg().anim ? " checked" : "") + '><span><b>Animace a videa zapnuté</b></span></div>';
   }
 
   if (section === "zarizeni") {
@@ -6099,6 +6111,8 @@ function screenParent(section) {
     ttsSay("Výborně, " + (S.name ? vok(S.name) : "čarodějko") + "! Deset bodů pro " + (S.house ? HOUSES[S.house].n : "tvou kolej") + ".", null, "cs")
       .then(function () { msg("mluvMsg", ttsProxyOk() || ttsCfg().key ? "Funguje (ElevenLabs)." : "Funguje (vestavěný hlas)."); }, function (e) { msg("mluvMsg", ttsErrText(e)); });
   });
+  on("pAmb", "onchange", function () { devSet("amb", el("pAmb").checked); });
+  on("pAnim", "onchange", function () { devSet("anim", el("pAnim").checked); });
   on("pSfx", "onchange", function () { sfxSet(el("pSfx").checked); var b = document.querySelector(".sfxBtn"); if (b) b.textContent = sfxOn() ? "🔈" : "🔇"; if (sfxOn()) sfx("ok"); });
 
   /* zařízení a cloud */
@@ -6464,6 +6478,7 @@ function screenJoin(code) {
   });
 }
 function boot() {
+  devApply();
   applyHouseColors();
   fsWire();
   fxInit();
