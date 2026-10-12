@@ -768,7 +768,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12k";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12l";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -4258,7 +4258,7 @@ var SFX = {
    Nový zvuk = řádek v design/zvuky.mjs + položka tady; přegenerovat = nový název nebo vyšší v.
    --------------------------------------------------------------------- */
 var SOUNDS = {   /* vol podle naměřené síly souboru (12. 10. 2026), ať jsou zvuky vyrovnané */
-  ok: { v: 1, vol: .55 }, bad: { v: 1, vol: .45 }, coin: { v: 1, vol: .6 }, tile: { v: 1, vol: .55 }, tileBad: { v: 1, vol: .35, f: "tile-bad" },
+  ok: { v: 1, vol: .55 }, bad: { v: 1, vol: .45 }, coin: { v: 1, vol: .22 }, tile: { v: 1, vol: .55 }, tileBad: { v: 1, vol: .35, f: "tile-bad" },
   built: { v: 1, vol: .4 }, fanfare: { v: 1, vol: .3 }, bell: { v: 1, vol: .4 }, badge: { v: 1, vol: .5, f: "badge2" }, star: { v: 1, vol: .4 },
   drum: { v: 1, vol: .35 }, buy: { v: 1, vol: .6 }, amulet: { v: 1, vol: .6 }, pop: { v: 1, vol: .6, f: "pop3" }, page: { v: 1, vol: .45 },
   wings: { v: 1, vol: .25 }, sin: { v: 1, vol: .28, loop: true }   /* atmosféra: praskání má ostré špičky, proto tiše (táta 12. 10.: bylo moc nahlas) */
@@ -4342,7 +4342,8 @@ function sfx(name) {
     } catch (e) {}
   });
 }
-function sfxCoins(n) { n = Math.min(n || 1, 4); for (var i = 0; i < n; i++) (function (i) { setTimeout(function () { sfx("coin"); }, 180 + i * 75); })(i); }
+/* cinkání galeonů po správné odpovědi: nejvýš dvě tiché mince, ať nepřehluší „správně“ (táta 12. 10.: bylo moc) */
+function sfxCoins(n) { n = Math.min(n || 1, 2); for (var i = 0; i < n; i++) (function (i) { setTimeout(function () { sfx("coin"); }, 260 + i * 140); })(i); }
 function sfxToggle() {
   sfxSet(!sfxOn());
   var b = typeof document !== "undefined" && document.querySelector(".sfxBtn");
