@@ -746,7 +746,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12e";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2970,7 +2970,7 @@ function navHTML(active) {
   }).join("") + '</nav>';
 }
 function topbarHTML(inQuest, parentBtn) {
-  var avatar = S.house ? houseIcon(S.house, 30) : svgCastle(28);
+  var avatar = S.house ? avatarHTML(30) : svgCastle(28);   /* zvolený avatar (Já), jinak erb koleje */
   var mid = inQuest ? '<button class="homeBtn" onclick="abortQuest()">' + svgHome(15) + ' Velká síň</button>' : "";
   return '<div class="topbar' + (inQuest ? " inQuest" : "") + '"><span class="who">' + avatar + ' <span>' + esc(S.name || "Bradavice") +
     '<br><span class="yr">' + yearLabel(S.year) + (S.house ? " · " + esc(HOUSES[S.house].n) : "") + '</span></span></span>' + mid +
