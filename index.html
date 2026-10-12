@@ -369,6 +369,8 @@
   .charSay .csWho { display: block; font-size: 14px; font-weight: 700; color: var(--acc-d); margin-bottom: 2px; }
   .charSay .csText { font-size: 18px; font-style: italic; line-height: 1.4; }
   .charSay.inSheet { margin: 6px 0 8px; max-width: none; }
+  .joyRow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .joyRow .btn { width: auto; margin: 0; }
+  #bonusBtn { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 8px; } #bonusBtn span { font-size: 14px; font-style: italic; opacity: .9; }
   /* mřížka násobilky */
   .factGrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; max-width: 520px; margin: 8px auto 6px; font-family: "Helvetica Neue", Arial, sans-serif; }
   .factGrid span { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(10px, 2.6vw, 15px); border-radius: 5px; }
@@ -795,7 +797,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12u";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12v";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2566,6 +2568,7 @@ function defaultState() {
     spelledOk: 0,
     wordLv: {},
     factLv: {},       /* mistrovství násobilky: { "3x7": { l, r, d, last } } */
+    joy: [],          /* co ji rozzářilo (rodič klepne v panelu): [{ d, k }] */
     exams: {},
     pendingYear: null,
     owned: [],
@@ -2626,6 +2629,7 @@ function migrate(s) {
   if (!s.exams || typeof s.exams !== "object") s.exams = {};
   if (!s.wordLv || typeof s.wordLv !== "object") s.wordLv = {};
   if (!s.factLv || typeof s.factLv !== "object") s.factLv = {};
+  if (!Array.isArray(s.joy)) s.joy = [];
   if (!s.recentQ || typeof s.recentQ !== "object") s.recentQ = {};
   if (!Array.isArray(s.rewards)) s.rewards = [];
   if (!s.roomPos || typeof s.roomPos !== "object") s.roomPos = {};
@@ -4022,6 +4026,26 @@ function subjectRoomsHTML(subj) {
   }
   return html;
 }
+/* CO JI DNES ROZZÁŘILO (Lenny's: Josh Woodward, „metrika jsou oči“): jedno klepnutí rodiče po hodině,
+   přehled za 14 dní ukáže, co dítě opravdu baví a co se dá zrušit. S.joy = [{ d, k }], nejvýš 60 záznamů. */
+var JOY = [["hodina", "📚 Vyučování"], ["hagrid", "🧔 Postavy a hlasy"], ["sova", "🦉 Sova"], ["obchod", "🛍️ Příčná ulice"], ["loznice", "🛏️ Ložnice"], ["mapa", "🗺️ Mapa hradu"], ["slovicka", "✨ Slovíčka"], ["nic", "😐 Nic zvláštního"]];
+function joyHTML() {
+  var today = todayStr(), todays = (S.joy || []).filter(function (x) { return x.d === today; }).map(function (x) { return x.k; });
+  var since = addDays(today, -13), cnt = {};
+  (S.joy || []).forEach(function (x) { if (x.d >= since) cnt[x.k] = (cnt[x.k] || 0) + 1; });
+  var top = JOY.filter(function (j) { return cnt[j[0]]; }).sort(function (a, b) { return cnt[b[0]] - cnt[a[0]]; });
+  return '<h3>✨ Co ji dnes rozzářilo?</h3><p class="muted">Jedno klepnutí po hodině. Za dva týdny uvidíte, co ji opravdu baví.</p><div class="joyRow">' +
+    JOY.map(function (j) { return '<button class="btn small ' + (todays.indexOf(j[0]) !== -1 ? "gold" : "secondary") + '" onclick="joyTap(\'' + j[0] + '\')">' + j[1] + '</button>'; }).join(" ") + '</div>' +
+    (top.length ? '<p class="muted">Posledních 14 dní: ' + top.map(function (j) { return j[1] + ' ' + cnt[j[0]] + '×'; }).join(" · ") + '</p>' : '');
+}
+function joyTap(k) {
+  if (!Array.isArray(S.joy)) S.joy = [];
+  var today = todayStr(), i = -1;
+  S.joy.forEach(function (x, n) { if (x.d === today && x.k === k) i = n; });
+  if (i >= 0) S.joy.splice(i, 1); else S.joy.push({ d: today, k: k });
+  if (S.joy.length > 60) S.joy = S.joy.slice(-60);
+  saveState(); screenParent("prehled");
+}
 /* Mřížka násobilky 2–10 obarvená podle stupňů (Lektvary a rodičovský panel). */
 function factGridHTML(state) {
   var cnt = [0, 0, 0], h = '<div class="factGrid"><span class="fgH">×</span>';
@@ -4679,6 +4703,7 @@ function mergeStates(a, b) {
     if (m.owned.indexOf(id) === -1) { var it = shopById(id); if (it) spentElsewhere += (o.paid && o.paid[id]) || it.p; m.owned.push(id); if (o.paid && o.paid[id]) { if (!m.paid) m.paid = {}; m.paid[id] = o.paid[id]; } }
   });
   m.tutorialDone = !!(m.tutorialDone || o.tutorialDone);
+  (o.joy || []).forEach(function (x) { if (!(m.joy || []).some(function (y) { return y.d === x.d && y.k === x.k; })) { if (!m.joy) m.joy = []; m.joy.push(x); } });
   if (!m.roomPos || typeof m.roomPos !== "object") m.roomPos = {};
   for (var rk in (o.roomPos || {})) if (!m.roomPos[rk]) m.roomPos[rk] = o.roomPos[rk];
   var RW_RANK = { open: 0, claimed: 1, done: 2 };
@@ -5140,14 +5165,14 @@ function answerQ(it, chosen, btn) {
     if (fch.to === 2 && fch.from < 2 && session) { if (!session.newFacts) session.newFacts = []; session.newFacts.push(it.fact.replace("x", " × ")); }
   }
   /* zápis odpovědi pro souhrn (nejlepší kouzla / kde jsem zaváhala); jen první pokus */
-  if (!it.retry) { if (!session.log) session.log = []; session.log.push({ q: it.q, a: String(it.correct), ok: !!correct, kind: it.kind, recall: !!it.recall, topic: it.topic, mental: !!it.mental }); }
+  if (!it.retry && !it.bonus) { if (!session.log) session.log = []; session.log.push({ q: it.q, a: String(it.correct), ok: !!correct, kind: it.kind, recall: !!it.recall, topic: it.topic, mental: !!it.mental }); }
   if (correct) {
-    var gained = it.retry ? 1 : (it.recall && it.kind !== "card") ? 3 : 2;
+    var gained = it.bonus ? 4 : it.retry ? 1 : (it.recall && it.kind !== "card") ? 3 : 2;
     if (it.mental) gained += 1;   /* bonus za výsledek z hlavy */
     giveDust(gained);
     st.c++;
     if (isSpell) S.spelledOk = (S.spelledOk || 0) + 1;
-    if (!it.retry) { session.firstTry++; if (!session.topicOk) session.topicOk = {}; session.topicOk[it.topic] = (session.topicOk[it.topic] || 0) + 1; }
+    if (!it.retry && !it.bonus) { session.firstTry++; if (!session.topicOk) session.topicOk = {}; session.topicOk[it.topic] = (session.topicOk[it.topic] || 0) + 1; }
     session.dustGained += gained;
     fb.innerHTML = '<div class="sheetSpacer"></div><div class="sheet ok"><div class="in">' +
       '<div class="sstamp">' + (it.mental ? "🧠 Z hlavy! " : "") + praiseLine() + '</div>' +
@@ -5158,6 +5183,10 @@ function answerQ(it, chosen, btn) {
     if (it.kind !== "build") sfx("ok");
     /* série správně napoprvé: po 3, 6, 9… pochválí postava předmětu svým hlasem (u zkoušky ne, ať nevyrušuje) */
     if (!it.retry) session.okRun = (session.okRun || 0) + 1;
+    if (!it.retry && !it.bonus && session.mode !== "exam" && session.okRun % 3 === 0 && !session.bonusOffered && TOPICS[it.topic].subj === "m") {
+      var ht = harderTopic(it.topic);
+      if (ht) { session.bonusOffered = true; setTimeout(function () { var nb = el("nextBtn"); if (nb) nb.insertAdjacentHTML("beforebegin", '<button class="btn gold" id="bonusBtn">✨ Chceš zkusit těžší kouzlo? <span class="muted" style="color:#fff">+4 galeony, chyba nic nestojí</span></button>'); var bb = el("bonusBtn"); if (bb) bb.onclick = function () { bonusGo(ht); }; }, 0); }
+    }
     if (!it.retry && session.mode !== "exam" && session.okRun % 3 === 0) {
       var ps = TOPICS[it.topic].subj, pcl = charLine(ps === "en" ? "praise_hagrid" : ps === "hp" ? "praise_brumbal" : "praise_mcg");
       setTimeout(function () { var fbx = document.querySelector(".sheet.ok .stitle"); if (fbx) fbx.insertAdjacentHTML("afterend", charSayHTML(pcl).replace('class="charSay"', 'class="charSay inSheet"')); }, 0);
@@ -5167,20 +5196,19 @@ function answerQ(it, chosen, btn) {
     fxCoinsToChip(gained);
   } else {
     if (btn) btn.classList.add("wrong");
-    session.okRun = 0;
+    if (!it.bonus) session.okRun = 0;
     if (it.kind !== "card") sfx("bad");
-    st.w++;
+    if (!it.bonus) st.w++;
     var shown = it.kind === "build" ? "poskládáno s " + it._slips + " zaváháním" : it.kind === "card" ? "řekla, že ještě neví" : String(chosen);
-    S.mistakes.unshift({ t: it.topic, q: it.q, spravne: String(it.correct), napsala: shown, datum: todayStr() });
-    if (S.mistakes.length > 50) S.mistakes = S.mistakes.slice(0, 50);
-    if (!it.retry) {
+    if (!it.bonus) { S.mistakes.unshift({ t: it.topic, q: it.q, spravne: String(it.correct), napsala: shown, datum: todayStr() }); if (S.mistakes.length > 50) S.mistakes = S.mistakes.slice(0, 50); }
+    if (!it.retry && !it.bonus) {
       var again = {};
       for (var k in it) if (k.charAt(0) !== "_") again[k] = it[k];
       again.retry = true;
       again.opts = shuffle(it.opts);
       session.queue.push(again);
     }
-    var title = it.kind === "build" ? "Poskládáno! Jen to chtělo pár pokusů — slovo se ještě vrátí." :
+    var title = it.bonus ? "Těžké kouzlo! Nevadí, zkusila jsi to — a to se počítá." : it.kind === "build" ? "Poskládáno! Jen to chtělo pár pokusů — slovo se ještě vrátí." :
       it.kind === "card" ? "Díky za poctivost! Teď už to víš — ještě se to vrátí." : cheerLine();
     fb.innerHTML = '<div class="sheetSpacer"></div><div class="sheet bad"><div class="in">' +
       '<div class="sstamp">' + svgRetry(15) + '</div>' +
@@ -5292,6 +5320,20 @@ function screenQuestSummary(perfect) {
   el("nextBtn").onclick = processPostQueue;
 }
 
+/* TĚŽŠÍ KOUZLO NA POZVÁNÍ (Lenny's: Matthew Dicks, Dr. Becky Kennedy): po třech správných za sebou v Lektvarech
+   jednou za hodinu nabídka otázky z nejtěžší odemčené učebny matematiky (nikdy nad odemčené meze). Dobrovolné,
+   chyba nic nestojí (žádné opakování, statistika ani záznam chyby), správně = 4 galeony. */
+function harderTopic(t) {
+  var ms = TOPIC_ORDER.filter(function (x) { return TOPICS[x].subj === "m" && isUnlocked(x, S) && x !== t && x !== "M9"; });
+  var i = TOPIC_ORDER.indexOf(t), harder = ms.filter(function (x) { return TOPIC_ORDER.indexOf(x) > i; });
+  return harder.length ? harder[harder.length - 1] : null;
+}
+function bonusGo(t) {
+  var q = makeQuestion(t, S, {}); q.bonus = true; q.topic = t;
+  session.queue.splice(session.index + 1, 0, q);
+  session.index++; showQuestion();
+  var c = document.querySelector("#app .card .qtext"); if (c) c.insertAdjacentHTML("beforebegin", '<div class="recallTag">✨ Těžší kouzlo — je těžké, a já vím, že na něj máš</div>');
+}
 /* Souhrn podle Chess.com (Lenny's, Albert Cheng): po povedené hodině nabídnout rozbor zaváhání (tehdy ho děti chtějí
    vidět), po slabší nejdřív ukázat nejlepší kouzla dne a povzbudit. Jen ze zápisu session.log (první pokusy). */
 function summaryReviewHTML() {
@@ -6196,6 +6238,7 @@ function screenParent(section) {
       '<p class="muted">Dokončená denní vyučování: <b>' + doneWeek + ' ze 7</b> · plamínek <b>' + sk.current + '</b> ' + dayWord(sk.current) + ' (rekord ' + sk.best + ', cíl ' + (sk.goal || "nezvolen") + ', amulety ' + sk.freezes + '/2) · chyb za týden: <b>' + mistWeek + '</b></p>' +
       '<table class="weekTable">' + weekRows + '</table>' +
       '<p class="muted">Plamínek prodlouží jen dokončené denní vyučování (10 otázek). Při vynechaném dnu se spotřebuje amulet; bez amuletu hra do dvou dnů nabídne odpracování (2 vyučování v jednom dni) — nikdy výčitky.</p>' +
+      joyHTML() +
       '<h3>Jak jí to jde</h3>' + (statRows || '<p class="muted">Zatím nehráno.</p>') +
       ((isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3>🧪 Násobilka po příkladech</h3><p class="muted">Tyrkysová = umí (správně ve dva různé dny), žlutá = jde jí (2× za sebou správně), bílá = ještě ne. Hra přednostně procvičuje žluté a nové.</p>' + factGridHTML(S) : '') +
       (examRows ? '<p class="muted" style="margin-top:8px">Zkoušky ročníku:</p><ul style="margin-left:20px;font-size:15px">' + examRows + '</ul>' : '') +
@@ -6574,6 +6617,8 @@ W.roomFullToggle = roomFullToggle;
 W.screenAvatar = screenAvatar;
 W.avatarPick = avatarPick;
 W.mapFullToggle = mapFullToggle;
+W.bonusGo = bonusGo;
+W.joyTap = joyTap;
 W.tutStart = tutStart;
 W.startDemo = startDemo;
 W.demoEnd = demoEnd;
