@@ -797,7 +797,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12v";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12w";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2861,7 +2861,6 @@ function charLine(kind) {
 function charSayHTML(cl) { return '<div class="charSay"><span class="csWho">' + cl.ch.e + ' ' + esc(cl.ch.n) + '</span><span class="csText">„' + esc(cl.text) + '“</span></div>'; }
 function speakAs(cl, delay) {
   if (!cl || !mluveniOn() || typeof setTimeout !== "function") return;
-  if (!(ttsCloudOk() || ttsProxyOk() || ttsLocalOk())) return;
   setTimeout(function () { ttsSay(cl.text, null, "cs", cl.ch.voice).catch(function () {}); }, delay == null ? 500 : delay);
 }
 /* {kolej} = jméno koleje. Postavy jen z 1.–2. dílu. */
@@ -4334,6 +4333,8 @@ function ttsPickVoice(lang) {
 }
 function ttsSpeak(word, lang) {
   if (!ttsLocalOk()) return Promise.reject(new Error("bez hlasu"));
+  /* češtinu nikdy nečte cizí hlas (anglický hlas s českým textem zní hrozně) — bez českého hlasu raději ticho */
+  if (lang === "cs" && !ttsPickVoice("cs")) return Promise.reject(new Error("bez českého hlasu"));
   return new Promise(function (res, rej) {
     try {
       speechSynthesis.cancel();
@@ -4423,17 +4424,29 @@ function ttsPlayBlob(blob) {
   });
 }
 /* Pořadí: cache → přímý klíč (pokud je) → server s rodinným kódem → vestavěný hlas zařízení. lang: "en" (výchozí) | "cs". */
+/* Veřejná nahrávka: server ukládá MP3 pod hlas/<hlas>/<sha1(hlas|text malými)>.mp3 a kbelík je veřejný. Bez rodinného
+   kódu (ukázka, nový hráč) se tak dají přehrát věty, které už někdo vyrobil nebo je připravil design/ukazka-hlas.mjs —
+   nic nového se nevyrábí, takže to nic nestojí a nedá se to zneužít. */
+function ttsPublicFetch(text, voice) {
+  if (typeof crypto === "undefined" || !crypto.subtle || typeof TextEncoder === "undefined") return Promise.reject(new Error("bez sha1"));
+  var norm = text.trim().replace(/\s+/g, " ");
+  return crypto.subtle.digest("SHA-1", new TextEncoder().encode(voice + "|" + norm.toLowerCase())).then(function (buf) {
+    var hex = Array.prototype.map.call(new Uint8Array(buf), function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+    return fetch(syncCfg().url + "/storage/v1/object/public/hlas/" + voice + "/" + hex + ".mp3");
+  }).then(function (r) { if (!r.ok) throw new Error("není"); return r.blob(); });
+}
 function ttsSay(word, cfgOverride, lang, voiceForce) {
   var cfg = cfgOverride || ttsCfg();
   /* angličtina: Alice (nebo zvolený hlas); čeština: český hlas z panelu, jinak tentýž hlas; voiceForce = hlas postavy */
   var voice = voiceForce || (lang === "cs" ? (cfg.voiceCs || TTS_DEFAULT_VOICE_CS || cfg.voice || TTS_DEFAULT_VOICE) : (cfg.voice || TTS_DEFAULT_VOICE));
   var hasCloud = !!cfg.key, hasProxy = !cfgOverride && ttsProxyOk();
-  if (!hasCloud && !hasProxy) return ttsSpeak(word, lang);
+  var hasPublic = !cfgOverride && !hasCloud && !hasProxy && typeof fetch === "function" && ttsOnline();
+  if (!hasCloud && !hasProxy && !hasPublic) return ttsSpeak(word, lang);
   var id = voice + "|" + word.toLowerCase();
   var p = ttsGetCached(id).then(function (blob) {
     if (blob) return blob;
     if (!ttsOnline()) throw new Error("offline");
-    var get = hasCloud ? ttsFetch(word, { key: cfg.key, voice: voice }) : ttsProxyFetch(word, voice);
+    var get = hasCloud ? ttsFetch(word, { key: cfg.key, voice: voice }) : hasProxy ? ttsProxyFetch(word, voice) : ttsPublicFetch(word, voice);
     return get.then(function (b) { ttsPutCached(id, b); return b; });
   }).then(ttsPlayBlob);
   /* při výpadku (offline, kredity, server) promluví aspoň vestavěný hlas; v panelu (cfgOverride) chybu hlásíme */
