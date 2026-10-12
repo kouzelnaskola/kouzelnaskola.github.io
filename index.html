@@ -361,6 +361,26 @@
   .backMap { margin: 0 0 6px; }
   .subjTitle { margin-bottom: 0; }
   @media (prefers-reduced-motion: reduce) { .bld, .bld.news .bldArt, .cmCloud { animation: none !important; } }
+  /* sova maskot (owlPerchHTML) */
+  .perchOwl { position: absolute; width: 62px; height: 62px; padding: 0; border: none; background: none; cursor: pointer; z-index: 4; -webkit-tap-highlight-color: transparent; }
+  .perchOwl .poBody { display: block; width: 100%; height: 100%; transform-origin: 50% 100%; }
+  .perchOwl img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 2px rgba(40,30,20,.35)); }
+  .perchOwl .poEmoji { font-size: 44px; line-height: 62px; } .perchOwl .poEmoji.sticker { font-size: 0; } .perchOwl .poEmoji img { width: 62px; height: 62px; }
+  .perchOwl.onHall { right: 8px; top: -50px; }
+  .perchOwl.onCard { left: 6px; top: -46px; width: 70px; height: 70px; }
+  .perchOwl.onCard .poSay { right: auto; left: 60px; border-radius: 12px 12px 12px 2px; }
+  .hasPerch { position: relative; }
+  .perchOwl.a-hop .poBody { animation: poHop .7s ease-out; }
+  @keyframes poHop { 20% { transform: scale(1.08, .88); } 45% { transform: translateY(-18px) scale(.95, 1.06); } 70% { transform: translateY(0) scale(1.06, .92); } }
+  .perchOwl.a-turn .poBody { animation: poTurn .9s ease-in-out; }
+  @keyframes poTurn { 40% { transform: scaleX(-1); } 70% { transform: scaleX(-1) rotate(-6deg); } }
+  .perchOwl.a-stretch .poBody { animation: poStretch .8s ease-in-out; }
+  @keyframes poStretch { 50% { transform: translateY(-6px) scale(1.12); } }
+  .perchOwl.a-wave .poBody, .perchOwl.a-wink .poBody { animation: poWave .6s ease-in-out; }
+  @keyframes poWave { 30% { transform: rotate(-6deg); } 60% { transform: rotate(5deg); } }
+  .perchOwl .poSay { position: absolute; right: 54px; top: -6px; width: max-content; max-width: min(260px, 64vw); padding: 7px 11px; background: #fffdf7; border: 2px solid var(--ink); border-radius: 12px 12px 2px 12px;
+    font-size: 15px; font-weight: 700; color: var(--ink); text-align: left; line-height: 1.3; box-shadow: 3px 3px 0 var(--shadow); opacity: 0; transform: translateY(6px) scale(.9); transform-origin: 100% 100%; transition: opacity .2s, transform .2s; pointer-events: none; }
+  .perchOwl.saying .poSay { opacity: 1; transform: none; }
   /* ------- Velká síň jako scéna ------- */
   .hall { position: relative; height: 450px; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; box-shadow: 6px 6px 0 var(--shadow); margin-bottom: 18px;
     background: linear-gradient(180deg, #1c2541 0%, #3a3f6b 38%, #8a6a5a 70%, #e9d3ae 100%); background-size: cover; background-position: center; }
@@ -699,6 +719,9 @@
     .hall .cloud, .hall .candle, .hall .candle i, .hall .stars, .hall .hbanner, .hall .hallBg, .bigCta { animation: none !important; }
   }
   .parentLink { text-align: center; margin-top: 26px; }
+  .welcomeAlt .btn { margin-bottom: 4px; }
+  @media (max-width: 480px) { .demoChip span { display: none; } }
+  .demoChip { border: 2px dashed var(--ink); border-radius: 14px; background: var(--mustard-pale); font: inherit; font-size: 14px; font-weight: 700; padding: 3px 9px; cursor: pointer; color: var(--ink); white-space: nowrap; }
   .parentLink button { background: none; border: none; color: #8a7a6a; text-decoration: underline; font-size: .9em; font-style: italic; padding: 8px; }
   hr { border: none; border-top: 2px dashed var(--shadow); margin: 16px 0; }
   .hidden { display: none !important; }
@@ -723,7 +746,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2512,7 +2535,11 @@ function loadState() {
   } catch (e) { if (memoryFallback) return memoryFallback; }
   return memoryFallback || defaultState();
 }
+/* UKÁZKA BEZ PŘIHLÁŠENÍ: DEMO = true → postup jen v paměti (nic do localStorage, žádná synchronizace,
+   žádná rozdělaná hodina). Opravdový profil v zařízení se tím nikdy nepřepíše; obnovení stránky ukázku zahodí. */
+var DEMO = false;
 function persistLocal() {
+  if (DEMO) return;
   memoryFallback = S;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bez úložiště se hraje aspoň v paměti */ }
 }
@@ -2946,7 +2973,7 @@ function topbarHTML(inQuest, parentBtn) {
   return '<div class="topbar' + (inQuest ? " inQuest" : "") + '"><span class="who">' + avatar + ' <span>' + esc(S.name || "Bradavice") +
     '<br><span class="yr">' + yearLabel(S.year) + (S.house ? " · " + esc(HOUSES[S.house].n) : "") + '</span></span></span>' + mid +
     '<span class="chips"><span class="chip dust">' + svgCoin(18) + ' <span class="num">' + S.dust + '</span></span>' +
-    '<span class="chip flame">' + flameIcon(16) + ' ' + S.streak.current + '</span>' + sfxBtnHTML() +
+    '<span class="chip flame">' + flameIcon(16) + ' ' + S.streak.current + '</span>' + (DEMO && !inQuest ? '<button class="demoChip" onclick="screenDemoInfo()" aria-label="Ukázka">👀<span> Ukázka</span></button>' : '') + sfxBtnHTML() +
     (parentBtn ? '<button class="homeBtn sfxBtn" onclick="screenParentLock()" title="Pro rodiče" aria-label="Pro rodiče">' + svgLock(15) + '</button>' : '') + '</span></div>';
 }
 function applyHouseColors() {
@@ -3106,10 +3133,16 @@ function screenWelcome() {
     'Moudrý klobouk už na Tebe čeká.“</p>' +
     '<p class="muted">Jak se jmenuješ?</p>' +
     '<input type="text" id="nameInput" maxlength="20" placeholder="Tvoje jméno">' +
-    '<button class="btn" id="nameBtn">Vydat se do Bradavic</button>' +
+    '<button class="btn" id="nameBtn">✨ Založit profil a vydat se do Bradavic</button>' +
+    '<p class="muted" style="font-size:14px">Postup se ukládá na tomto zařízení. Rodiče ho pak mohou propojit s dalšími zařízeními rodinným kódem.</p>' +
+    '</div>' +
+    '<div class="card center welcomeAlt">' +
+    '<button class="btn secondary" onclick="startDemo()">👀 Vyzkoušet bez přihlášení</button>' +
+    '<p class="muted" style="font-size:14px;margin:4px 0 12px">Ukázková studentka s hotovým postupem: projdi si hodiny, Rozvrh s mapou hradu, Příčnou ulici i ložnici. Nic se neuloží.</p>' +
+    '<button class="btn secondary" onclick="screenJoinCode()">🔑 Máme rodinný kód — připojit postup</button>' +
     '</div>' +
     (isIOSWeb() && !isStandalone() ? '<p class="muted center">Tip pro rodiče: v Safari klepněte na Sdílet → <b>Přidat na plochu</b>. Hra pak poběží přes celou obrazovku a bude se sama aktualizovat. Postup v aplikaci na ploše je oddělený od Safari, proto začněte až tam.</p>' : '') +
-    '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Už máme postup na jiném zařízení? Pro rodiče</button></div>');
+    '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button></div>');
   el("nameBtn").onclick = function () {
     var n = el("nameInput").value.trim();
     if (!n) { el("nameInput").placeholder = "Napiš prosím své jméno…"; return; }
@@ -3231,7 +3264,7 @@ function hallSceneHTML() {
     '<div class="candles">' + candles + '</div>' +
     '<div class="banners">' + banners + '</div><div class="hallShade"></div>' +
     (S.streak.current > 0 ? '<div class="stamp' + (gold ? " mustard" : "") + '">' + S.streak.current + '. den!</div>' : '') +
-    '<div class="hallCenter">' +
+    '<div class="hallCenter">' + owlPerchHTML("onHall") +
     '<span class="mascot pulse">' + flameIcon(56 + Math.min(S.streak.current, 30)) + '</span>' +
     '<div class="flameNum">' + (S.streak.current > 0 ? S.streak.current + " " + dayWord(S.streak.current) + " v řadě" : "Zapal svou svíčku ve Velké síni!") + '</div>' +
     (gold ? '<div class="goldNote">' + svgStar(15) + ' Zlatý plamínek — celý týden bez amuletu!</div>' : '') +
@@ -3275,7 +3308,98 @@ function screenHome() {
     syncHomeLine() + navHTML("sin");
   render(html);
   lastScreen = "home";
+  imgApplyAll(".perchOwl .poEmoji"); owlPerchIdle();
   imgApply(".hall", "sin", function (el, url) { var bg = el.querySelector(".hallBg"); if (!bg) return; bg.style.backgroundImage = "url(" + url + ")"; el.classList.add("photo"); });
+}
+
+/* =====================================================================
+   SOVA JAKO MASKOT — mimo hodinu
+   Velká síň: sova sedí na rámu s plamínkem a každých pár vteřin udělá něco jiného (mrkne, zamává,
+   protáhne křídla, poskočí, otočí se) — nikdy dvakrát totéž za sebou. Klepnutí: zamává a řekne větu
+   podle situace (plamínek, cíl, slovíčka, sleva…), věty se střídají bez opakování.
+   Souhrn hodiny a milníky: sova přiletí s dopisem a usadí se na kartě (bez chyby = zlatá pečeť a mrknutí).
+   Jen DOM, nic v S; omezený pohyb = sova jen sedí.
+   ===================================================================== */
+var owlPerchTimer = null, owlPerchLast = "", owlLineIdx = 0, owlSaidAt = 0;
+function owlSrc(k) { return owlImgs[k] || owlImgs["pet_sova"] || null; }
+function owlPerchHTML(cls) {
+  return '<button class="perchOwl ' + (cls || "") + '" onclick="owlPerchTap(this)" aria-label="Sova"><span class="poBody">' +
+    (owlSrc("pet_sova") ? '<img src="' + owlSrc("pet_sova") + '" alt="">' : '<span class="poEmoji" data-img="pet_sova">🦉</span>') + '</span><span class="poSay"></span></button>';
+}
+function owlPose(o, k, ms) {
+  var img = o && o.querySelector(".poBody img"); if (!img || !owlImgs[k]) return;
+  img.src = owlImgs[k];
+  if (ms) setTimeout(function () { if (img.isConnected && owlImgs["pet_sova"]) img.src = owlImgs["pet_sova"]; }, ms);
+}
+function owlAct(o, a) {
+  if (!o || !o.isConnected) return;
+  o.classList.remove("a-hop", "a-turn", "a-stretch", "a-wave", "a-wink"); void o.offsetWidth;
+  o.classList.add("a-" + a);
+  if (a === "wink") owlPose(o, "sova-mrka", 900);
+  if (a === "wave") owlPose(o, "sova-mava", 1100);
+  if (a === "stretch") { owlPose(o, "sova-kridla-nahore", 260); setTimeout(function () { owlPose(o, "sova-kridla-dole", 260); }, 260); setTimeout(function () { owlPose(o, "sova-kridla-nahore", 260); }, 520); }
+  if (a === "hop") { owlPose(o, "sova-kridla-dole", 450); }
+}
+function owlLines() {
+  var L = [], d = S.streak.current, today = todayStr(), c = dictCounts(S);
+  if (S.streak.history[today] === "done") L.push("Dnešní vyučování máš hotové. Hú, výborně!");
+  else L.push(d > 0 ? "Dnešní vyučování tě ještě čeká. Přinesu ti otázky!" : "Zapal dnes svou svíčku. Otázky ti přinesu já!");
+  if (d > 1) L.push("Tvůj plamínek svítí už " + d + " " + dayWord(d) + " v řadě!");
+  if (S.streak.goal && d < S.streak.goal) L.push("Do cíle ti chybí " + (S.streak.goal - d) + " " + dayWord(S.streak.goal - d) + ".");
+  if (c[2] > 0) L.push("Z hlavy už umíš " + c[2] + " " + (c[2] === 1 ? "slovíčko" : c[2] < 5 ? "slovíčka" : "slovíček") + "!");
+  var off = weeklyOffer().filter(function (i) { return S.owned.indexOf(i.id) === -1; });
+  if (off.length) L.push("Tento týden je na Příčné ulici sleva: " + off[0].n + "!");
+  if (S.streak.freezes > 0) L.push("Máš " + S.streak.freezes + " " + (S.streak.freezes === 1 ? "ledový amulet" : "ledové amulety") + ". Ochrání tvůj plamínek.");
+  L.push("Hú hú! Jsem tvoje pošťačka.");
+  L.push("Poklepej na mapu v Rozvrhu a zvětší se!");
+  return L;
+}
+function owlPerchTap(o) {
+  owlAct(o, "wave"); sfx("pop");
+  var L = owlLines(), s = o.querySelector(".poSay");
+  owlLineIdx = (owlLineIdx + 1) % L.length;
+  s.textContent = L[owlLineIdx]; o.classList.add("saying");
+  clearTimeout(o._sayT); o._sayT = setTimeout(function () { o.classList.remove("saying"); }, 3800);
+}
+function owlPerchIdle() {
+  clearInterval(owlPerchTimer);
+  if (reducedMotion()) return;
+  var acts = ["wink", "hop", "turn", "stretch", "wave"];
+  owlPerchTimer = setInterval(function () {
+    var o = document.querySelector(".hall .perchOwl");
+    if (!o) { clearInterval(owlPerchTimer); owlPerchTimer = null; return; }
+    if (o.classList.contains("saying")) return;
+    var pool = acts.filter(function (a) { return a !== owlPerchLast; }), a = pool[Math.floor(Math.random() * pool.length)];
+    owlPerchLast = a; owlAct(o, a);
+  }, 5200 + Math.random() * 3000);
+}
+/* přílet sovy s dopisem na kartu (souhrn, milníky); pak na ní zůstane sedět */
+function owlVisit(target, gold) {
+  if (!target || typeof document === "undefined") return;
+  owlPreload();
+  var land = function () {
+    if (!target.isConnected) return;
+    target.classList.add("hasPerch");
+    target.insertAdjacentHTML("beforeend", owlPerchHTML("onCard"));
+    var o = target.querySelector(".perchOwl.onCard");
+    imgApplyAll(".perchOwl .poEmoji");
+    setTimeout(function () { owlAct(o, gold ? "wink" : "wave"); if (gold) owlSparks(o.getBoundingClientRect().left + 30, o.getBoundingClientRect().top + 20, true); }, 120);
+  };
+  if (reducedMotion() || !document.body.animate || !owlSrc("sova-dopis")) { land(); return; }
+  var r = target.getBoundingClientRect(), size = innerWidth < 500 ? 70 : 92, bw = Math.round(size * 1.33);
+  var ex = r.right - 50, ey = r.top + 6;
+  var f = document.createElement("div"); f.id = "owlFx";
+  f.innerHTML = '<div class="owlBird poses" style="width:' + bw + 'px;height:' + size + 'px"><img src="' + owlSrc("sova-dopis") + '" alt=""></div>';
+  document.body.appendChild(f);
+  var b = f.querySelector(".owlBird"), img = b.querySelector("img");
+  var a = b.animate([
+    { transform: "translate(" + (innerWidth + 40) + "px," + (ey - 160) + "px) rotate(-12deg) scaleX(1)" },
+    { transform: "translate(" + (ex + 60 - bw / 2) + "px," + (ey - 120 - size / 2) + "px) rotate(-6deg) scaleX(1)", offset: .55 },
+    { transform: "translate(" + (ex - bw / 2) + "px," + (ey - size / 2 - 10) + "px) rotate(0deg) scaleX(1)" }
+  ], { duration: 1100, easing: "ease-out", fill: "forwards" });
+  var flip = false, tm = setInterval(function () { flip = !flip; if (owlImgs["sova-kridla-nahore"]) img.src = owlImgs[flip ? "sova-kridla-nahore" : "sova-dopis"]; }, 130);
+  sfxWings(4);
+  a.onfinish = function () { clearInterval(tm); if (f.parentNode) f.parentNode.removeChild(f); land(); };
 }
 
 /* Nový školní rok — když táta posune ročník */
@@ -3704,6 +3828,7 @@ function newSession(mode, queue, total) {
 /* Rozdělaná hodina přežije obnovení stránky (jen tentýž den). */
 var SESSION_KEY = "bradaviceHodina";
 function sessionPersist() {
+  if (DEMO) return;
   try {
     if (session && session.index < session.queue.length) localStorage.setItem(SESSION_KEY, JSON.stringify({ day: todayStr(), s: session }));
     else localStorage.removeItem(SESSION_KEY);
@@ -4054,7 +4179,7 @@ function syncSaveCfg(code) {
 function syncSaveStatus() {
   try { var c = JSON.parse(localStorage.getItem(SYNC_KEY) || "{}") || {}; c.last = syncSt.last; localStorage.setItem(SYNC_KEY, JSON.stringify(c)); } catch (e) {}
 }
-function syncOn() { return !!syncCfg().code; }
+function syncOn() { return !DEMO && !!syncCfg().code; }
 function syncReady() { return syncOn() && typeof fetch === "function" && ttsOnline(); }
 function syncGenCode() {
   var out = [];
@@ -4661,7 +4786,9 @@ function screenQuestSummary(perfect) {
   var nb = session.newBadges.length, ns = session.newStarCount || 0;
   for (var si = 0; si < ns; si++) setTimeout(function () { sfx("star"); }, 1000 + si * 450);
   for (var bi = 0; bi < nb; bi++) setTimeout(function () { sfx("badge"); }, 1000 + ns * 450 + bi * 450);
+  var owlGold = perfect || (isExam && session.examPassed);
   session = null;
+  setTimeout(function () { owlVisit(document.querySelector(".card.celebrate"), owlGold); }, 900);
   el("nextBtn").onclick = processPostQueue;
 }
 
@@ -4735,6 +4862,7 @@ function screenMilestone(days, isGoal) {
     '<p class="qtext">' + esc(vok(S.name)) + ', tvůj plamínek hoří už ' + days + ' dní!<br>To dokáže jen opravdová čarodějka.</p>' +
     '<button class="btn gold" id="nextBtn">Sláva!</button></div>');
   confettiRain(null, 50); sfx("bell");
+  setTimeout(function () { owlVisit(document.querySelector(".heroCard"), true); }, 700);
   speakLine(days + " dní v řadě! To dokáže jen opravdová čarodějka.", 1200);
   el("nextBtn").onclick = processPostQueue;
 }
@@ -5847,6 +5975,11 @@ W.roomFullToggle = roomFullToggle;
 W.screenAvatar = screenAvatar;
 W.avatarPick = avatarPick;
 W.mapFullToggle = mapFullToggle;
+W.startDemo = startDemo;
+W.demoEnd = demoEnd;
+W.screenDemoInfo = screenDemoInfo;
+W.screenJoinCode = screenJoinCode;
+W.owlPerchTap = owlPerchTap;
 W.zoomAt = zoomAt;
 W.zoomReset = zoomReset;
 W.navGo = navGo;
@@ -5878,6 +6011,47 @@ W.BRADAVICE = {
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
 
+/* připojení existujícího postupu rodinným kódem (registrace dalšího zařízení) */
+function screenJoinCode() {
+  render('<div class="card center"><div class="bigIcon">' + svgLetter(90) + '</div><h2>Připojit postup z jiného zařízení</h2>' +
+    '<p class="muted">Rodinný kód najdete na zařízení, kde už studentka hraje: Pro rodiče → Zařízení a cloud.</p>' +
+    '<input type="text" id="joinCodeIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="např. k7mfx-2p9qa-…">' +
+    '<button class="btn" id="joinCodeBtn">Ověřit kód</button><p class="muted" id="joinCodeMsg"></p>' +
+    '<button class="btn secondary" onclick="screenWelcome()">Zpět</button></div>');
+  el("joinCodeBtn").onclick = function () {
+    var c = syncNormCode(el("joinCodeIn").value);
+    if (c.length < 16) { el("joinCodeMsg").textContent = "Kód je moc krátký — má aspoň 16 znaků."; return; }
+    screenJoin(c);
+  };
+}
+/* ukázková studentka: týden plamínku, pár věcí z obchodu, hvězdy v učebnách, odměna od rodičů */
+function demoState() {
+  var s = migrate({});
+  var today = todayStr();
+  s.name = "Bára"; s.house = HOUSE_KEYS[Math.floor(Math.random() * 4)]; s.since = addDays(today, -20);
+  s.dust = 640; s.dustEarned = 980; s.questsDone = 12; s.perfectQuests = 4;
+  s.owned = ["pet_sova", "acc_masle", "hat_klobouk", "dec_teleskop", "dec_globus", "dec_mapa", "dec_knihy", "dec_svicky"];
+  s.equipped = { pet: "pet_sova", hat: "hat_klobouk", petAcc: "acc_masle" };
+  s.streak.current = 6; s.streak.best = 6; s.streak.goal = 7; s.streak.lastQuestDate = addDays(today, -1);
+  s.streak.history = {}; for (var i = 1; i <= 6; i++) s.streak.history[addDays(today, -i)] = "done";
+  ["M1", "M2", "M3", "C1", "C2", "C3", "E1", "E2", "E3"].forEach(function (k) { s.unlocked[k] = true; });
+  s.stats.M1 = { c: 22, w: 3 }; s.stats.M2 = { c: 13, w: 4 }; s.stats.C1 = { c: 14, w: 2 }; s.stats.C2 = { c: 6, w: 1 }; s.stats.E1 = { c: 8, w: 2 }; s.stats.H1 = { c: 5, w: 0 };
+  s.rewards = [{ id: "demo1", n: "Výlet do zoo", e: "🦁", p: 900, status: "open", created: addDays(today, -5) }];
+  s.badges = ["vyprava1", "plamen3", "prach500", "mazlicek", "vyprav10"];
+  return s;
+}
+function startDemo() {
+  DEMO = true; S = demoState(); session = null;
+  applyHouseColors(); sfx("pop");
+  screenHome();
+}
+function demoEnd() { DEMO = false; S = loadState(); session = null; applyHouseColors(); routeHome(); }
+function screenDemoInfo() {
+  render(topbarHTML() + '<div class="card center"><div class="bigIcon">👀</div><h2>Tohle je ukázka</h2>' +
+    '<p class="qtext">Hraješ za ukázkovou studentku. Můžeš zkusit všechno: vyučování, Rozvrh s mapou hradu, Příčnou ulici, ložnici i panel pro rodiče.</p>' +
+    '<p class="muted">Nic se neukládá a nic se neposílá na server. Po zavření nebo obnovení stránky ukázka zmizí.</p>' +
+    '<button class="btn gold" onclick="demoEnd()">✨ Založit vlastní profil</button><button class="btn secondary" onclick="screenHome()">Pokračovat v ukázce</button></div>' + navHTML("ja"));
+}
 function routeHome() {
   if (!S.name) { screenWelcome(); return; }
   if (!S.house) { screenSortingIntro(); return; }
