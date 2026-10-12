@@ -361,6 +361,10 @@
   .backMap { margin: 0 0 6px; }
   .subjTitle { margin-bottom: 0; }
   @media (prefers-reduced-motion: reduce) { .bld, .bld.news .bldArt, .cmCloud { animation: none !important; } }
+  /* bublina postavy (úvody hodin) */
+  .charSay { margin: 4px auto 14px; max-width: 520px; text-align: left; background: #fffdf7; border: 2px solid var(--ink); border-radius: 14px 14px 14px 4px; padding: 9px 13px; box-shadow: 3px 3px 0 var(--shadow); animation: pop .35s ease-out .25s both; }
+  .charSay .csWho { display: block; font-size: 14px; font-weight: 700; color: var(--acc-d); margin-bottom: 2px; }
+  .charSay .csText { font-size: 18px; font-style: italic; line-height: 1.4; }
   /* průvodce se sovou */
   #tut { position: fixed; inset: 0; z-index: 80; opacity: 0; transition: opacity .25s; }
   #tut.on { opacity: 1; }
@@ -768,7 +772,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12l";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12m";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2681,6 +2685,56 @@ var FLAVOR = {
   en: ["Profesor Kratiknot vylezl na hromádku knih…", "Hůlka se ti v ruce zachvěla…", "Wingardium leviosa — teď ještě správně napsat!"],
   hp: ["Profesor Binns proplul tabulí…", "Moudrý klobouk na polici si něco brouká…", "Skoro bezhlavý Nick se objevil ve zdi…"]
 };
+/* POSTAVY S HLASEM (ElevenLabs, vybral táta 12. 10. 2026). Úvody hodin, zkouška, milníky, nový ročník.
+   {jm} = oslovení (5. pád jména). Jen postavy a věci z 1.–2. dílu a dočtené části 3. dílu, krátké věty pro 8 let.
+   Text je vidět v bublině s jménem postavy a zazní jejím hlasem (jen se zapnutými mluvenými hláškami). */
+var CHARS = {
+  brumbal: { n: "Brumbál", e: "🧙‍♂️", voice: "A4QaWrc6j9wnj1l191pm" },
+  mcg:     { n: "Profesorka McGonagallová", e: "🎓", voice: "bF7C2fCv7Zf30iT84wZ1" },
+  hagrid:  { n: "Hagrid", e: "🧔", voice: "VG5NcsmIedYE75ow5Dmn" }
+};
+var CHAR_LINES = {
+  daily: [
+    ["brumbal", "Vítej ve Velké síni, {jm}. Každý den kousek, a jednou z tebe bude skvělá čarodějka."],
+    ["brumbal", "Ach, {jm}! Vědění je to nejkouzelnější, co můžeš mít. Začneme?"],
+    ["mcg", "Vítej, {jm}. Posaď se, dnes nás čeká deset otázek."],
+    ["hagrid", "Nazdar, {jm}! Tak co, jdeme na to? Já ti budu držet palce!"]
+  ],
+  hp: [
+    ["brumbal", "Dějiny jsou plné tajemství, {jm}. Pojďme na ně trochu posvítit."],
+    ["brumbal", "I já jsem kdysi seděl v téhle učebně, {jm}. Uvidíme, co si pamatuješ."]
+  ],
+  m: [
+    ["mcg", "Přesnost a trpělivost, {jm}. To je základ každého kouzla i každého příkladu."],
+    ["mcg", "Ticho, prosím. {Jm}, ukaž mi, jak pěkně počítáš."]
+  ],
+  cj: [
+    ["mcg", "Brk do ruky, {jm}. Dnes chci vidět pečlivou práci."],
+    ["mcg", "Každé písmenko má své místo, {jm}. Stejně jako při přeměňování brouka v knoflík."]
+  ],
+  en: [
+    ["hagrid", "Ahoj, {jm}! Tesák tě pozdravuje. Tak jdeme na ty anglický slovíčka!"],
+    ["hagrid", "No ne, {jm}! S psaním jsem se vždycky pral, ale ty to zvládneš. Do toho!"]
+  ],
+  exam: [["mcg", "{Jm}, zkouška začíná. Klid a soustředění. Věřím, že to zvládneš."]],
+  milestone: [["brumbal", "{Jm}, tvůj plamínek září až ke stropu Velké síně. Jsem na tebe pyšný."]],
+  newYear: [["brumbal", "Vítej v novém školním roce, {jm}. Bradavice se na tebe těšily."]]
+};
+var charLast = {};
+function charLine(kind) {
+  var L = CHAR_LINES[kind] || CHAR_LINES.daily, i = Math.floor(Math.random() * L.length);
+  if (L.length > 1 && i === charLast[kind]) i = (i + 1) % L.length;
+  charLast[kind] = i;
+  var jm = S.name ? vok(S.name) : "čarodějko", c = L[i][0];
+  var text = L[i][1].replace("{Jm}", jm.charAt(0).toUpperCase() + jm.slice(1)).replace("{jm}", jm);
+  return { c: c, ch: CHARS[c], text: text };
+}
+function charSayHTML(cl) { return '<div class="charSay"><span class="csWho">' + cl.ch.e + ' ' + esc(cl.ch.n) + '</span><span class="csText">„' + esc(cl.text) + '“</span></div>'; }
+function speakAs(cl, delay) {
+  if (!cl || !mluveniOn() || typeof setTimeout !== "function") return;
+  if (!(ttsCloudOk() || ttsProxyOk() || ttsLocalOk())) return;
+  setTimeout(function () { ttsSay(cl.text, null, "cs", cl.ch.voice).catch(function () {}); }, delay == null ? 500 : delay);
+}
 /* {kolej} = jméno koleje. Postavy jen z 1.–2. dílu. */
 var PRAISE = ["Výborně!", "Kouzelné!", "Přesně tak!", "Bravo!", "Skvěle!", "Jako mávnutím hůlky!",
   "Deset bodů pro {kolej}!", "Pět bodů pro {kolej} za bystrost!", "Deset bodů pro {kolej} — a přesýpací hodiny zašuměly!",
@@ -3534,6 +3588,7 @@ function screenNewYear(y) {
   S.pendingYear = null; saveState();
   videoMoment("expres", function () { screenNewYearCard(y); });
 }
+var nyCl = null;
 function screenNewYearCard(y) {
   render(topbarHTML() + '<div class="card center celebrate">' +
     '<div class="trainTrack"><div class="train">' + svgTrain(170) + '</div></div>' +
@@ -3542,9 +3597,10 @@ function screenNewYearCard(y) {
     '<p class="qtext">' + esc(vok(S.name)) + ', Bradavický expres tě přivezl do nového školního roku.<br>' +
     'V Dějinách čar a kouzel se otevřela nová učebna: <b>' + esc(YEARS[y].title) + '</b>.</p>' +
     (EXAM_NAMES[y] ? '<p class="muted">Letos tě čeká velká zkouška: ' + esc(EXAM_NAMES[y]) + '.</p>' : '') +
+    charSayHTML(nyCl = charLine("newYear")) +
     '<button class="btn gold" onclick="screenHome()">Hurá do školy!</button></div>');
   confettiRain(null, 50);
-  speakLine("Vítej v " + y + ". ročníku, " + vok(S.name) + "!", 1500);
+  speakAs(nyCl, 1500);
 }
 
 /* =====================================================================
@@ -3919,15 +3975,16 @@ function lockedNode() {
 var session = null;
 
 function startDailyQuest() {
-  var intro = pick(QUEST_INTROS);
+  var intro = pick(QUEST_INTROS), cl = charLine("daily");
   render(topbarHTML(true) +
     '<div class="card center">' +
     '<div class="bigIcon"><span class="mascot pulse">' + svgFlame(56, "lit") + '</span></div>' +
     '<h2>Dnešní vyučování</h2>' +
-    '<p class="introFlavor">' + esc(intro) + '</p>' +
+    '<p class="introFlavor">' + esc(intro) + '</p>' + charSayHTML(cl) +
     '<p class="muted">10 otázek ze všeho, co už umíš.</p>' +
     '<button class="btn" id="beginBtn">Vzhůru do učebny!</button>' +
     '</div>');
+  speakAs(cl);
   el("beginBtn").onclick = function () {
     session = newSession("daily", buildQuestItems(S, 10), 10);
     showQuestion();
@@ -3970,21 +4027,23 @@ function abandonAsk() {
 }
 function abandonSession() { sessionClear(); session = null; screenHome(); }
 function startTopicQuest(t) {
-  var intro = pick(TOPIC_INTROS);
+  var intro = pick(TOPIC_INTROS), cl = charLine(TOPICS[t].subj);
   render(topbarHTML(true) +
     '<div class="card center">' +
     '<div class="bigIcon">' + subjIcon(TOPICS[t].subj, 56) + '</div>' +
     '<h2>' + esc(TOPICS[t].n) + '</h2>' +
-    '<p class="introFlavor">' + esc(intro) + '</p>' +
+    '<p class="introFlavor">' + esc(intro) + '</p>' + charSayHTML(cl) +
     '<p class="muted">10 otázek na procvičení. Hvězdy mistrovství: ' + starsHTML(t) + '<br>(Plamínek prodlouží jen dnešní vyučování.)</p>' +
     '<button class="btn" id="beginBtn">Vstoupit do učebny</button>' +
     '</div>');
+  speakAs(cl);
   el("beginBtn").onclick = function () {
     session = newSession("topic", buildTopicItems(t, S, 10), 10);
     session.topic = t;
     showQuestion();
   };
 }
+var examCl = null;
 function screenExamIntro() {
   var y = S.year, name = EXAM_NAMES[y] || ("Závěrečná zkouška " + y + ". ročníku");
   var ex = S.exams[y];
@@ -3992,13 +4051,14 @@ function screenExamIntro() {
     '<div class="card center">' +
     '<div class="bigIcon">' + svgTrophy(64) + '</div>' +
     '<h2>' + esc(name) + '</h2>' +
-    '<p class="introFlavor">Ve Velké síni stojí řady jednotlivých lavic a profesorka McGonagallová obrací přesýpací hodiny…</p>' +
+    '<p class="introFlavor">Ve Velké síni stojí řady jednotlivých lavic a profesorka McGonagallová obrací přesýpací hodiny…</p>' + charSayHTML(examCl = charLine("exam")) +
     '<p class="muted">15 otázek ze všech otevřených učeben. Zkoušku složíš, když jich napoprvé zvládneš aspoň 12. ' +
     'Zkusit ji můžeš, kolikrát chceš — chyby nic nestojí.</p>' +
     (ex ? '<p class="muted">Nejlepší výsledek: <b>' + ex.best + ' / 15</b>' + (ex.passed ? ' — zkouška složena ' + svgCheck(16, "#2a7f7f") : '') + '</p>' : '') +
     '<button class="btn gold" id="beginBtn">Jdu na zkoušku!</button>' +
     '<button class="btn secondary" onclick="screenHome()">Ještě ne</button>' +
     '</div>');
+  speakAs(examCl);
   el("beginBtn").onclick = function () {
     session = newSession("exam", buildExamItems(S, 15), 15);
     showQuestion();
@@ -4167,10 +4227,10 @@ function ttsPlayBlob(blob) {
   return p;
 }
 /* Pořadí: cache → přímý klíč (pokud je) → server s rodinným kódem → vestavěný hlas zařízení. lang: "en" (výchozí) | "cs". */
-function ttsSay(word, cfgOverride, lang) {
+function ttsSay(word, cfgOverride, lang, voiceForce) {
   var cfg = cfgOverride || ttsCfg();
-  /* angličtina: Alice (nebo zvolený hlas); čeština: český hlas z panelu, jinak tentýž hlas */
-  var voice = lang === "cs" ? (cfg.voiceCs || TTS_DEFAULT_VOICE_CS || cfg.voice || TTS_DEFAULT_VOICE) : (cfg.voice || TTS_DEFAULT_VOICE);
+  /* angličtina: Alice (nebo zvolený hlas); čeština: český hlas z panelu, jinak tentýž hlas; voiceForce = hlas postavy */
+  var voice = voiceForce || (lang === "cs" ? (cfg.voiceCs || TTS_DEFAULT_VOICE_CS || cfg.voice || TTS_DEFAULT_VOICE) : (cfg.voice || TTS_DEFAULT_VOICE));
   var hasCloud = !!cfg.key, hasProxy = !cfgOverride && ttsProxyOk();
   if (!hasCloud && !hasProxy) return ttsSpeak(word, lang);
   var id = voice + "|" + word.toLowerCase();
@@ -5080,10 +5140,11 @@ function screenMilestoneCard(days, isGoal) {
     '<div class="mascotBig">' + svgFlame(92, "lit") + '</div>' +
     '<h1>Milník plamínku!</h1>' + heroCardHTML(days + ' DNÍ', 'v řadě') +
     '<p class="qtext">' + esc(vok(S.name)) + ', tvůj plamínek hoří už ' + days + ' dní!<br>To dokáže jen opravdová čarodějka.</p>' +
-    '<button class="btn gold" id="nextBtn">Sláva!</button></div>');
+    '<div id="milestoneSay"></div><button class="btn gold" id="nextBtn">Sláva!</button></div>');
   confettiRain(null, 50); sfx("bell");
   setTimeout(function () { owlVisit(document.querySelector(".heroCard"), true); }, 700);
-  speakLine(days + " dní v řadě! To dokáže jen opravdová čarodějka.", 1200);
+  var mcl = charLine("milestone"); var mt = el("milestoneSay"); if (mt) mt.innerHTML = charSayHTML(mcl);
+  speakAs(mcl, 1200);
   el("nextBtn").onclick = processPostQueue;
 }
 
