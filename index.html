@@ -778,7 +778,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12q";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12r";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2093,6 +2093,40 @@ function vocabListenQ(w, pool, all) {
   return { kind:"choice", how:"rec", listen:true, sayPre:true, bigOpts: correct === w.e, word:w.en, q:(ph ? "Poslechni si a vyber, co znamená:" : "Poslechni si a vyber, co slyšíš:"), cue:"",
     opts: opts, correct: correct, why: w.en + " = " + w.cs + (w.e ? " " + w.e : "") + "." };
 }
+/* ROZHOVOR S HAGRIDEM: Hagrid se anglicky zeptá (svým hlasem), Karolinka vybere správnou anglickou odpověď.
+   Jen věty ze slovíček ze školy, která už má v seznamu (Unit 1: How old are you?, Unit 2: What is this?,
+   Is this your pen?). Bez vlivu na stupně slov (how chybí). */
+var NUM_EN = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+function dialogQ(pool) {
+  var has = function (en) { return pool.some(function (w) { return w.en === en; }); };
+  var kinds = [];
+  if (has("what is this?")) kinds.push("what");
+  if (has("is this your pen?") && has("yes, it is.") && has("no, it isn't.")) kinds.push("your");
+  if (has("how old are you?")) kinds.push("old");
+  if (!kinds.length) return null;
+  var k = pick(kinds), items = pool.filter(function (w) { return w.b === 2 && w.e && w.en.split(" ").length <= 2 && !/[?.]/.test(w.en) && w.en !== "this is" && ["scissors", "glue"].indexOf(w.en) === -1; });   /* „a scissors / a glue“ by nebyla správná angličtina */
+  var seenE = {}; items = shuffle(items).filter(function (w) { if (seenE[w.e]) return false; seenE[w.e] = true; return true; });
+  var q, opts, correct, cue = "", note = "", why;
+  if (k === "what" && items.length >= 4) {
+    var it = items[0]; q = "What is this?"; cue = it.e; correct = "This is a " + it.en + ".";
+    opts = [correct].concat(items.slice(1, 4).map(function (x) { return "This is a " + x.en + "."; }));
+    why = "What is this? = Co to je? " + correct + " = To je " + it.cs.split(" (")[0] + ".";
+  } else if (k === "your" && items.length >= 2) {
+    var thing = items[0], mine = Math.random() < 0.5;
+    q = "Is this your " + thing.en + "?"; cue = thing.e; note = mine ? "Je to tvoje." : "Není to tvoje.";
+    correct = mine ? "Yes, it is." : "No, it isn't.";
+    opts = ["Yes, it is.", "No, it isn't.", "This is a " + items[1].en + ".", "I am seven years old."];
+    why = q + " = Je to tvoje " + thing.cs.split(" (")[0] + "? " + correct + (mine ? " = Ano, je." : " = Ne, není.");
+  } else {
+    var n = 6 + Math.floor(Math.random() * 5); q = "How old are you?"; cue = "🎂 " + n; note = "Je ti " + n + " let.";
+    correct = "I am " + NUM_EN[n] + " years old.";
+    var others = shuffle([6, 7, 8, 9, 10].filter(function (x) { return x !== n; })).slice(0, 3);
+    opts = [correct].concat(others.map(function (x) { return "I am " + NUM_EN[x] + " years old."; }));
+    why = "How old are you? = Kolik je ti let? " + correct + " = Je mi " + n + " let.";
+  }
+  return { kind:"choice", dialog:true, sayPre:true, enOpts:true, voice: CHARS.hagrid.voice, word: q,
+    q: "🧔 Hagrid se ptá: „" + q + "“" + (note ? " (" + note + ")" : ""), cue: cue, opts: shuffle(opts), correct: correct, why: why };
+}
 function vocabMeaningQ(w, pool, all) {
   var seen = {}; seen[w.cs] = true;
   /* špatné možnosti stejného druhu: k větě věty, ke slovu slova — jinak se dá uhodnout podle tvaru */
@@ -2174,6 +2208,10 @@ function pickWordWeighted(list, state) {
 function genVocab(t, state, usedIds) {
   var pool = vocabPool(t, state);
   if (!pool.length) pool = VOCAB_SETS.E1;
+  /* občas rozhovor s Hagridem (jen slovíčka ze školy, nejvýš jednou za hodinu, jen když zařízení mluví) */
+  if (t === "E0" && !usedIds.dialog && Math.random() < 0.15 && listenOk()) {
+    var dq = dialogQ(pool); if (dq) { usedIds.dialog = true; dq.dbg = { t: t, kind: "dialog" }; return dq; }
+  }
   var all = allVocab(state);
   var fresh = pool.filter(function (w) { return !usedIds["w:" + w.en]; });
   if (!fresh.length) fresh = pool;
@@ -4221,10 +4259,10 @@ function ttsSpeak(word, lang) {
 }
 if (typeof speechSynthesis !== "undefined" && speechSynthesis.addEventListener) speechSynthesis.addEventListener("voiceschanged", function () { ttsVoicesCache = speechSynthesis.getVoices(); });
 function ttsOnline() { return typeof navigator === "undefined" || navigator.onLine !== false; }
-function sayBtnHTML(word, mini) {
+function sayBtnHTML(word, mini, voice) {
   if (!word || !ttsReady()) return "";
   /* třída local = vestavěný hlas (funguje i offline); bez ní se tlačítko offline skryje */
-  return '<button type="button" class="sayBtn' + (mini ? " mini" : "") + ((ttsCloudOk() || ttsProxyOk()) ? "" : " local") + '" data-say="' + esc(word) + '" title="Poslechni si výslovnost" aria-label="Poslechni si ' + esc(word) + '">🔊' + (mini ? "" : " Poslechni si") + '</button>';
+  return '<button type="button" class="sayBtn' + (mini ? " mini" : "") + ((ttsCloudOk() || ttsProxyOk()) ? "" : " local") + '" data-say="' + esc(word) + '"' + (voice ? ' data-voice="' + esc(voice) + '"' : '') + ' title="Poslechni si výslovnost" aria-label="Poslechni si ' + esc(word) + '">🔊' + (mini ? "" : " Poslechni si") + '</button>';
 }
 var ttsMem = {}, ttsDbP = null, ttsAudio = null;
 function ttsDb() {
@@ -4320,7 +4358,7 @@ function ttsWire() {
     ev.preventDefault(); ev.stopPropagation();
     if (b.classList.contains("busy")) return;
     b.classList.add("busy"); b.classList.remove("fail");
-    ttsSay(b.getAttribute("data-say")).then(function () { b.classList.remove("busy"); },
+    ttsSay(b.getAttribute("data-say"), null, "en", b.getAttribute("data-voice") || null).then(function () { b.classList.remove("busy"); },
       function () { b.classList.remove("busy"); b.classList.add("fail"); b.title = "Hlas se teď nepodařilo načíst."; });
   }, true);
 }
@@ -4718,7 +4756,7 @@ function showQuestion() {
       '<div id="cardArea"><button class="btn" id="revealBtn">Řekla jsem to — ukaž odpověď</button></div>';
   } else {
     html += (it.cue ? '<div class="wordCue">' + it.cue + '</div>' : '') + '<p class="qtext">' + esc(it.q) + '</p>' +
-      (it.sayPre && it.word ? '<div class="sayRow">' + sayBtnHTML(it.word) + '</div>' : '');
+      (it.sayPre && it.word ? '<div class="sayRow">' + sayBtnHTML(it.word, false, it.voice) + '</div>' : '');
     if (it.hint) html += '<div class="hintRow"><button class="hintBtn" id="hintBtn">🧮 Rozlož si to</button><div class="hintBox hidden" id="hintBox">' + esc(it.hint) + '</div></div>';
     var shortOpts = it.bigOpts || it.opts.every(function (o) { return String(o).length <= 3; });
     var mental = mentalEligible(it), mentalQuiet = mental && session.mentalSkips && (session.mentalSkips[it.topic] || 0) >= 2;
@@ -4808,7 +4846,7 @@ function sayFirst(it) {
   }
   setTimeout(function () {
     if (!session || session.queue[session.index] !== it) return;
-    ttsSay(it.word).then(function () { setTimeout(show, 250); }, show);
+    ttsSay(it.word, null, "en", it.voice).then(function () { setTimeout(show, 250); }, show);
   }, 900);
 }
 
@@ -6465,7 +6503,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
