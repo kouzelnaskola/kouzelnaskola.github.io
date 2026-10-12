@@ -365,6 +365,7 @@
   .charSay { margin: 4px auto 14px; max-width: 520px; text-align: left; background: #fffdf7; border: 2px solid var(--ink); border-radius: 14px 14px 14px 4px; padding: 9px 13px; box-shadow: 3px 3px 0 var(--shadow); animation: pop .35s ease-out .25s both; }
   .charSay .csWho { display: block; font-size: 14px; font-weight: 700; color: var(--acc-d); margin-bottom: 2px; }
   .charSay .csText { font-size: 18px; font-style: italic; line-height: 1.4; }
+  .charSay.inSheet { margin: 6px 0 8px; max-width: none; }
   /* průvodce se sovou */
   #tut { position: fixed; inset: 0; z-index: 80; opacity: 0; transition: opacity .25s; }
   #tut.on { opacity: 1; }
@@ -774,7 +775,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12n";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12o";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2718,6 +2719,21 @@ var CHAR_LINES = {
     ["hagrid", "Ahoj, {jm}! Tesák tě pozdravuje. Tak jdeme na ty anglický slovíčka!"],
     ["hagrid", "No ne, {jm}! S psaním jsem se vždycky pral, ale ty to zvládneš. Do toho!"]
   ],
+  praise_brumbal: [
+    ["brumbal", "Výborně, {jm}! Deset bodů pro {kolej}."],
+    ["brumbal", "Tak se mi to líbí, {jm}. Opravdu kouzelné."],
+    ["brumbal", "Zase správně! Umíš víc, než si myslíš, {jm}."]
+  ],
+  praise_mcg: [
+    ["mcg", "Velmi dobře, {jm}. Pět bodů pro {kolej}."],
+    ["mcg", "Přesně tak, {jm}. Na to můžeš být hrdá."],
+    ["mcg", "Bez chyby. Takhle pracuje opravdová čarodějka."]
+  ],
+  praise_hagrid: [
+    ["hagrid", "Páni, {jm}! Ty jsi teda šikovná!"],
+    ["hagrid", "Další správně! To by i Tesák zavrtěl ocasem!"],
+    ["hagrid", "No jo, {jm}! Já věděl, že to zvládneš!"]
+  ],
   exam: [["mcg", "{Jm}, zkouška začíná. Klid a soustředění. Věřím, že to zvládneš."]],
   milestone: [["brumbal", "{Jm}, tvůj plamínek září až ke stropu Velké síně. Jsem na tebe pyšný."]],
   newYear: [["brumbal", "Vítej v novém školním roce, {jm}. Bradavice se na tebe těšily."]]
@@ -2728,7 +2744,7 @@ function charLine(kind) {
   if (L.length > 1 && i === charLast[kind]) i = (i + 1) % L.length;
   charLast[kind] = i;
   var jm = S.name ? vok(S.name) : "čarodějko", c = L[i][0];
-  var text = L[i][1].replace("{Jm}", jm.charAt(0).toUpperCase() + jm.slice(1)).replace("{jm}", jm);
+  var text = L[i][1].replace("{Jm}", jm.charAt(0).toUpperCase() + jm.slice(1)).replace("{jm}", jm).replace("{kolej}", S.house ? HOUSES[S.house].n : "tvou kolej");
   return { c: c, ch: CHARS[c], text: text };
 }
 function charSayHTML(cl) { return '<div class="charSay"><span class="csWho">' + cl.ch.e + ' ' + esc(cl.ch.n) + '</span><span class="csText">„' + esc(cl.text) + '“</span></div>'; }
@@ -4949,10 +4965,18 @@ function answerQ(it, chosen, btn) {
       '<button class="btn" id="nextBtn">Pokračovat</button></div></div>';
     sparkles();
     if (it.kind !== "build") sfx("ok");
+    /* série správně napoprvé: po 3, 6, 9… pochválí postava předmětu svým hlasem (u zkoušky ne, ať nevyrušuje) */
+    if (!it.retry) session.okRun = (session.okRun || 0) + 1;
+    if (!it.retry && session.mode !== "exam" && session.okRun % 3 === 0) {
+      var ps = TOPICS[it.topic].subj, pcl = charLine(ps === "en" ? "praise_hagrid" : ps === "hp" ? "praise_brumbal" : "praise_mcg");
+      setTimeout(function () { var fbx = document.querySelector(".sheet.ok .stitle"); if (fbx) fbx.insertAdjacentHTML("afterend", charSayHTML(pcl).replace('class="charSay"', 'class="charSay inSheet"')); }, 0);
+      speakAs(pcl, 700);
+    }
     sfxCoins(gained);
     fxCoinsToChip(gained);
   } else {
     if (btn) btn.classList.add("wrong");
+    session.okRun = 0;
     if (it.kind !== "card") sfx("bad");
     st.w++;
     var shown = it.kind === "build" ? "poskládáno s " + it._slips + " zaváháním" : it.kind === "card" ? "řekla, že ještě neví" : String(chosen);
@@ -6034,6 +6058,10 @@ function screenParent(section) {
       '<p class="muted">Zvuky z ElevenLabs: správně, špatně (měkce), mince, skládání slova, fanfára, zvon u milníků, třpyt u odznaku, šustnutí stránky, křídla sovy. Nikdy před odpovědí. Vypínač je i v horní liště (🔈/🔇) a platí jen pro toto zařízení.</p>' +
       '<div class="chkRow"><input type="checkbox" id="pSfx"' + (sfxOn() ? " checked" : "") + '><span><b>Zvuky zapnuté</b></span></div>' +
       '<div class="chkRow"><input type="checkbox" id="pAmb"' + (devCfg().amb ? " checked" : "") + '><span><b>Atmosféra Velké síně</b> <span class="muted">— tiché praskání pochodní ve Velké síni</span></span></div>' +
+      '<h3>🎬 Velké momenty</h3>' +
+      '<p class="muted">Videa, která hra pustí u velkých chvil. Tady si je můžete přehrát kdykoli.</p>' +
+      '<div class="vidList">' + [["dopis", "Sova s dopisem (uvítání)"], ["klobouk", "Moudrý klobouk (zařazení)"], ["plaminek", "Plamínek (milník)"], ["expres", "Bradavický expres (nový ročník)"], ["zkouska", "Vysvědčení (složená zkouška)"]].map(function (v) {
+        return '<button class="btn small secondary" data-vid="' + v[0] + '">▶ ' + v[1] + '</button>'; }).join(" ") + '</div><p class="muted" id="vidMsg"></p>' +
       '<h3>✨ Animace</h3>' +
       '<p class="muted">Létající sova, otáčení stránek, konfety, kolébání mapy a videa u velkých momentů. Vypnutím hra zklidní a zrychlí na starších zařízeních. Platí pro toto zařízení.</p>' +
       '<div class="chkRow"><input type="checkbox" id="pAnim"' + (devCfg().anim ? " checked" : "") + '><span><b>Animace a videa zapnuté</b></span></div>';
@@ -6194,6 +6222,16 @@ function screenParent(section) {
       .then(function () { msg("mluvMsg", ttsProxyOk() || ttsCfg().key ? "Funguje (ElevenLabs)." : "Funguje (vestavěný hlas)."); }, function (e) { msg("mluvMsg", ttsErrText(e)); });
   });
   on("pAmb", "onchange", function () { devSet("amb", el("pAmb").checked); });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-vid]"), function (b) {
+    b.onclick = function () {
+      var k = b.getAttribute("data-vid"); msg("vidMsg", "Načítám…");
+      vidReady(k, 15000).then(function (url) {
+        if (!url) { msg("vidMsg", "Toto video ještě není nahrané v cloudu (nebo je zařízení offline)."); return; }
+        msg("vidMsg", ""); var a = devCfg().anim; if (!a) devSet("anim", true);
+        videoMoment(k, function () { if (!a) devSet("anim", false); }, 100);
+      });
+    };
+  });
   on("pAnim", "onchange", function () { devSet("anim", el("pAnim").checked); });
   on("pSfx", "onchange", function () { sfxSet(el("pSfx").checked); var b = document.querySelector(".sfxBtn"); if (b) b.textContent = sfxOn() ? "🔈" : "🔇"; if (sfxOn()) sfx("ok"); });
 
