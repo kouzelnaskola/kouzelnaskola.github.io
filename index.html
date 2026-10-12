@@ -403,6 +403,9 @@
   .fg.l1 { background: var(--mustard-pale); border-color: var(--mustard-d); }
   .fg.l2 { background: var(--teal); border-color: var(--teal-d); color: #fff; font-weight: 700; }
   .fg.new { color: #b9ad97; }
+  .vyjRow { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 6px 0; } .vyjRow b { width: 44px; font-size: 14px; color: var(--muted2); }
+  .vyjChip { font-size: 14px; padding: 2px 8px; border-radius: 12px; border: 1.5px solid #b9ad97; background: #fff; }
+  .vyjChip.l1 { background: var(--mustard-pale); border-color: var(--mustard-d); } .vyjChip.l2 { background: var(--teal); border-color: var(--teal-d); color: #fff; }
   .fgLegend { text-align: center; font-size: 14px; color: var(--muted2); display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
   .fgLegend .fg { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-left: 8px; }
   /* souhrn: nejlepší kouzla / kde jsem zaváhala */
@@ -821,7 +824,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-12y";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-12z";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1610,6 +1613,31 @@ function factRecord(state, k, ok, day) {
   } else { x.r = 0; x.d = []; if (x.l === 2) x.l = 1; }
   x.last = day;
   return { from: from, to: x.l };
+}
+/* Vyjmenovaná slova (C4–C10) mají stupně po jednotlivých otázkách stejně jako násobilka (klíč "v:<id>" v S.factLv). */
+var VYJ_TOPICS = ["C4", "C5", "C6", "C7", "C8", "C9", "C10"];
+function vyjWord(q) {
+  var s = String(q.why || "").split(" — ")[0];
+  s = s.split(/ (?:je|patří|píšeme|není|se píše)(?= |$)| \(| =|\. /)[0];   /* \b v JS nezná českou diakritiku */
+  return s.replace(/[.!?,]+$/, "").trim() || q.id;
+}
+function pickByLevel(list, keyOf, state) {
+  var today = todayStr(), w = list.map(function (q) {
+    var x = state && state.factLv && state.factLv[keyOf(q)], l = x ? x.l : 0;
+    return l === 0 ? 3 : l === 1 ? 5 : ((x.last ? dateDiffDays(x.last, today) : 99) >= 3 ? 1.5 : 0.4);
+  });
+  var sum = w.reduce(function (p, c) { return p + c; }, 0), r = Math.random() * sum;
+  for (var i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; }
+  return list[list.length - 1];
+}
+function vyjListHTML(state) {
+  var tot = [0, 0, 0], rows = VYJ_TOPICS.filter(function (t) { return isUnlocked(t, state); }).map(function (t) {
+    return '<div class="vyjRow"><b>' + TOPICS[t].n.replace("Vyjmenovaná slova ", "") + '</b>' + BANKS[t].map(function (q) {
+      var x = state.factLv && state.factLv["v:" + q.id], l = x ? x.l : 0; tot[l]++;
+      return '<span class="vyjChip l' + l + '">' + esc(vyjWord(q)) + '</span>'; }).join("") + '</div>';
+  }).join("");
+  if (!rows) return "";
+  return rows + '<div class="fgLegend"><span class="fg l2"></span> Umím ' + tot[2] + ' <span class="fg l1"></span> Jde mi ' + tot[1] + ' <span class="fg l0"></span> Zatím ne ' + tot[0] + '</div>';
 }
 function pickFact(state, aMin, aMax) {
   var today = todayStr(), list = [], w = [];
@@ -2730,9 +2758,11 @@ function makeQuestion(t, state, usedIds) {
   if (BANKS[t]) {
     var pool = BANKS[t].filter(function (q) { return !usedIds[q.id]; });
     if (!pool.length) pool = BANKS[t];
-    var it = pick(pool);
+    var vyj = VYJ_TOPICS.indexOf(t) !== -1;
+    var it = vyj ? pickByLevel(pool, function (q) { return "v:" + q.id; }, state) : pick(pool);
     usedIds[it.id] = true;
-    return { topic: t, kind:"choice", id: it.id, q: it.q, opts: shuffle(it.o), correct: it.o[0], why: it.why };
+    return { topic: t, kind:"choice", id: it.id, q: it.q, opts: shuffle(it.o), correct: it.o[0], why: it.why,
+      fact: vyj ? "v:" + it.id : null, factLabel: vyj ? vyjWord(it) : null };
   }
   if (tp.subj === "hp") {
     var kp = knowledgePool(t, state);
@@ -2893,7 +2923,7 @@ function charLine(kind) {
 function personalNote() {
   if (DEMO) return "";
   var today = todayStr(), y = addDays(today, -1), s = S.streak || {};
-  var facts = Object.keys(S.factLv || {}).filter(function (k) { var x = S.factLv[k]; return x.l === 2 && x.last === y; });
+  var facts = Object.keys(S.factLv || {}).filter(function (k) { var x = S.factLv[k]; return /^\d+x\d+$/.test(k) && x.l === 2 && x.last === y; });
   if (facts.length) return "Včera jsi zvládla " + facts[0].replace("x", " krát ") + ". Teď už to umíš!";
   var words = Object.keys(S.wordLv || {}).filter(function (k) { var x = S.wordLv[k]; return x.l === 2 && x.last === y; });
   if (words.length) return "Včera ses naučila z hlavy slovíčko " + words[0] + ".";
@@ -4201,6 +4231,7 @@ function screenMapSubject(subj) {
   var html = topbarHTML() + '<div class="card"><button class="btn secondary small backMap" onclick="screenMap()">← Mapa hradu</button>' +
     '<h2 class="center subjTitle">' + subjIcon(subj, 30) + ' ' + esc(SUBJECTS[subj].n) + '</h2><p class="muted center">' + esc(SUBJECTS[subj].sub) + '</p>' +
     subjectRoomsHTML(subj) + (subj === "m" && (isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3 class="center" style="margin-top:18px">🧪 Moje násobilka</h3><p class="muted center">Příklad umíš, když ho spočítáš správně ve dva různé dny.</p>' + factGridHTML(S) : '') +
+    (subj === "cj" && vyjListHTML(S) ? '<h3 class="center" style="margin-top:18px">🪶 Moje vyjmenovaná slova</h3><p class="muted center">Slovo umíš, když ho doplníš správně ve dva různé dny.</p>' + vyjListHTML(S) : '') +
     '</div>' + navHTML("rozvrh");
   render(html);
   TOPIC_ORDER.forEach(function (t) { if (TOPICS[t].subj === subj) delete recentStars[t]; });
@@ -5321,7 +5352,7 @@ function answerQ(it, chosen, btn) {
   var note = wordNote(it, correct);
   if (it.fact && !it.retry) {
     var fch = factRecord(S, it.fact, !!correct, todayStr());
-    if (fch.to === 2 && fch.from < 2 && session) { if (!session.newFacts) session.newFacts = []; session.newFacts.push(it.fact.replace("x", " × ")); }
+    if (fch.to === 2 && fch.from < 2 && session) { if (!session.newFacts) session.newFacts = []; session.newFacts.push(it.factLabel || it.fact.replace("x", " × ")); }
   }
   /* zápis odpovědi pro souhrn (nejlepší kouzla / kde jsem zaváhala); jen první pokus */
   if (!it.retry && !it.bonus) { if (!session.log) session.log = []; session.log.push({ q: it.q, a: String(it.correct), ok: !!correct, kind: it.kind, recall: !!it.recall, topic: it.topic, mental: !!it.mental }); }
@@ -5447,7 +5478,7 @@ function screenQuestSummary(perfect) {
   html += summaryReviewHTML();
   var flipAt = 1.0 + (session.newStarCount || 0) * 0.45;
   if (session.newFacts && session.newFacts.length) {
-    html += '<div class="feedback ok flipIn" style="animation-delay:' + flipAt.toFixed(2) + 's">🧪 Nově umíš násobilku: <b>' + session.newFacts.map(esc).join(", ") + '</b></div>';
+    html += '<div class="feedback ok flipIn" style="animation-delay:' + flipAt.toFixed(2) + 's">🌟 Nově umíš: <b>' + session.newFacts.map(esc).join(", ") + '</b></div>';
     flipAt += 0.45;
   }
   if (session.newWords && session.newWords.length) {
@@ -6443,6 +6474,7 @@ function screenParent(section) {
       '<p class="muted">Plamínek prodlouží jen dokončené denní vyučování (10 otázek). Při vynechaném dnu se spotřebuje amulet; bez amuletu hra do dvou dnů nabídne odpracování (2 vyučování v jednom dni) — nikdy výčitky.</p>' +
       joyHTML() +
       '<h3>Jak jí to jde</h3>' + (statRows || '<p class="muted">Zatím nehráno.</p>') +
+      (vyjListHTML(S) ? '<h3>🪶 Vyjmenovaná slova po slovech</h3>' + vyjListHTML(S) : '') +
       ((isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3>🧪 Násobilka po příkladech</h3><p class="muted">Tyrkysová = umí (správně ve dva různé dny), žlutá = jde jí (2× za sebou správně), bílá = ještě ne. Hra přednostně procvičuje žluté a nové.</p>' + factGridHTML(S) : '') +
       (examRows ? '<p class="muted" style="margin-top:8px">Zkoušky ročníku:</p><ul style="margin-left:20px;font-size:15px">' + examRows + '</ul>' : '') +
       '<h3>Chyby</h3>' +
@@ -6865,7 +6897,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, altExplainHTML: altExplainHTML, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, vyjWord: vyjWord, BANKS_VYJ: VYJ_TOPICS, altExplainHTML: altExplainHTML, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
