@@ -398,6 +398,7 @@
   .ssn.bdayBanner { z-index: 4; top: 10px; left: 50%; translate: -50% 0; padding: 6px 16px; border: 2px solid var(--ink); border-radius: 20px; background: var(--mustard); color: #fff; font-weight: 700; white-space: nowrap; box-shadow: 3px 3px 0 rgba(0,0,0,.3); }
   .hall.bday .candle i { filter: hue-rotate(-10deg) saturate(1.6) brightness(1.2); }
   .puzzleCard, .radioCard { animation: none; background: #fff; }
+  .micBtn.listening { background: var(--coral-pale); animation: thinkPulse 1s infinite; }
   .charSay.onAir { outline: 3px solid var(--mustard); }
   .noteOut { min-height: 48px; font: 700 26px "Helvetica Neue", Arial, sans-serif; padding: 10px; margin: 8px 0; border: 2px dashed var(--ink); border-radius: 8px; background: #fffaf0; }
   .joyRow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .joyRow .btn { width: auto; margin: 0; }
@@ -831,7 +832,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-13c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-13d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2632,6 +2633,7 @@ function defaultState() {
     birthday: "",     /* narozeniny "MM-DD" (rodič v panelu), oslava ve Velké síni */
     puzzle: null,     /* hlavolam týdne: { w, solved, tries } */
     radioHeard: 0,    /* týden (weekNo), kdy už slyšela Bradavický rozhlas */
+    teachDay: "",     /* den, kdy už dostala galeony za „Zkoušej tátu“ */
     bdayYear: 0,      /* rok, kdy už byl narozeninový dárek */
     exams: {},
     pendingYear: null,
@@ -2699,6 +2701,7 @@ function migrate(s) {
   if (typeof s.bdayYear !== "number") s.bdayYear = 0;
   if (s.puzzle === undefined) s.puzzle = null;
   if (typeof s.radioHeard !== "number") s.radioHeard = 0;
+  if (typeof s.teachDay !== "string") s.teachDay = "";
   if (!s.recentQ || typeof s.recentQ !== "object") s.recentQ = {};
   if (!Array.isArray(s.rewards)) s.rewards = [];
   if (!s.roomPos || typeof s.roomPos !== "object") s.roomPos = {};
@@ -4327,6 +4330,86 @@ function screenNoteBuilder(mailId) {
   draw();
 }
 
+/* =====================================================================
+   ODPOVĚDI NAHLAS (rozpoznávání řeči v prohlížeči; Safari a Chrome, potřebuje internet).
+   Jen jako pohodlná zkratka, nikdy povinnost: u karty „řekni nahlas“ (česky) hra pozná řečené slovo
+   a u rozhovoru s Hagridem anglickou odpověď. Když to nepozná, zůstane původní poctivé „věděla / ještě ne“.
+   ===================================================================== */
+function speechOk() { return typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition) && ttsOnline(); }
+function speechListen(lang, onDone) {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition, r, done = false;
+  try { r = new SR(); } catch (e) { onDone(null, "nejde"); return null; }
+  r.lang = lang; r.interimResults = false; r.maxAlternatives = 5; r.continuous = false;
+  var fin = function (alts, err) { if (done) return; done = true; onDone(alts, err); };
+  r.onresult = function (ev) { var alts = []; var res = ev.results && ev.results[0]; if (res) for (var i = 0; i < res.length; i++) alts.push(res[i].transcript); fin(alts, null); };
+  r.onerror = function (ev) { fin(null, ev.error || "chyba"); };
+  r.onend = function () { fin([], null); };
+  try { r.start(); } catch (e) { fin(null, "nejde"); }
+  setTimeout(function () { try { r.stop(); } catch (e) {} }, 6000);
+  return r;
+}
+function speechMatches(alts, accept) {
+  return (alts || []).some(function (a) { var v = normAns(a); return accept.some(function (x) { return v === x || (x.length >= 5 && lev(x, v) <= 1) || (" " + v + " ").indexOf(" " + x + " ") !== -1; }); });
+}
+function micBtnHTML(label) { return speechOk() ? '<button class="btn secondary micBtn" id="micBtn">🎤 ' + label + '</button><p class="muted center" id="micMsg"></p>' : ''; }
+function micWire(lang, accept, onOk) {
+  var b = el("micBtn"); if (!b) return;
+  b.onclick = function () {
+    b.disabled = true; b.classList.add("listening"); b.textContent = "🎤 Poslouchám…"; el("micMsg").textContent = "";
+    speechListen(lang, function (alts, err) {
+      b.classList.remove("listening");
+      if (alts && alts.length && speechMatches(alts, accept)) { onOk(alts[0]); return; }
+      b.disabled = false; b.textContent = "🎤 Zkusit znovu";
+      el("micMsg").textContent = err === "not-allowed" ? "Mikrofon není povolený — klidně odpověz klepnutím." : alts && alts.length ? "Slyšela jsem: „" + alts[0] + "“. Zkus to znovu, nebo odpověz klepnutím." : "Nic jsem neslyšela. Zkus to znovu, nebo odpověz klepnutím.";
+    });
+  };
+}
+
+/* =====================================================================
+   ZKOUŠEJ TÁTU (Lenny's: Mark Pincus — tvořit, ne jen spotřebovávat): dítě v roli učitelky položí rodiči
+   5 otázek z toho, co samo umí (násobilka, vyjmenovaná slova, slovíčka). Rodič klepne, dítě vidí, jestli má
+   pravdu, a může mu to vysvětlit. Za učení jednou denně 5 galeonů.
+   ===================================================================== */
+function teachItems() {
+  var out = [], fx = Object.keys(S.factLv || {}).filter(function (k) { return S.factLv[k].l >= 1; });
+  shuffle(fx).slice(0, 3).forEach(function (k) {
+    if (/^\d+x\d+$/.test(k)) { var ab = k.split("x").map(Number), ans = ab[0] * ab[1]; out.push({ q: "Kolik je " + ab[0] + " × " + ab[1] + "?", o: shuffle(numOptions(ans, [ab[0], -ab[0], ab[1], -ab[1]])), c: ans }); }
+    else { var id = k.slice(2), bq = null; VYJ_TOPICS.forEach(function (t) { BANKS[t].forEach(function (q) { if (q.id === id) bq = q; }); });
+      if (bq) out.push({ q: bq.q, o: shuffle(bq.o), c: bq.o[0] }); }
+  });
+  var ws = Object.keys(S.wordLv || {}).filter(function (k) { return S.wordLv[k].l >= 1; }), all = allVocab(S);
+  shuffle(ws).slice(0, 3).forEach(function (en) { var w = all.filter(function (x) { return x.en === en; })[0]; if (!w) return; var m = vocabMeaningQ(w, all, all); out.push({ q: "Co znamená anglicky „" + en + "“?", o: m.opts, c: m.correct }); });
+  if (out.length < 5) unlockedTopics(S).filter(function (t) { return GENS[t]; }).forEach(function (t) { if (out.length < 5) { var g = GENS[t](S); out.push({ q: g.q, o: shuffle(g.opts), c: g.correct }); } });
+  return shuffle(out).slice(0, 5);
+}
+function screenTeach() {
+  var items = teachItems(), i = 0, ok = 0;
+  if (!items.length) { render(topbarHTML() + '<div class="card center"><h2>🎓 Zkoušej tátu</h2><p class="qtext">Nejdřív se něco nauč ve vyučování, pak budeš zkoušet ty!</p><button class="btn" onclick="screenProfile()">Zpět</button></div>' + navHTML("ja")); return; }
+  var show = function () {
+    if (i >= items.length) {
+      var reward = S.teachDay !== todayStr(); if (reward) { S.teachDay = todayStr(); giveDust(5); saveState(); }
+      render(topbarHTML() + '<div class="card center celebrate"><div class="bigIcon">🎓</div><h2>Zkoušení skončilo</h2><p class="qtext">Táta zvládl <b>' + ok + ' z ' + items.length + '</b>.</p>' +
+        '<p class="muted">' + (ok === items.length ? "Výborný student! Dej mu jedničku." : "Příště se mu to povede, když mu to vysvětlíš.") + '</p>' +
+        (reward ? '<p class="qtext">+5 ' + svgCoin(18) + ' galeonů za to, že jsi dnes učila ty!</p>' : '') +
+        '<button class="btn gold" onclick="screenProfile()">Hotovo</button></div>' + navHTML("ja"));
+      confettiRain(null, 30); sfx("fanfare"); return;
+    }
+    var it = items[i];
+    render(topbarHTML() + '<div class="card"><p class="progress">🎓 Zkoušíš tátu · otázka ' + (i + 1) + ' z ' + items.length + '</p>' +
+      '<p class="qtext">' + esc(it.q) + '</p><p class="muted">Podej tátovi tablet a ať odpoví.</p>' +
+      it.o.map(function (o, k) { return '<button class="opt" data-ti="' + k + '">' + esc(String(o)) + '</button>'; }).join("") + '<div id="teachFb"></div></div>' + navHTML("ja"));
+    Array.prototype.forEach.call(document.querySelectorAll("[data-ti]"), function (b) {
+      b.onclick = function () {
+        var pickV = it.o[+b.getAttribute("data-ti")], good = String(pickV) === String(it.c);
+        Array.prototype.forEach.call(document.querySelectorAll("[data-ti]"), function (x) { x.disabled = true; if (String(it.o[+x.getAttribute("data-ti")]) === String(it.c)) x.classList.add("correct"); });
+        if (good) { ok++; sfx("ok"); } else { b.classList.add("wrong"); sfx("bad"); }
+        el("teachFb").innerHTML = '<div class="feedback ' + (good ? "ok" : "bad") + '">' + (good ? "Táta má pravdu! 👏" : "Táta se spletl! Správně je <b>" + esc(String(it.c)) + "</b>. Vysvětli mu to.") + '</div><button class="btn" id="teachNext">Další otázka</button>';
+        el("teachNext").onclick = function () { i++; show(); };
+      };
+    });
+  };
+  show();
+}
 /* CO JI DNES ROZZÁŘILO (Lenny's: Josh Woodward, „metrika jsou oči“): jedno klepnutí rodiče po hodině,
    přehled za 14 dní ukáže, co dítě opravdu baví a co se dá zrušit. S.joy = [{ d, k }], nejvýš 60 záznamů. */
 var JOY = [["hodina", "📚 Vyučování"], ["hagrid", "🧔 Postavy a hlasy"], ["sova", "🦉 Sova"], ["obchod", "🛍️ Příčná ulice"], ["loznice", "🛏️ Ložnice"], ["mapa", "🗺️ Mapa hradu"], ["slovicka", "✨ Slovíčka"], ["nic", "😐 Nic zvláštního"]];
@@ -4438,6 +4521,7 @@ function screenProfile() {
     '</div>' +
     '<p class="muted center" style="margin-top:12px">Průkaz je jako fotka — ukaž ho, komu chceš!</p>' +
     '<button class="btn secondary" onclick="screenBadges()">' + svgBadgeIcon(20) + ' Zeď odznaků — ' + S.badges.length + ' / ' + BADGES.length + '</button>' +
+    '<button class="btn secondary" onclick="screenTeach()">🎓 Zkoušej tátu</button>' +
     '<button class="btn secondary" onclick="tutStart()">🦉 Provést hrou se sovou</button></div>' + navHTML("ja"));
 }
 function lockedNode() {
@@ -5205,7 +5289,7 @@ function showQuestion() {
       '<p class="qtext center">' + esc(it.q) + '</p>' +
       '<div class="cardWord qword">' + esc(it.shownWord) + '</div>' +
       '<div class="sayRow">' + sayBtnHTML(it.word) + '</div>' +
-      '<div id="cardArea"><button class="btn" id="revealBtn">Řekla jsem to — ukaž odpověď</button></div>';
+      '<div id="cardArea">' + micBtnHTML("Řekni to do mikrofonu") + '<button class="btn" id="revealBtn">Řekla jsem to — ukaž odpověď</button></div>';
   } else {
     html += (it.cue ? '<div class="wordCue">' + it.cue + '</div>' : '') + '<p class="qtext">' + esc(it.q) + '</p>' +
       (it.sayPre && it.word ? '<div class="sayRow">' + sayBtnHTML(it.word, false, it.voice) + '</div>' : '');
@@ -5222,8 +5306,13 @@ function showQuestion() {
       html += '<button class="opt' + (shortOpts ? " bigOpt" : "") + (it.listen && it.bigOpts ? " emojiOpt" : "") + (it.enOpts ? " enOpt" : "") + (mental && !mentalQuiet ? " hidden" : "") + '" data-i="' + idx + '">' + esc(o) + '</button>';
     });
   }
+  if (it.dialog) html += micBtnHTML("Odpověz Hagridovi nahlas");
   html += '<div id="fb"></div></div>';
   render(html);
+  if (it.dialog) micWire("en-GB", [normAns(it.correct), normAns(String(it.correct).replace(/[,.]/g, ""))], function () {
+    var b = Array.prototype.filter.call(document.querySelectorAll(".opt"), function (x) { return it.opts[+x.getAttribute("data-i")] === it.correct; })[0];
+    answerQ(it, it.correct, b || null);
+  });
   if (it.kind === "choice" && mentalEligible(it)) {
     if (el("mentalBox")) wireMental(it);
     var mo = el("mentalOpen");
@@ -5246,6 +5335,10 @@ function showQuestion() {
   });
   if (it.kind === "build") { wireBuild(it); return; }
   if (it.kind === "card") {
+    micWire("cs-CZ", csVariants(it.correct), function (heard) {
+      el("cardArea").innerHTML = '<div class="cardAnswer">' + esc(it.correct) + '</div><p class="muted center">🎤 Slyšela jsem „' + esc(heard) + '“ — správně!</p>';
+      answerQ(it, it.correct, null);
+    });
     el("revealBtn").onclick = function () {
       el("cardArea").innerHTML = '<div class="cardAnswer">' + esc(it.correct) + '</div>' +
         '<p class="muted center">Řekni poctivě — jen tak slovíčko opravdu naučíš.</p>' +
@@ -6716,6 +6809,9 @@ function screenParent(section) {
       '<p class="muted">Zvuky z ElevenLabs: správně, špatně (měkce), mince, skládání slova, fanfára, zvon u milníků, třpyt u odznaku, šustnutí stránky, křídla sovy. Nikdy před odpovědí. Vypínač je i v horní liště (🔈/🔇) a platí jen pro toto zařízení.</p>' +
       '<div class="chkRow"><input type="checkbox" id="pSfx"' + (sfxOn() ? " checked" : "") + '><span><b>Zvuky zapnuté</b></span></div>' +
       '<div class="chkRow"><input type="checkbox" id="pAmb"' + (devCfg().amb ? " checked" : "") + '><span><b>Atmosféra Velké síně</b> <span class="muted">— tiché praskání pochodní ve Velké síni</span></span></div>' +
+      '<h3>🎤 Odpovědi nahlas</h3>' +
+      '<p class="muted">U karet „řekni nahlas“ a u rozhovorů s Hagridem může dítě odpovědět do mikrofonu. Funguje v Safari a Chrome s internetem; když hra slovo nepozná, zůstane obyčejné odpovídání. Vyzkoušejte, jak rozumí dětskému hlasu:</p>' +
+      (speechOk() ? '<button class="btn small secondary" id="srCs">🎤 Zkusit česky</button> <button class="btn small secondary" id="srEn">🎤 Zkusit anglicky</button> <span class="muted" id="srMsg"></span>' : '<p class="muted">Toto zařízení nebo prohlížeč rozpoznávání řeči nepodporuje (nebo je offline).</p>') +
       '<h3>🎬 Velké momenty</h3>' +
       '<p class="muted">Videa, která hra pustí u velkých chvil. Tady si je můžete přehrát kdykoli.</p>' +
       '<div class="vidList">' + [["dopis", "Sova s dopisem (uvítání)"], ["klobouk", "Moudrý klobouk (zařazení)"], ["plaminek", "Plamínek (milník)"], ["expres", "Bradavický expres (nový ročník)"], ["zkouska", "Vysvědčení (složená zkouška)"]].map(function (v) {
@@ -6882,6 +6978,7 @@ function screenParent(section) {
       .then(function () { msg("mluvMsg", ttsProxyOk() || ttsCfg().key ? "Funguje (ElevenLabs)." : "Funguje (vestavěný hlas)."); }, function (e) { msg("mluvMsg", ttsErrText(e)); });
   });
   on("pAmb", "onchange", function () { devSet("amb", el("pAmb").checked); });
+  ["srCs", "srEn"].forEach(function (id) { on(id, "onclick", function () { msg("srMsg", "Poslouchám…"); speechListen(id === "srCs" ? "cs-CZ" : "en-GB", function (alts, err) { msg("srMsg", alts && alts.length ? "Slyšela jsem: „" + alts.join("“ / „") + "“" : "Nic (" + (err || "ticho") + ")"); }); }); });
   Array.prototype.forEach.call(document.querySelectorAll("[data-vid]"), function (b) {
     b.onclick = function () {
       var k = b.getAttribute("data-vid"); msg("vidMsg", "Načítám…");
@@ -7030,6 +7127,7 @@ W.screenMail = screenMail;
 W.screenPuzzle = screenPuzzle;
 W.screenRadio = screenRadio;
 W.screenNoteBuilder = screenNoteBuilder;
+W.screenTeach = screenTeach;
 W.bonusGo = bonusGo;
 W.joyTap = joyTap;
 W.tutStart = tutStart;
@@ -7064,7 +7162,7 @@ W.BRADAVICE = {
   topicStars: topicStars, totalCorrect: totalCorrect, vok: vok, syncNormCode: syncNormCode,
   SCHOOL_UNIT1: SCHOOL_UNIT1, SCHOOL_UNIT2: SCHOOL_UNIT2, SCHOOL_WORDS_DEFAULT: SCHOOL_WORDS_DEFAULT, wordsToText: wordsToText, newestUnit: newestUnit,
   mergeStates: mergeStates, mergeStreak: mergeStreak, syncGenCode: syncGenCode, stateSig: stateSig, ttsProxyUrl: ttsProxyUrl, genKey: genKey, numOptions: numOptions,
-  SHOP_BY_ID: shopById, PUZZLES: PUZZLES, vyjWord: vyjWord, BANKS_VYJ: VYJ_TOPICS, altExplainHTML: altExplainHTML, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
+  SHOP_BY_ID: shopById, PUZZLES: PUZZLES, speechMatches: speechMatches, vyjWord: vyjWord, BANKS_VYJ: VYJ_TOPICS, altExplainHTML: altExplainHTML, factRecord: factRecord, factKey: factKey, todayStr: todayStr, dialogQ: dialogQ, vocabMeaningQ: vocabMeaningQ, vocabListenQ: vocabListenQ, VOCAB_SETS: VOCAB_SETS, SYNC_URL: SYNC_URL, SETS: SETS, weeklyOffer: weeklyOffer, itemPrice: itemPrice, IMAGES: IMAGES, IMG_BASE: IMG_BASE,
   QUEST_INTROS: QUEST_INTROS, TOPIC_INTROS: TOPIC_INTROS, FLAVOR: FLAVOR, PRAISE: PRAISE, CHEER: CHEER,
   getState: function () { return S; }, setState: function (s) { S = s; }
 };
