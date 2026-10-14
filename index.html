@@ -401,6 +401,17 @@
   .micBtn.listening { background: var(--coral-pale); animation: thinkPulse 1s infinite; }
   .charSay.onAir { outline: 3px solid var(--mustard); }
   .noteOut { min-height: 48px; font: 700 26px "Helvetica Neue", Arial, sans-serif; padding: 10px; margin: 8px 0; border: 2px dashed var(--ink); border-radius: 8px; background: #fffaf0; }
+  body.rodic .tabbar { display: none; } body.rodic #app { padding-bottom: 40px; }
+  .dashLive { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; margin-bottom: 8px; font-size: 17px; }
+  .dashLive.on { background: var(--teal-pale); }
+  .dashLive .dot { width: 14px; height: 14px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 0 4px rgba(46,204,113,.25); animation: thinkPulse 1.2s infinite; flex: none; }
+  .dashLive .dot.off { background: #b9ad97; box-shadow: none; animation: none; }
+  .dashKpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 8px; }
+  .dashKpi div { text-align: center; border: 2px solid var(--ink); border-radius: 8px; padding: 6px 2px; background: #fffaf0; } .dashKpi b { display: block; font-size: 24px; } .dashKpi span { font-size: 13px; color: var(--muted2); }
+  .dashWeek { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .dDay { display: flex; flex-direction: column; align-items: center; border: 2px solid #b9ad97; border-radius: 8px; padding: 4px 0; background: #fff; font-size: 14px; }
+  .dDay.done { background: var(--teal); border-color: var(--teal-d); color: #fff; } .dDay.frz { background: #d5e8f7; } .dDay.today { outline: 2px solid var(--mustard); }
+  .dDay small { font-size: 11px; min-height: 13px; }
   .joyRow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .joyRow .btn { width: auto; margin: 0; }
   #bonusBtn { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 8px; } #bonusBtn span { font-size: 14px; font-style: italic; opacity: .9; }
   /* mřížka násobilky */
@@ -832,7 +843,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-13d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-14a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2634,6 +2645,8 @@ function defaultState() {
     puzzle: null,     /* hlavolam týdne: { w, solved, tries } */
     radioHeard: 0,    /* týden (weekNo), kdy už slyšela Bradavický rozhlas */
     teachDay: "",     /* den, kdy už dostala galeony za „Zkoušej tátu“ */
+    live: null,       /* živě pro přehled rodičů: { at, active, mode, topic, i, n, ok } */
+    lessonLog: [],    /* dokončené hodiny: [{ d, t, mode, topic, n, ok, dust }] (posledních 60) */
     bdayYear: 0,      /* rok, kdy už byl narozeninový dárek */
     exams: {},
     pendingYear: null,
@@ -2702,6 +2715,8 @@ function migrate(s) {
   if (s.puzzle === undefined) s.puzzle = null;
   if (typeof s.radioHeard !== "number") s.radioHeard = 0;
   if (typeof s.teachDay !== "string") s.teachDay = "";
+  if (s.live === undefined) s.live = null;
+  if (!Array.isArray(s.lessonLog)) s.lessonLog = [];
   if (!s.recentQ || typeof s.recentQ !== "object") s.recentQ = {};
   if (!Array.isArray(s.rewards)) s.rewards = [];
   if (!s.roomPos || typeof s.roomPos !== "object") s.roomPos = {};
@@ -4428,7 +4443,7 @@ function joyTap(k) {
   S.joy.forEach(function (x, n) { if (x.d === today && x.k === k) i = n; });
   if (i >= 0) S.joy.splice(i, 1); else S.joy.push({ d: today, k: k });
   if (S.joy.length > 60) S.joy = S.joy.slice(-60);
-  saveState(); screenParent("prehled");
+  saveState(); if (RODIC) { syncRun(); screenDash(); } else screenParent("prehled");
 }
 /* Mřížka násobilky 2–10 obarvená podle stupňů (Lektvary a rodičovský panel). */
 function factGridHTML(state) {
@@ -4562,6 +4577,13 @@ function newSession(mode, queue, total) {
 }
 /* Rozdělaná hodina přežije obnovení stránky (jen tentýž den). */
 var SESSION_KEY = "bradaviceHodina";
+/* živý stav pro přehled rodičů: zapíše se při každé otázce a odeslání proběhne se synchronizací */
+function liveMark(active) {
+  if (DEMO || !session) return;
+  var tp = TOPICS[session.topic] || {};
+  S.live = { at: new Date().toISOString(), active: !!active, mode: session.mode, topic: session.mode === "daily" ? "Dnešní vyučování" : session.mode === "exam" ? "Zkouška ročníku" : (tp.n || ""),
+    i: Math.min(session.index + 1, session.total), n: session.total, ok: session.firstTry || 0 };
+}
 function sessionPersist() {
   if (DEMO) return;
   try {
@@ -4646,6 +4668,7 @@ function screenExamIntro() {
   };
 }
 function abortQuest() {
+  if (session && !DEMO) { liveMark(false); S.live.paused = true; saveState(); }
   /* návrat okamžitě, bez potvrzování — body se ukládají po každé odpovědi;
      rozdělaná hodina zůstává uložená a Velká síň nabídne pokračování */
   session = null; screenHome();
@@ -5141,6 +5164,11 @@ function mergeStates(a, b) {
   m.bdayYear = Math.max(m.bdayYear || 0, o.bdayYear || 0);
   if (o.puzzle && (!m.puzzle || o.puzzle.w > m.puzzle.w || (o.puzzle.w === m.puzzle.w && o.puzzle.solved && !m.puzzle.solved))) m.puzzle = o.puzzle;
   m.radioHeard = Math.max(m.radioHeard || 0, o.radioHeard || 0);
+  if (o.live && (!m.live || (o.live.at || "") > (m.live.at || ""))) m.live = o.live;
+  if (!m.lessonLog) m.lessonLog = [];
+  (o.lessonLog || []).forEach(function (x) { if (!m.lessonLog.some(function (y) { return y.d === x.d && y.t === x.t && y.mode === x.mode; })) m.lessonLog.push(x); });
+  m.lessonLog.sort(function (a, b) { return (a.d + a.t) < (b.d + b.t) ? -1 : 1; });
+  if (m.lessonLog.length > 60) m.lessonLog = m.lessonLog.slice(-60);
   (o.joy || []).forEach(function (x) { if (!(m.joy || []).some(function (y) { return y.d === x.d && y.k === x.k; })) { if (!m.joy) m.joy = []; m.joy.push(x); } });
   if (!m.roomPos || typeof m.roomPos !== "object") m.roomPos = {};
   for (var rk in (o.roomPos || {})) if (!m.roomPos[rk]) m.roomPos[rk] = o.roomPos[rk];
@@ -5273,6 +5301,7 @@ function syncHomeLine() {
 function showQuestion() {
   if (session.index >= session.queue.length) { questComplete(); return; }
   sessionPersist();
+  if (session.index === 0 || !S.live || !S.live.active) { liveMark(true); saveState(); } else liveMark(true);
   var it = session.queue[session.index];
   var html = topbarHTML(true) + '<div class="card">' + questionHeader(it);
   if (it.kind === "build") { html += buildUIHTML(it); }
@@ -5680,6 +5709,13 @@ function questComplete() {
   var bonus = session.mode === "daily" ? 10 : session.mode === "exam" ? 15 : 5;
   giveDust(bonus);
   session.dustGained += bonus;
+  if (!DEMO) {
+    var nowD = new Date(), tp0 = TOPICS[session.topic] || {};
+    if (!Array.isArray(S.lessonLog)) S.lessonLog = [];
+    S.lessonLog.push({ d: todayStr(), t: pad2(nowD.getHours()) + ":" + pad2(nowD.getMinutes()), mode: session.mode, topic: session.mode === "daily" ? "Denní vyučování" : session.mode === "exam" ? "Zkouška ročníku" : (tp0.n || ""), n: session.total, ok: session.firstTry, dust: session.dustGained });
+    if (S.lessonLog.length > 60) S.lessonLog = S.lessonLog.slice(-60);
+    liveMark(false);
+  }
   var perfect = session.firstTry === session.total;
   postQueue = [];
   if (session.mode === "daily") {
@@ -6835,7 +6871,9 @@ function screenParent(section) {
         '<p class="muted"><b>Jednou pro každý tablet:</b> pošlete si odkaz, otevřete ho na iPadu v Safari, klepněte Sdílet → Přidat na plochu a hru pak spouštějte už jen z plochy — při prvním spuštění se sama připojí. Dál se aktualizuje sama, odkaz už nebudete potřebovat. Odkaz obsahuje rodinný kód, posílejte ho jen sobě. (Kdo nechce odkaz, může v aplikaci na ploše kód opsat ručně tady v této sekci.)</p>' +
         '<div class="codeShow">' + esc(syncCfg().code) + '</div>' +
         '<button class="btn small" id="copyJoin">Zkopírovat odkaz pro tablet</button>' + (typeof navigator !== "undefined" && navigator.share ? ' <button class="btn small secondary" id="shareJoin">Sdílet… (AirDrop)</button>' : '') +
-        '<p class="muted" id="joinMsg"></p>' : '') +
+        '<p class="muted" id="joinMsg"></p>' +
+        '<h3 style="font-size:17px">📊 Živý přehled pro rodiče</h3><p class="muted">Samostatná stránka pro telefon rodičů: co se právě učí, dnešní hodiny, týden, chyby, slovíčka a násobilka; obnovuje se sama. Odkaz obsahuje rodinný kód — posílejte ho jen rodině. Na telefonu ho otevřete v Safari a dejte Sdílet → Přidat na plochu.</p>' +
+        '<button class="btn small" id="copyDash">Zkopírovat odkaz na přehled</button> <span class="muted" id="dashMsg"></span>' : '') +
       '<h3>🖼️ Obrázky ve hře</h3>' +
       '<p class="muted">Ilustrace (pozadí ložnic, mazlíčci a další) jsou v cloudu; hra si je při prvním spuštění online stáhne a zapamatuje, pak fungují i bez internetu. Bez obrázku ukáže původní podobu. Na novém zařízení je dobré stáhnout všechny najednou. Obrázky jsou veřejné, registrace pro ně není potřeba.</p>' +
       '<button class="btn small" id="imgAll">Stáhnout všechny obrázky pro offline</button> <button class="btn small secondary" id="imgClear">Smazat stažené</button> <span class="muted" id="imgMsg">Zjišťuji…</span>';
@@ -6999,6 +7037,10 @@ function screenParent(section) {
     msg("syncMsg", (changed ? "Postup sloučen s Bradavicemi: " + (S.name || "bez jména") + ", " + S.dustEarned + " " + galeonWord(S.dustEarned) + " celkem, plamínek " + S.streak.current + " " + dayWord(S.streak.current) + ". " : "Zařízení je zaregistrované. ") + syncStatusText());
   }
   var regNewCode = null;
+  on("copyDash", "onclick", function () {
+    var u = GAME_URL.replace(/[^/]*$/, "") + "prehled.html#kod=" + encodeURIComponent(syncCfg().code);
+    try { navigator.clipboard.writeText(u).then(function () { msg("dashMsg", "Zkopírováno."); }, function () { msg("dashMsg", u); }); } catch (e) { msg("dashMsg", u); }
+  });
   on("syncGen", "onclick", function () { regNewCode = syncGenCode(); el("pSyncCode").value = regNewCode; msg("syncMsg", "Nový kód je připravený — klikněte na „Uložit kód a zaregistrovat“. Jen pro úplně první zařízení; na dalších kód opište nebo použijte odkaz pro tablet."); });
   function doRegister(code) {
     syncSaveCfg(code);
@@ -7128,6 +7170,7 @@ W.screenPuzzle = screenPuzzle;
 W.screenRadio = screenRadio;
 W.screenNoteBuilder = screenNoteBuilder;
 W.screenTeach = screenTeach;
+W.screenDash = screenDash;
 W.bonusGo = bonusGo;
 W.joyTap = joyTap;
 W.tutStart = tutStart;
@@ -7235,7 +7278,7 @@ function updApplyIfIdle() {
   if (!updPending || session) return;
   var editing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
   if (editing) return;
-  location.replace(location.pathname + "?v=" + encodeURIComponent(updPending) + (location.hash || ""));
+  location.replace(location.pathname + "?v=" + encodeURIComponent(updPending) + (RODIC ? "&rodic=1" : "") + (location.hash || ""));
 }
 function updWire() {
   if (typeof document === "undefined") return;
@@ -7369,7 +7412,85 @@ function screenJoin(code) {
     var a = el("joinArea"); if (a) a.innerHTML = '<div class="stavBox ne">Nepodařilo se spojit se serverem. Zkontrolujte internet a otevřete odkaz znovu.</div><button class="btn" onclick="routeHome()">Pokračovat</button>';
   });
 }
+/* =====================================================================
+   ŽIVÝ PŘEHLED PRO RODIČE (…/prehled.html → index.html?rodic=1): stejný kód hry, jiná obrazovka.
+   Rodinný kód z odkazu (#kod=) nebo opsaný; každých 10 s stáhne postup (syncRun) a překreslí přehled.
+   Hra posílá S.live (co se právě děje) a S.lessonLog (dokončené hodiny). Z přehledu jde poslat soví poštu
+   a klepnout „Co ji rozzářilo“. Žádné zvuky, průvodce ani Velká síň.
+   ===================================================================== */
+var RODIC = typeof location !== "undefined" && /[?&]rodic=1/.test(location.search || "");
+var dashTimer = null, dashLast = null;
+function agoText(iso) {
+  if (!iso) return "";
+  var s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "před chvílí"; if (s < 3600) return "před " + Math.round(s / 60) + " min";
+  return syncWhen(iso);
+}
+function dashLiveHTML() {
+  var L = S.live, recent = L && L.at && (Date.now() - new Date(L.at).getTime()) < 3 * 60 * 1000;
+  if (L && L.active && recent) return '<div class="dashLive on"><span class="dot"></span><div><b>Právě se učí: ' + esc(L.topic) + '</b><br>otázka ' + L.i + ' z ' + L.n + ' · napoprvé správně ' + L.ok + '</div></div>';
+  var last = (S.lessonLog || []).slice(-1)[0];
+  return '<div class="dashLive"><span class="dot off"></span><div><b>' + (L && L.paused && recent ? "Hodinu odložila do Velké síně" : "Teď nehraje") + '</b><br>' +
+    (last ? 'Naposledy dokončila ' + esc(last.topic.toLowerCase()) + ' · ' + (last.d === todayStr() ? "dnes" : czDate(last.d)) + ' v ' + last.t : "Zatím žádná dokončená hodina") + '</div></div>';
+}
+function screenDash() {
+  if (!syncOn()) { screenDashCode(); return; }
+  var today = todayStr(), sk = S.streak || { history: {} }, log = S.lessonLog || [];
+  var todays = log.filter(function (x) { return x.d === today; });
+  var dailyDone = sk.history && sk.history[today] === "done";
+  var days = []; for (var i = 6; i >= 0; i--) { var d = addDays(today, -i), n = log.filter(function (x) { return x.d === d; }).length;
+    days.push('<div class="dDay' + (sk.history[d] === "done" ? " done" : sk.history[d] === "freeze" ? " frz" : "") + (d === today ? " today" : "") + '"><b>' + DAY_NAMES[(new Date(d + "T12:00:00").getDay() + 6) % 7] + '</b><span>' + (sk.history[d] === "done" ? "✓" : sk.history[d] === "freeze" ? "❄" : "·") + '</span><small>' + (n ? n + "×" : "") + '</small></div>'); }
+  var since = addDays(today, -6), mist = (S.mistakes || []).filter(function (m) { return m.datum >= since; }), byT = {};
+  mist.forEach(function (m) { (byT[m.t] = byT[m.t] || []).push(m); });
+  var mistHTML = Object.keys(byT).sort(function (a, b) { return byT[b].length - byT[a].length; }).slice(0, 5).map(function (t) {
+    var m = byT[t][0]; return '<div class="chkRow"><span style="flex:1">' + subjIcon((TOPICS[t] || {}).subj, 15) + ' <b>' + esc((TOPICS[t] || {}).n || t) + '</b> · ' + byT[t].length + '× <br><span class="muted">např. „' + esc(m.q) + '“ — napsala ' + esc(m.napsala) + ', správně ' + esc(m.spravne) + '</span></span></div>'; }).join("");
+  var dc = dictCounts(S);
+  var html = '<div class="topbar dashTop"><span class="who">' + (S.house ? houseIcon(S.house, 30) : svgCastle(28)) + ' <span>' + esc(S.name || "Studentka") + '<br><span class="yr">přehled pro rodiče · ' + (S.house ? esc(HOUSES[S.house].n) : "") + '</span></span></span>' +
+    '<span class="chips"><span class="chip flame">' + flameIcon(16) + ' ' + (sk.current || 0) + '</span><span class="chip dust">' + svgCoin(18) + ' ' + (S.dust || 0) + '</span></span></div>' +
+    '<div class="card">' + dashLiveHTML() +
+    '<h3>Dnes</h3><div class="dashKpi"><div><b>' + (dailyDone ? "✓" : "—") + '</b><span>denní vyučování</span></div><div><b>' + todays.length + '</b><span>' + (todays.length === 1 ? "hodina" : todays.length >= 2 && todays.length <= 4 ? "hodiny" : "hodin") + '</span></div>' +
+      '<div><b>' + todays.reduce(function (a, x) { return a + (x.n || 0); }, 0) + '</b><span>otázek</span></div><div><b>' + todays.reduce(function (a, x) { return a + (x.dust || 0); }, 0) + '</b><span>galeonů</span></div></div>' +
+    (todays.length ? todays.map(function (x) { return '<div class="chkRow"><span style="flex:1">' + x.t + ' · ' + esc(x.topic) + '</span><b>' + x.ok + ' / ' + x.n + '</b></div>'; }).join("") : '<p class="muted">Dnes zatím nehrála.</p>') +
+    '<h3>Posledních 7 dní</h3><div class="dashWeek">' + days.join("") + '</div><p class="muted">Plamínek ' + (sk.current || 0) + ' ' + dayWord(sk.current || 0) + ' · rekord ' + (sk.best || 0) + (sk.goal ? ' · cíl ' + sk.goal : '') + ' · ledové amulety ' + (sk.freezes || 0) + '</p>' +
+    '<h3>Kde chybuje (7 dní)</h3>' + (mistHTML || '<p class="muted">Žádné chyby, výborně.</p>') +
+    '<h3>Co umí</h3><p>🌟 Slovíčka z hlavy <b>' + dc[2] + '</b> · 👀 poznává <b>' + dc[1] + '</b> · 🥚 nová ' + dc[0] + '</p>' +
+    ((isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3>🧪 Násobilka</h3>' + factGridHTML(S) : '') +
+    (vyjListHTML(S) ? '<h3>🪶 Vyjmenovaná slova</h3>' + vyjListHTML(S) : '') +
+    joyHTML() + mailPanelHTML() +
+    '<p class="muted center" id="dashUpd">Aktualizováno ' + (dashLast ? agoText(dashLast) : "teď") + ' · obnovuje se samo</p></div>';
+  var y = (typeof window !== "undefined" && window.scrollY) || 0;
+  render(html); lastScreen = "dash";   /* render() lastScreen nuluje */
+  if (y && W.scrollTo) W.scrollTo(0, y);
+  var send = el("mlSend");
+  if (send) send.onclick = function () { var tx = el("mlText").value.trim(); if (!tx) { el("mlMsg").textContent = "Napište vzkaz."; return; } mailSend(el("mlFrom").value, tx, parseInt(el("mlGift").value, 10) || 0); syncRun(); screenDash(); var m2 = el("mlMsg"); if (m2) m2.textContent = "Sova letí! Dopis čeká ve Velké síni."; };
+}
+function screenDashCode() {
+  render('<div class="card center"><div class="bigIcon">🦉</div><h2>Přehled pro rodiče</h2><p class="muted">Opište rodinný kód. Najdete ho ve hře: Pro rodiče → Zařízení a cloud.</p>' +
+    '<input type="text" id="dcIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="např. k7mfx-2p9qa-…"><button class="btn" id="dcBtn">Zobrazit přehled</button><p class="muted" id="dcMsg"></p></div>');
+  el("dcBtn").onclick = function () {
+    var c = syncNormCode(el("dcIn").value); if (c.length < 16) { el("dcMsg").textContent = "Kód je moc krátký."; return; }
+    el("dcMsg").textContent = "Ověřuji…";
+    syncPeek(c).then(function (r) { if (!r.exists) { el("dcMsg").textContent = "Pod tímto kódem žádný postup není."; return; } syncSaveCfg(c); dashStart(); }, function () { el("dcMsg").textContent = "Nepodařilo se spojit se serverem."; });
+  };
+}
+function dashStart() {
+  var tick = function () { if (!syncOn()) return; syncRun().then(function () { dashLast = new Date().toISOString(); if (lastScreen === "dash") screenDash(); }, function () {}); };
+  if (dashTimer) clearInterval(dashTimer);
+  render('<div class="card center"><div class="bigIcon">🦉</div><h2>Sova letí pro přehled…</h2></div>');
+  syncRun().then(function () { dashLast = new Date().toISOString(); screenDash(); }, function () { screenDash(); });
+  dashTimer = setInterval(function () { if (!document.hidden) tick(); }, 10000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) tick(); });
+}
+function bootRodic() {
+  devApply(); applyHouseColors();
+  if (typeof document !== "undefined") { document.title = "Bradavice – rodiče"; document.body.classList.add("rodic"); }
+  var m = /[#&]kod=([^&]+)/.exec(location.hash || "");
+  if (m) { var c = syncNormCode(decodeURIComponent(m[1])); if (c.length >= 16) syncSaveCfg(c); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  if (!syncOn()) { screenDashCode(); return; }
+  dashStart();
+}
 function boot() {
+  if (RODIC) { bootRodic(); return; }
   devApply();
   applyHouseColors();
   fsWire();
