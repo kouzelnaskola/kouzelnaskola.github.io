@@ -858,7 +858,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-14d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-14e";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3320,7 +3320,7 @@ function applyHouseColors() {
 
 /* Nastavení zařízení (mimo postup, localStorage bradaviceNastaveni): anim = animace a videa, amb = atmosféra Velké síně. */
 var DEV_KEY = "bradaviceNastaveni";
-function devCfg() { try { var c = JSON.parse(localStorage.getItem(DEV_KEY) || "{}"); return { anim: c.anim !== false, amb: c.amb !== false }; } catch (e) { return { anim: true, amb: true }; } }
+function devCfg() { try { var c = JSON.parse(localStorage.getItem(DEV_KEY) || "{}"); return { anim: c.anim !== false, amb: c.amb !== false, mic: c.mic === true }; } catch (e) { return { anim: true, amb: true, mic: false }; } }
 function devSet(k, v) { var c = devCfg(); c[k] = !!v; try { localStorage.setItem(DEV_KEY, JSON.stringify(c)); } catch (e) {} devApply(); }
 function devApply() { if (typeof document !== "undefined" && document.documentElement) document.documentElement.classList.toggle("noAnim", !devCfg().anim); }
 function reducedMotion() { return !devCfg().anim || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches); }
@@ -3491,12 +3491,12 @@ function screenWelcome(note) {
     '<div class="card center welcomeAlt">' +
     '<button class="btn secondary" onclick="startDemo()">👀 Vyzkoušet bez přihlášení</button>' +
     '<p class="muted" style="font-size:14px;margin:4px 0 12px">Ukázková studentka s hotovým postupem: projdi si hodiny, Rozvrh s mapou hradu, Příčnou ulici i ložnici. Nic se neuloží.</p>' +
-    (ucetOn() ? '' : '<button class="btn secondary" onclick="screenLogin()">✉️ Rodiče: přihlásit se e-mailem</button>') +
     '<button class="btn secondary" onclick="screenPair()">📲 Připojit tablet k rodině</button>' +
+    '<p class="muted" style="font-size:14px;margin:4px 0 0">Tablet připojí rodič: ukáže se 6 číslic, které potvrdí ve svém telefonu.</p>' +
     '<p class="muted" style="font-size:14px;margin:6px 0 0"><button class="linkBtn" onclick="screenJoinCode()">Máme starý rodinný kód</button></p>' +
     '</div>' +
     (isIOSWeb() && !isStandalone() ? '<p class="muted center">Tip pro rodiče: v Safari klepněte na Sdílet → <b>Přidat na plochu</b>. Hra pak poběží přes celou obrazovku a bude se sama aktualizovat. Postup v aplikaci na ploše je oddělený od Safari, proto začněte až tam.</p>' : '') +
-    '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button>' + (isWeb() ? ' · <a href="pro-rodice.html">Co hra umí a proč funguje</a>' : '') + '</div>');
+    '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button>' + (isWeb() ? ' · <a href="prehled.html">Přehled pro rodiče (přihlášení)</a> · <a href="pro-rodice.html">Co hra umí</a>' : '') + '</div>');
   vidPrefetch(["klobouk"]);
   if (!reducedMotion()) vidGet("dopis").then(function (url) {
     var a = el("welcomeArt"); if (!url || !a) return;
@@ -4369,12 +4369,17 @@ function screenNoteBuilder(mailId) {
    Jen jako pohodlná zkratka, nikdy povinnost: u karty „řekni nahlas“ (česky) hra pozná řečené slovo
    a u rozhovoru s Hagridem anglickou odpověď. Když to nepozná, zůstane původní poctivé „věděla / ještě ne“.
    ===================================================================== */
-function speechOk() { return typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition) && ttsOnline(); }
+/* Mikrofon je od 14. 10. 2026 ve výchozím stavu vypnutý (táta: na iPadu nepoznal ani jednu odpověď); zapíná se v panelu
+   po úspěšné zkoušce. speechSupported = prohlížeč to umí, speechOk = umí a rodič to na tomto zařízení zapnul. */
+function speechSupported() { return typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition) && ttsOnline(); }
+function speechOk() { return speechSupported() && devCfg().mic; }
 function speechListen(lang, onDone) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition, r, done = false;
   try { r = new SR(); } catch (e) { onDone(null, "nejde"); return null; }
   r.lang = lang; r.interimResults = false; r.maxAlternatives = 5; r.continuous = false;
-  var fin = function (alts, err) { if (done) return; done = true; onDone(alts, err); };
+  /* iOS v režimu „playback“ (kvůli tichému režimu, sfxPlaybackSession) mikrofon nepustí: na dobu poslechu přepnout */
+  try { if (navigator.audioSession) navigator.audioSession.type = "play-and-record"; } catch (e) {}
+  var fin = function (alts, err) { if (done) return; done = true; try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {} onDone(alts, err); };
   r.onresult = function (ev) { var alts = []; var res = ev.results && ev.results[0]; if (res) for (var i = 0; i < res.length; i++) alts.push(res[i].transcript); fin(alts, null); };
   r.onerror = function (ev) { fin(null, ev.error || "chyba"); };
   r.onend = function () { fin([], null); };
@@ -6867,8 +6872,9 @@ function screenParent(section) {
       '<div class="chkRow"><input type="checkbox" id="pSfx"' + (sfxOn() ? " checked" : "") + '><span><b>Zvuky zapnuté</b></span></div>' +
       '<div class="chkRow"><input type="checkbox" id="pAmb"' + (devCfg().amb ? " checked" : "") + '><span><b>Atmosféra Velké síně</b> <span class="muted">— tiché praskání pochodní ve Velké síni</span></span></div>' +
       '<h3>🎤 Odpovědi nahlas</h3>' +
-      '<p class="muted">U karet „řekni nahlas“ a u rozhovorů s Hagridem může dítě odpovědět do mikrofonu. Funguje v Safari a Chrome s internetem; když hra slovo nepozná, zůstane obyčejné odpovídání. Vyzkoušejte, jak rozumí dětskému hlasu:</p>' +
-      (speechOk() ? '<button class="btn small secondary" id="srCs">🎤 Zkusit česky</button> <button class="btn small secondary" id="srEn">🎤 Zkusit anglicky</button> <span class="muted" id="srMsg"></span>' : '<p class="muted">Toto zařízení nebo prohlížeč rozpoznávání řeči nepodporuje (nebo je offline).</p>') +
+      '<p class="muted">Ve výchozím stavu vypnuto: na iPadu hra dětský hlas spolehlivě nepoznávala. Dítě odpovídá klepnutím a u karet „řekni nahlas“ poctivě „věděla / ještě ne“. Zapněte jen tehdy, když zkouška níže na tomto zařízení opakovaně pozná, co dítě říká.</p>' +
+      (speechSupported() ? '<div class="chkRow"><input type="checkbox" id="pMic"' + (devCfg().mic ? " checked" : "") + '><span><b>Odpovědi do mikrofonu</b> <span class="muted">— jen toto zařízení</span></span></div>' : '') +
+      (speechSupported() ? '<button class="btn small secondary" id="srCs">🎤 Zkusit česky</button> <button class="btn small secondary" id="srEn">🎤 Zkusit anglicky</button> <span class="muted" id="srMsg"></span>' : '<p class="muted">Toto zařízení nebo prohlížeč rozpoznávání řeči nepodporuje (nebo je offline).</p>') +
       '<h3>🎬 Velké momenty</h3>' +
       '<p class="muted">Videa, která hra pustí u velkých chvil. Tady si je můžete přehrát kdykoli.</p>' +
       '<div class="vidList">' + [["dopis", "Sova s dopisem (uvítání)"], ["klobouk", "Moudrý klobouk (zařazení)"], ["plaminek", "Plamínek (milník)"], ["expres", "Bradavický expres (nový ročník)"], ["zkouska", "Vysvědčení (složená zkouška)"]].map(function (v) {
@@ -7039,6 +7045,7 @@ function screenParent(section) {
       .then(function () { msg("mluvMsg", ttsProxyOk() || ttsCfg().key ? "Funguje (ElevenLabs)." : "Funguje (vestavěný hlas)."); }, function (e) { msg("mluvMsg", ttsErrText(e)); });
   });
   on("pAmb", "onchange", function () { devSet("amb", el("pAmb").checked); });
+  on("pMic", "onchange", function () { devSet("mic", el("pMic").checked); });
   ["srCs", "srEn"].forEach(function (id) { on(id, "onclick", function () { msg("srMsg", "Poslouchám…"); speechListen(id === "srCs" ? "cs-CZ" : "en-GB", function (alts, err) { msg("srMsg", alts && alts.length ? "Slyšela jsem: „" + alts.join("“ / „") + "“" : "Nic (" + (err || "ticho") + ")"); }); }); });
   Array.prototype.forEach.call(document.querySelectorAll("[data-vid]"), function (b) {
     b.onclick = function () {
@@ -7384,7 +7391,7 @@ function ucetPoPrihlaseni(opts) {
     var act = ucetDecide(rod, syncCfg().code, !!S.name);
     if (opts.silent && act !== "create") return;
     if (act === "same") { done("Přihlášeno. Toto zařízení už patří k vaší rodině."); return; }
-    if (act === "join") { screenJoin(rod.code); return; }
+    if (act === "join") { if (S.name) screenJoin(rod.code); else screenUcetVolba(rod); return; }
     if (act === "needProfile") { screenWelcome("Přihlášeno jako " + ((ucetGet() || {}).email || "") + ". Teď založte profil studentky — postup se uloží pod váš e-mail."); return; }
     return ucetRpc("zalozit_rodinu", { p_code: syncCfg().code || syncGenCode(), p_data: S }).then(function (r) {
       syncSaveCfg(r.code);
@@ -7392,6 +7399,17 @@ function ucetPoPrihlaseni(opts) {
       return syncRun().then(fin, fin);
     });
   }).then(null, function (e) { if (!opts.silent) { if (el("lgMsg")) ucetMsg("lgMsg", ucetErrText(e)); else done(ucetErrText(e)); } });
+}
+/* Rodič se přihlásil na zařízení bez profilu: bude tu hrát dítě, nebo jen chce sledovat přehled? */
+function screenUcetVolba(rod) {
+  render('<div class="card center"><div class="bigIcon">' + svgLetter(90) + '</div><h2>Co bude na tomto zařízení?</h2>' +
+    '<p class="muted">Přihlášeno: ' + esc((ucetGet() || {}).email || "") + ' · rodina studentky ' + esc(rod.jmeno || "…") + '</p>' +
+    '<button class="btn gold" id="uvHraje">🎓 Bude tu hrát ' + esc(rod.jmeno || "dítě") + '</button>' +
+    '<p class="muted" style="font-size:14px;margin:2px 0 14px">Tablet nebo počítač dítěte: připojí se k jejímu postupu.</p>' +
+    '<button class="btn secondary" id="uvPrehled">📊 Jsem rodič, chci jen přehled</button>' +
+    '<p class="muted" style="font-size:14px;margin:2px 0 0">Telefon rodiče: živý přehled bez hraní.</p></div>');
+  el("uvHraje").onclick = function () { screenJoin(rod.code); };
+  el("uvPrehled").onclick = function () { location.href = isWeb() ? "prehled.html" : GAME_URL + "prehled.html"; };
 }
 function ucetBackToPanel(t) { screenParent("zarizeni"); var a = el("hRodina"); if (a && a.scrollIntoView) a.scrollIntoView({ block: "start" }); ucetMsg("famMsg", t || ""); }
 /* Tablet dítěte: ukáže 6 číslic, rodič je potvrdí ve svém panelu; pak stávající potvrzení screenJoin. */
