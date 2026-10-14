@@ -305,6 +305,10 @@
   .stavBox .btn.small { margin: 8px 0 0; }
   .howTo { text-align: left; margin: 12px auto; max-width: 440px; font-size: 19px; line-height: 1.5; padding-left: 26px; }
   .howTo li { margin: 6px 0; } .shareIco { display: inline-block; border: 2px solid var(--ink); border-radius: 4px; padding: 0 5px; font-size: 15px; }
+  .advSync > summary { cursor: pointer; font-weight: 700; margin: 16px 0 6px; }
+  .pairDigits { font-size: 56px; font-weight: 700; letter-spacing: .12em; font-variant-numeric: tabular-nums; margin: 8px 0 4px; color: var(--acc, var(--ink)); }
+  input.codeIn { font-size: 28px; text-align: center; letter-spacing: .2em; font-variant-numeric: tabular-nums; }
+  .welcomeAlt .linkBtn { background: none; border: 0; padding: 0; font: inherit; color: var(--muted2); text-decoration: underline; cursor: pointer; }
   .codeShow { font-family: Menlo, Consolas, monospace; font-size: 22px; letter-spacing: 2px; background: #fff; border: 2px dashed var(--ink); border-radius: 6px; padding: 8px 12px; margin: 6px 0; text-align: center; user-select: all; }
   textarea { min-height: 110px; font-size: .8em; }
   textarea.words { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 17px; min-height: 160px; line-height: 1.5; }
@@ -854,7 +858,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-14b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-14c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3469,8 +3473,9 @@ function revokeSessionDust(sess, st) {
 /* =====================================================================
    PRVNÍ SPUŠTĚNÍ — dopis z Bradavic a jméno
    ===================================================================== */
-function screenWelcome() {
+function screenWelcome(note) {
   render(
+    (note ? '<div class="stavBox ok">' + esc(note) + '</div>' : '') +
     '<div class="card center">' +
     '<div class="bigIcon" id="welcomeArt">' + svgLetter(130) + '</div>' +
     '<h1>Bradavická škola</h1>' +
@@ -3481,12 +3486,14 @@ function screenWelcome() {
     '<p class="muted">Jak se jmenuješ?</p>' +
     '<input type="text" id="nameInput" maxlength="20" placeholder="Tvoje jméno">' +
     '<button class="btn" id="nameBtn">✨ Založit profil a vydat se do Bradavic</button>' +
-    '<p class="muted" style="font-size:14px">Postup se ukládá na tomto zařízení. Rodiče ho pak mohou propojit s dalšími zařízeními rodinným kódem.</p>' +
+    '<p class="muted" style="font-size:14px">Postup se ukládá na tomto zařízení. Rodiče ho pak mohou uložit pod svůj e-mail a sdílet s dalšími zařízeními.</p>' +
     '</div>' +
     '<div class="card center welcomeAlt">' +
     '<button class="btn secondary" onclick="startDemo()">👀 Vyzkoušet bez přihlášení</button>' +
     '<p class="muted" style="font-size:14px;margin:4px 0 12px">Ukázková studentka s hotovým postupem: projdi si hodiny, Rozvrh s mapou hradu, Příčnou ulici i ložnici. Nic se neuloží.</p>' +
-    '<button class="btn secondary" onclick="screenJoinCode()">🔑 Máme rodinný kód — připojit postup</button>' +
+    (ucetOn() ? '' : '<button class="btn secondary" onclick="screenLogin()">✉️ Rodiče: přihlásit se e-mailem</button>') +
+    '<button class="btn secondary" onclick="screenPair()">📲 Připojit tablet k rodině</button>' +
+    '<p class="muted" style="font-size:14px;margin:6px 0 0"><button class="linkBtn" onclick="screenJoinCode()">Máme starý rodinný kód</button></p>' +
     '</div>' +
     (isIOSWeb() && !isStandalone() ? '<p class="muted center">Tip pro rodiče: v Safari klepněte na Sdílet → <b>Přidat na plochu</b>. Hra pak poběží přes celou obrazovku a bude se sama aktualizovat. Postup v aplikaci na ploše je oddělený od Safari, proto začněte až tam.</p>' : '') +
     '<div class="parentLink"><button onclick="screenParentLock()">' + svgLock(13) + ' Pro rodiče</button>' + (isWeb() ? ' · <a href="pro-rodice.html">Co hra umí a proč funguje</a>' : '') + '</div>');
@@ -3555,6 +3562,7 @@ function screenSorting(i, tally) {
 }
 function screenSortingReveal(best) {
   S.house = best; saveState(); applyHouseColors();
+  if (ucetOn() && !syncOn()) ucetPoPrihlaseni({ silent: true });   /* přihlášený rodič bez rodiny: nový profil se uloží pod jeho e-mail */
   var h = HOUSES[best];
   render(
     '<div class="card center">' +
@@ -6871,7 +6879,8 @@ function screenParent(section) {
   }
 
   if (section === "zarizeni") {
-    body =
+    body = famSectionHTML() +
+      '<details class="advSync"' + (syncOn() && !ucetOn() ? ' open' : '') + '><summary>🔑 Rodinný kód (dosavadní způsob, funguje dál)</summary>' +
       '<h3 id="hRegistrace">☁️ Registrace zařízení (rodinný kód)</h3>' +
       (syncOn()
         ? '<div class="stavBox ok">' + svgCheck(16, "#1f6363") + ' <b>Toto zařízení je zaregistrované.</b> Sdílí postup s ostatními zařízeními se stejným kódem a má hlas i obrázky ze serveru.</div>'
@@ -6887,6 +6896,7 @@ function screenParent(section) {
         '<p class="muted" id="joinMsg"></p>' +
         '<h3 style="font-size:17px">📊 Živý přehled pro rodiče</h3><p class="muted">Samostatná stránka pro telefon rodičů: co se právě učí, dnešní hodiny, týden, chyby, slovíčka a násobilka; obnovuje se sama. Odkaz obsahuje rodinný kód — posílejte ho jen rodině. Na telefonu ho otevřete v Safari a dejte Sdílet → Přidat na plochu.</p>' +
         '<button class="btn small" id="copyDash">Zkopírovat odkaz na přehled</button> <span class="muted" id="dashMsg"></span>' : '') +
+      '</details>' +
       '<h3>🖼️ Obrázky ve hře</h3>' +
       '<p class="muted">Ilustrace (pozadí ložnic, mazlíčci a další) jsou v cloudu; hra si je při prvním spuštění online stáhne a zapamatuje, pak fungují i bez internetu. Bez obrázku ukáže původní podobu. Na novém zařízení je dobré stáhnout všechny najednou. Obrázky jsou veřejné, registrace pro ně není potřeba.</p>' +
       '<button class="btn small" id="imgAll">Stáhnout všechny obrázky pro offline</button> <button class="btn small secondary" id="imgClear">Smazat stažené</button> <span class="muted" id="imgMsg">Zjišťuji…</span>';
@@ -7088,6 +7098,7 @@ function screenParent(section) {
     msg("syncMsg", "Synchronizuji…");
     syncRun().then(syncReport);
   });
+  if (section === "zarizeni") famWire();
   on("syncOff", "onclick", function () { syncSaveCfg(""); reopen("zarizeni", "hRegistrace"); msg("syncMsg", "Registrace zrušena. Postup na serveru zůstává, toto zařízení se dál ukládá jen místně."); });
   if (el("imgMsg")) {
     var imgReport = function () { imgStatus().then(function (s) { msg("imgMsg", "Staženo " + s.have + " z " + s.total + " obrázků" + (s.have < s.total ? (ttsOnline() ? "." : " — zařízení je offline.") : " — vše připraveno i offline.")); }); };
@@ -7144,7 +7155,7 @@ function screenParent(section) {
       '<div class="feedback bad"><b>Opravdu začít úplně znovu?</b><br>' +
       '<span class="muted">Smaže se celý postup — galeony, odznaky, plamínek, slovíčka i odemčené učebny. Tohle nejde vrátit. (Před smazáním si můžete stáhnout zálohu výše.) Registrace zařízení se zruší; postup na serveru zůstane pod starým kódem.</span><br>' +
       '<button class="btn small" id="resetYes" style="margin-top:10px">Ano, smazat a začít znovu</button> <button class="btn small secondary" id="resetNo" style="margin-top:10px">Ne, nechat jak je</button></div>';
-    on("resetYes", "onclick", function () { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} syncSaveCfg(""); S = defaultState(); saveState(); screenWelcome(); });
+    on("resetYes", "onclick", function () { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} syncSaveCfg(""); ucetSet(null); S = defaultState(); saveState(); screenWelcome(); });
     on("resetNo", "onclick", function () { el("resetConfirm").innerHTML = ""; });
   });
 }
@@ -7204,6 +7215,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
+  ucetFromHash: ucetFromHash, ucetDecide: ucetDecide, ucetEmailOk: ucetEmailOk, ucetEmailNorm: ucetEmailNorm, jwtEmail: jwtEmail, UCET_KEY: UCET_KEY,
   SAVE_KEY: SAVE_KEY, SAVE_VERSION: SAVE_VERSION, OLD_KEYS: OLD_KEYS,
   TOPICS: TOPICS, TOPIC_ORDER: TOPIC_ORDER, DEFAULT_UNLOCKED: DEFAULT_UNLOCKED, YEARS: YEARS,
   BANKS: BANKS, GENS: GENS, SHOP: SHOP, BADGES: BADGES, HOUSES: HOUSES, KNOWLEDGE: KNOWLEDGE, VOCAB_SETS: VOCAB_SETS,
@@ -7224,6 +7236,272 @@ W.BRADAVICE = {
 };
 
 /* připojení existujícího postupu rodinným kódem (registrace dalšího zařízení) */
+/* =====================================================================
+   ÚČET RODIČŮ (e-mail) — vrstva nad rodinným kódem (14. 10. 2026). Přihlášený e-mail si od serveru
+   vyzvedne kód své rodiny (moje_rodina) a zařízení se připojí stávající synchronizací (syncSaveCfg,
+   syncRun, screenJoin). Přihlášení: e-mail s tlačítkem i 6 číslicemi — aplikace z plochy má jiné
+   úložiště než Safari, odkaz by přihlásil jen Safari. Tokeny v localStorage „bradaviceUcet“ (mimo
+   postup i zálohu). Tablet dítěte bez e-mailu: párování šesti číslicemi (parovani_*).
+   Server: supabase/ucty.sql. Bez něj (404) hra nabídne rodinný kód.
+   ===================================================================== */
+var UCET_KEY = "bradaviceUcet";
+function ucetGet() { try { var u = JSON.parse(localStorage.getItem(UCET_KEY) || "null"); return u && u.refresh ? u : null; } catch (e) { return null; } }
+function ucetSet(u) { try { if (u) localStorage.setItem(UCET_KEY, JSON.stringify(u)); else localStorage.removeItem(UCET_KEY); } catch (e) {} }
+function ucetOn() { return !DEMO && !!ucetGet(); }
+function ucetEmailNorm(s) { return String(s || "").trim().toLowerCase(); }
+function ucetEmailOk(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s); }
+function jwtEmail(t) {
+  try { var p = String(t).split(".")[1].replace(/-/g, "+").replace(/_/g, "/"); while (p.length % 4) p += "="; return JSON.parse(decodeURIComponent(escape(atob(p)))).email || ""; } catch (e) { return ""; }
+}
+/* tokeny v adrese po klepnutí na tlačítko v e-mailu: #access_token=…&refresh_token=…&expires_in=… (nebo #error=…) */
+function ucetFromHash(h) {
+  h = String(h || "").replace(/^#/, "");
+  if (!/(^|&)(access_token|error|error_code)=/.test(h)) return null;
+  var p = {}; h.split("&").forEach(function (kv) { var i = kv.indexOf("="); if (i > 0) try { p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " ")); } catch (e) {} });
+  if (p.error || p.error_code) return { error: p.error_code || p.error, text: p.error_description || "" };
+  if (!p.access_token || !p.refresh_token) return null;
+  return { email: jwtEmail(p.access_token), access: p.access_token, refresh: p.refresh_token, exp: Date.now() + (parseInt(p.expires_in, 10) || 3600) * 1000 };
+}
+/* co po přihlášení: rodina = odpověď moje_rodina (nebo null) */
+function ucetDecide(rodina, deviceCode, hasProfile) {
+  if (rodina && rodina.code) return rodina.code === deviceCode ? "same" : "join";
+  if (deviceCode || hasProfile) return "create";
+  return "needProfile";
+}
+function authFetch(path, body, bearer) {
+  var cfg = syncCfg();
+  var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+  var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
+  return fetch(cfg.url + path, { method: "POST", signal: ctrl ? ctrl.signal : undefined,
+    headers: { "apikey": cfg.key, "Authorization": "Bearer " + (bearer || cfg.key), "Content-Type": "application/json" }, body: JSON.stringify(body || {}) })
+    .then(function (r) {
+      clearTimeout(timer);
+      return r.text().then(function (tx) {
+        var j = null; try { j = tx ? JSON.parse(tx) : null; } catch (e) {}
+        if (!r.ok) { var er = new Error((j && (j.msg || j.message || j.error_description)) || "http"); er.status = r.status; er.code = j && (j.error_code || j.code); throw er; }
+        return j;
+      });
+    }, function (e) { clearTimeout(timer); throw e; });
+}
+/* kam vede tlačítko v e-mailu: tatáž stránka (přehled v rámečku → nadřazená prehled.html) */
+function ucetRedirect() {
+  if (!isWeb()) return "";
+  try { var t = window.top.location; if (t.origin === location.origin) return t.origin + t.pathname; } catch (e) {}
+  return location.origin + location.pathname;
+}
+function authSend(email) {
+  var r = ucetRedirect();
+  return authFetch("/auth/v1/otp" + (r ? "?redirect_to=" + encodeURIComponent(r) : ""), { email: email, create_user: true });
+}
+function ucetSave(j) {
+  var u = { email: (j.user && j.user.email) || jwtEmail(j.access_token), access: j.access_token, refresh: j.refresh_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
+  ucetSet(u); return u;
+}
+function authVerify(email, token) { return authFetch("/auth/v1/verify", { type: "email", email: email, token: String(token).replace(/\D/g, "") }).then(ucetSave); }
+function authRefresh() {
+  var u = ucetGet(); if (!u) { var e0 = new Error("neprihlaseno"); e0.status = 401; return Promise.reject(e0); }
+  return authFetch("/auth/v1/token?grant_type=refresh_token", { refresh_token: u.refresh }).then(ucetSave, function (e) {
+    if (e.status === 400 || e.status === 401 || e.status === 403) ucetSet(null);   /* neplatné přihlášení; bez sítě se nemaže */
+    throw e;
+  });
+}
+function ucetToken() {
+  var u = ucetGet(); if (!u) { var e0 = new Error("neprihlaseno"); e0.status = 401; return Promise.reject(e0); }
+  if (u.exp - Date.now() > 60000) return Promise.resolve(u.access);
+  return authRefresh().then(function (n) { return n.access; });
+}
+function ucetRpc(fn, args) {
+  var call = function (tok) { return authFetch("/rest/v1/rpc/" + fn, args || {}, tok); };
+  return ucetToken().then(call).then(null, function (e) {
+    if (e.status === 401 && ucetGet()) return authRefresh().then(function (n) { return call(n.access); });
+    throw e;
+  });
+}
+function ucetErrText(e) {
+  var m = String((e && e.message) || "");
+  if (e && e.status === 404) return "Přihlášení e-mailem se na serveru ještě nastavuje. Zatím použijte rodinný kód.";
+  if (e && e.status === 429) return "Příliš mnoho pokusů. Zkuste to prosím za pár minut.";
+  if (/Neplatny e-mail/.test(m)) return "Tohle nevypadá jako e-mail.";
+  if (/vyprselo/.test(m)) return "Toto číslo neplatí nebo už vypršelo. Na tabletu klepněte na „Nové číslo“.";
+  if (/Odebirat/.test(m)) return "Odebírat členy může jen správce rodiny.";
+  if (/Posledniho/.test(m)) return "Posledního správce rodiny nejde odebrat.";
+  if (/12 clenu/.test(m)) return "Rodina už má 12 členů.";
+  if (/Nejste clenem/.test(m)) return "Tento e-mail zatím nepatří k žádné rodině.";
+  if (/not authorized|sending|smtp/i.test(m)) return "E-mail se teď nepodařilo odeslat (server ještě nemá nastaveného odesílatele). Zatím použijte rodinný kód.";
+  if (/neprihlaseno|Neprihlaseno/.test(m)) return "Přihlášení vypršelo. Přihlaste se prosím znovu.";
+  if (/expired|invalid|otp/i.test(m) || (e && e.code === "otp_expired")) return "Kód nesedí nebo už vypršel. Opište ho znovu, nebo si nechte poslat nový e-mail.";
+  if (!e || !e.status) return "Nepodařilo se spojit se serverem. Zkontrolujte internet.";
+  return "Něco se nepovedlo (" + e.status + "). Zkuste to prosím znovu.";
+}
+function ucetMsg(id, t) { var x = el(id); if (x) x.textContent = t; }
+/* Přihlášení rodiče: e-mail → (tlačítko v e-mailu, nebo opsané číslice) → ucetPoPrihlaseni */
+function screenLogin(opts) {
+  opts = opts || {};
+  var back = opts.back || routeHome;
+  render('<div class="card center"><div class="bigIcon">' + svgLetter(90) + '</div><h2>Přihlášení rodiče</h2>' +
+    (opts.note ? '<div class="stavBox ne">' + esc(opts.note) + '</div>' : '') +
+    '<p class="muted">Zadejte svůj e-mail. Přijde vám přihlašovací e-mail s tlačítkem a 6 číslicemi. Heslo není potřeba.</p>' +
+    '<input type="text" inputmode="email" id="lgEmail" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="vas@email.cz" value="' + esc((ucetGet() || {}).email || "") + '">' +
+    '<button class="btn" id="lgSend">Poslat přihlašovací e-mail</button>' +
+    '<div id="lgStep2" class="hidden"><p id="lgSent" style="font-size:19px"></p>' +
+    '<input type="text" id="lgCode" class="codeIn" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456">' +
+    '<button class="btn gold" id="lgVerify">Přihlásit</button></div>' +
+    '<p class="muted" id="lgMsg"></p><button class="btn secondary" id="lgBack">Zpět</button></div>');
+  el("lgBack").onclick = function () { back(); };
+  var email = "";
+  el("lgSend").onclick = function () {
+    email = ucetEmailNorm(el("lgEmail").value);
+    if (!ucetEmailOk(email)) { ucetMsg("lgMsg", "Napište prosím celý e-mail, třeba jmeno@seznam.cz."); return; }
+    ucetMsg("lgMsg", "Posílám…");
+    authSend(email).then(function () {
+      el("lgStep2").classList.remove("hidden"); el("lgSend").textContent = "Poslat znovu";
+      ucetMsg("lgSent", isWeb() && !isStandalone()
+        ? "E-mail je na cestě na " + email + ". Klepněte v něm na tlačítko, nebo sem opište 6 číslic."
+        : "E-mail je na cestě na " + email + ". Opište sem 6 číslic z něj.");
+      ucetMsg("lgMsg", "Nic nepřišlo? Mrkněte do hromadné pošty nebo spamu.");
+      var c = el("lgCode"); if (c) c.focus();
+    }, function (e) { ucetMsg("lgMsg", ucetErrText(e)); });
+  };
+  el("lgVerify").onclick = function () {
+    var code = el("lgCode").value.replace(/\D/g, "");
+    if (code.length < 6) { ucetMsg("lgMsg", "Kód má 6 číslic."); return; }
+    ucetMsg("lgMsg", "Ověřuji…");
+    authVerify(email, code).then(function () { ucetPoPrihlaseni(opts); }, function (e) { ucetMsg("lgMsg", ucetErrText(e)); });
+  };
+}
+/* Po přihlášení: najít rodinu a připojit zařízení. opts.done(text) = kam dál; opts.silent = bez obrazovek (po ceremoniálu klobouku). */
+function ucetPoPrihlaseni(opts) {
+  opts = opts || {};
+  var done = opts.done || function () { routeHome(); };
+  if (!opts.silent) ucetMsg("lgMsg", "Přihlášeno. Hledám vaši rodinu…");
+  return ucetRpc("moje_rodina", {}).then(function (rod) {
+    if (RODIC) {
+      if (rod && rod.code) { syncSaveCfg(rod.code); dashStart(); return; }
+      screenDashCode("K e-mailu " + ((ucetGet() || {}).email || "") + " zatím nepatří žádná rodina. Ve hře na zařízení, kde dítě hraje, otevřete Pro rodiče → Zařízení a cloud → Rodina a přihlaste se tam, nebo požádejte druhého rodiče o pozvánku.");
+      return;
+    }
+    var act = ucetDecide(rod, syncCfg().code, !!S.name);
+    if (opts.silent && act !== "create") return;
+    if (act === "same") { done("Přihlášeno. Toto zařízení už patří k vaší rodině."); return; }
+    if (act === "join") { screenJoin(rod.code); return; }
+    if (act === "needProfile") { screenWelcome("Přihlášeno jako " + ((ucetGet() || {}).email || "") + ". Teď založte profil studentky — postup se uloží pod váš e-mail."); return; }
+    return ucetRpc("zalozit_rodinu", { p_code: syncCfg().code || syncGenCode(), p_data: S }).then(function (r) {
+      syncSaveCfg(r.code);
+      var fin = function () { if (!opts.silent) done("Hotovo: postup je uložený pod vaší rodinou. Další rodiče pozvete níže."); };
+      return syncRun().then(fin, fin);
+    });
+  }).then(null, function (e) { if (!opts.silent) { if (el("lgMsg")) ucetMsg("lgMsg", ucetErrText(e)); else done(ucetErrText(e)); } });
+}
+function ucetBackToPanel(t) { screenParent("zarizeni"); var a = el("hRodina"); if (a && a.scrollIntoView) a.scrollIntoView({ block: "start" }); ucetMsg("famMsg", t || ""); }
+/* Tablet dítěte: ukáže 6 číslic, rodič je potvrdí ve svém panelu; pak stávající potvrzení screenJoin. */
+var pairTimer = null;
+function pairStop() { if (pairTimer) clearInterval(pairTimer); pairTimer = null; }
+function screenPair() {
+  render('<div class="card center"><div class="bigIcon" style="font-size:64px;line-height:1.1">📲</div><h2>Připojit toto zařízení k rodině</h2>' +
+    '<p class="muted">Na telefonu nebo počítači rodiče otevřete hru → Pro rodiče → Zařízení a cloud → Rodina a opište tam tato čísla:</p>' +
+    '<div class="pairDigits" id="prDigits">· · ·</div><p class="muted" id="prMsg">Chystám číslo…</p><div id="prNew"></div>' +
+    '<button class="btn secondary" id="prBack">Zpět</button></div>');
+  el("prBack").onclick = function () { pairStop(); routeHome(); };
+  pairRun();
+}
+function pairRun() {
+  pairStop();
+  var showNew = function (t) {
+    ucetMsg("prMsg", t); var n = el("prNew"); if (!n) return;
+    n.innerHTML = '<button class="btn" id="prAgain">Nové číslo</button>'; el("prAgain").onclick = function () { n.innerHTML = ""; pairRun(); };
+  };
+  authFetch("/rest/v1/rpc/parovani_start", {}).then(function (p) {
+    var d = el("prDigits"); if (!d) return;
+    d.textContent = p.digits.slice(0, 3) + " " + p.digits.slice(3);
+    ucetMsg("prMsg", "Číslo platí 10 minut. Čekám na potvrzení od rodiče…");
+    var t0 = Date.now();
+    pairTimer = setInterval(function () {
+      if (!el("prDigits")) { pairStop(); return; }
+      if (typeof document !== "undefined" && document.hidden) return;
+      if (Date.now() - t0 > 600000) { pairStop(); showNew("Číslo vypršelo."); return; }
+      authFetch("/rest/v1/rpc/parovani_stav", { p_secret: p.secret }).then(function (s) {
+        if (!pairTimer || !el("prDigits")) return;
+        if (s && s.stav === "hotovo") { pairStop(); screenJoin(s.code); }
+        else if (s && s.stav === "neplatne") { pairStop(); showNew("Číslo vypršelo."); }
+      }, function () {});
+    }, 3000);
+  }, function (e) { showNew(ucetErrText(e)); });
+}
+/* Panel → Zařízení a cloud → Rodina */
+function famSectionHTML() {
+  if (DEMO) return "";
+  var u = ucetGet();
+  return '<h3 id="hRodina">👪 Rodina (přihlášení e-mailem)</h3>' +
+    (u ? '<div class="stavBox ok">' + svgCheck(16, "#1f6363") + ' Přihlášeno: <b>' + esc(u.email) + '</b></div><div id="famBox"><p class="muted">Načítám rodinu…</p></div>'
+       : '<p class="muted">Přihlaste se svým e-mailem. Postup se uloží pod vaši rodinu, další rodiče pozvete e-mailem a tablet dítěte připojíte šesti číslicemi. Heslo není potřeba.</p>' +
+         '<button class="btn small" id="famLogin">✉️ Přihlásit se e-mailem</button>') +
+    '<p class="muted" id="famMsg"></p>';
+}
+function famBoxHTML(r) {
+  if (!r) return '<p class="muted">K tomuto e-mailu zatím žádná rodina nepatří.</p><button class="btn small" id="famCreate">Uložit postup tohoto zařízení pod můj e-mail</button> <button class="btn small secondary" id="famLogout">Odhlásit</button>';
+  var spr = r.role === "spravce", here = r.code === syncCfg().code;
+  return '<p>Rodina studentky <b>' + esc(r.jmeno || "…") + '</b> · ' + (here ? 'toto zařízení je připojené ✓' : '<b>toto zařízení zatím není připojené</b> <button class="btn small" id="famJoin">Připojit</button>') + '</p>' +
+    (r.clenove || []).map(function (m) {
+      return '<div class="chkRow"><span style="flex:1">' + esc(m.email) + ' <span class="muted">· ' + (m.role === "spravce" ? "správce" : "rodič") + (m.stav === "pozvan" ? " · pozvánka čeká na první přihlášení" : "") + '</span></span>' +
+        (spr && m.email !== r.email ? '<button class="btn small secondary" data-famdel="' + esc(m.email) + '">Odebrat</button>' : '') + '</div>';
+    }).join("") +
+    '<div class="row"><div><label>Pozvat další e-mail (máma, babička…)</label><input type="text" inputmode="email" id="famInv" autocapitalize="none" spellcheck="false" placeholder="jmeno@email.cz"></div></div>' +
+    '<button class="btn small" id="famInvBtn">Pozvat</button>' +
+    '<p class="muted">Pozvanému přijde přihlašovací e-mail. Stačí se jím přihlásit ve hře nebo v živém přehledu pro rodiče, nic dalšího opisovat nemusí.</p>' +
+    '<h3 style="font-size:17px">📲 Připojit tablet dítěte</h3>' +
+    '<p class="muted">Na tabletu na úvodní obrazovce klepněte na „Připojit tablet k rodině“ a sem opište 6 číslic, které ukáže.</p>' +
+    '<div class="row"><div><input type="text" id="famPair" class="codeIn" inputmode="numeric" maxlength="7" placeholder="123 456"></div></div>' +
+    '<button class="btn small" id="famPairBtn">Připojit tablet</button>' +
+    '<p style="margin-top:12px"><button class="btn small secondary" id="famLogout">Odhlásit e-mail na tomto zařízení</button></p>';
+}
+function famWire() {
+  var back = function () { screenParent("zarizeni"); };
+  var lg = el("famLogin"); if (lg) lg.onclick = function () { screenLogin({ back: back, done: ucetBackToPanel }); };
+  var box = el("famBox"); if (!box) return;
+  ucetRpc("moje_rodina", {}).then(function (r) {
+    if (!el("famBox")) return;
+    box.innerHTML = famBoxHTML(r);
+    var on = function (id, fn) { var x = el(id); if (x) x.onclick = fn; };
+    on("famLogout", function () { ucetSet(null); ucetBackToPanel("Odhlášeno. Postup na tomto zařízení zůstává."); });
+    on("famCreate", function () { ucetMsg("famMsg", "Ukládám…"); ucetPoPrihlaseni({ done: ucetBackToPanel }); });
+    on("famJoin", function () { screenJoin(r.code); });
+    on("famInvBtn", function () {
+      var em = ucetEmailNorm(el("famInv").value);
+      if (!ucetEmailOk(em)) { ucetMsg("famMsg", "Napište prosím celý e-mail."); return; }
+      ucetMsg("famMsg", "Zvu…");
+      ucetRpc("pozvat", { p_email: em }).then(function () {
+        authSend(em).then(function () { ucetBackToPanel("Pozváno: " + em + ". Přihlašovací e-mail je na cestě."); },
+          function () { ucetBackToPanel("Pozváno: " + em + ". E-mail se teď nepodařilo poslat; ať se přihlásí sám/sama svým e-mailem ve hře."); });
+      }, function (e) { ucetMsg("famMsg", ucetErrText(e)); });
+    });
+    on("famPairBtn", function () {
+      var d = el("famPair").value.replace(/\D/g, "");
+      if (d.length !== 6) { ucetMsg("famMsg", "Opište všech 6 číslic z tabletu."); return; }
+      ucetMsg("famMsg", "Připojuji…");
+      ucetRpc("parovani_potvrdit", { p_digits: d }).then(function () { el("famPair").value = ""; ucetMsg("famMsg", "Hotovo. Na tabletu teď potvrďte „Ano, připojit“."); }, function (e) { ucetMsg("famMsg", ucetErrText(e)); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-famdel]"), function (b) {
+      b.onclick = function () { ucetRpc("odebrat", { p_email: b.getAttribute("data-famdel") }).then(function () { ucetBackToPanel("Odebráno."); }, function (e) { ucetMsg("famMsg", ucetErrText(e)); }); };
+    });
+  }, function (e) {
+    if (!el("famBox")) return;
+    if (!ucetGet()) { ucetBackToPanel(ucetErrText(e)); return; }
+    box.innerHTML = '<p class="muted">' + esc(ucetErrText(e)) + '</p><button class="btn small secondary" id="famLogout">Odhlásit</button>';
+    var x = el("famLogout"); if (x) x.onclick = function () { ucetSet(null); ucetBackToPanel(""); };
+  });
+}
+function screenUcetWait(back) {
+  render('<div class="card center"><div class="bigIcon">' + svgLetter(90) + '</div><h2>Přihlašuji…</h2><p class="muted" id="lgMsg">Sova ověřuje váš e-mail.</p><button class="btn secondary" id="lgBack">Zpět</button></div>');
+  el("lgBack").onclick = function () { back(); };
+}
+/* Návrat z tlačítka v e-mailu: tokeny z adresy uloží a adresu vyčistí */
+function ucetFromLink() {
+  if (typeof location === "undefined") return null;
+  var t = ucetFromHash(location.hash); if (!t) return null;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  if (!t.error) ucetSet({ email: t.email, access: t.access, refresh: t.refresh, exp: t.exp });
+  return t;
+}
 function screenJoinCode() {
   render('<div class="card center"><div class="bigIcon">' + svgLetter(90) + '</div><h2>Připojit postup z jiného zařízení</h2>' +
     '<p class="muted">Rodinný kód najdete na zařízení, kde už studentka hraje: Pro rodiče → Zařízení a cloud.</p>' +
@@ -7493,9 +7771,13 @@ function dashHeroFill(oldHero) {
     var p = v.play(); if (p && p.catch) p.catch(function () {});
   });
 }
-function screenDashCode() {
-  render('<div class="card center"><div class="bigIcon">🦉</div><h2>Přehled pro rodiče</h2><p class="muted">Opište rodinný kód. Najdete ho ve hře: Pro rodiče → Zařízení a cloud.</p>' +
+function screenDashCode(note) {
+  render('<div class="card center"><div class="bigIcon">🦉</div><h2>Přehled pro rodiče</h2>' + (note ? '<div class="stavBox ne">' + esc(note) + '</div>' : '') +
+    '<p class="muted">Přihlaste se e-mailem, pod kterým máte rodinu (nebo na který vám přišla pozvánka).</p>' +
+    '<button class="btn" id="dcMail">✉️ Přihlásit se e-mailem</button>' +
+    '<p class="muted" style="margin-top:16px">Nebo opište rodinný kód. Najdete ho ve hře: Pro rodiče → Zařízení a cloud → Rodinný kód.</p>' +
     '<input type="text" id="dcIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="např. k7mfx-2p9qa-…"><button class="btn" id="dcBtn">Zobrazit přehled</button><p class="muted" id="dcMsg"></p></div>');
+  el("dcMail").onclick = function () { screenLogin({ back: function () { screenDashCode(); } }); };
   el("dcBtn").onclick = function () {
     var c = syncNormCode(el("dcIn").value); if (c.length < 16) { el("dcMsg").textContent = "Kód je moc krátký."; return; }
     el("dcMsg").textContent = "Ověřuji…";
@@ -7515,6 +7797,9 @@ function bootRodic() {
   if (typeof document !== "undefined") { document.title = "Bradavice – rodiče"; document.body.classList.add("rodic"); }
   var m = /[#&]kod=([^&]+)/.exec(location.hash || "");
   if (m) { var c = syncNormCode(decodeURIComponent(m[1])); if (c.length >= 16) syncSaveCfg(c); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  var lg = ucetFromLink();
+  if (lg && lg.error) { screenDashCode("Tlačítko z e-mailu už neplatí nebo bylo použité. Nechte si poslat nový e-mail."); return; }
+  if (lg || (!syncOn() && ucetOn())) { screenUcetWait(function () { screenDashCode(); }); ucetPoPrihlaseni({}); return; }
   if (!syncOn()) { screenDashCode(); return; }
   dashStart();
 }
@@ -7529,8 +7814,19 @@ function boot() {
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     startDemo(); return;
   }
+  var lg = ucetFromLink();
+  if (lg) {
+    if (lg.error) { screenLogin({ note: "Tlačítko z e-mailu už neplatí nebo bylo použité. Nechte si poslat nový e-mail.", back: bootSync }); return; }
+    screenUcetWait(bootSync);
+    ucetPoPrihlaseni({ done: function () { bootSync(); } });
+    return;
+  }
   var joinCode = joinFromLink();
   if (joinCode && joinCode !== syncCfg().code) { if (isIOSWeb() && !isStandalone()) screenAddToHome(joinCode); else screenJoin(joinCode); return; }
+  bootSync();
+}
+/* zbytek startu: stáhnout postup (nejvýš 7 s) a otevřít Velkou síň */
+function bootSync() {
   updWire();
   if (syncReady()) {
     render('<div class="card center"><div class="bigIcon">' + svgLetter(100) + '</div>' +
