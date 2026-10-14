@@ -12,6 +12,15 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23f6efe0' stroke='%233a2f28' stroke-width='4'/%3E%3Cpath d='M32 10c7 11 15 15 15 28a15 15 0 0 1-30 0c0-8 5-11 8-17 2 4 4 6 7 6 0-6-3-11 0-17z' fill='%23e2694f' stroke='%233a2f28' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M32 30c3 5 6 7 6 12a6 6 0 0 1-12 0c0-4 3-6 6-12z' fill='%23d9a032'/%3E%3C/svg%3E">
 <title>Bradavická škola</title>
+<meta property="og:type" content="website">
+<meta property="og:locale" content="cs_CZ">
+<meta property="og:title" content="Bradavická škola">
+<meta property="og:description" content="Kouzelná škola na deset minut denně: matematika, čeština a angličtina 3. třídy. Vyzkoušejte bez přihlášení.">
+<meta property="og:url" content="https://pavelpavlicek9-source.github.io/bradavice-hra/">
+<meta property="og:image" content="https://pavelpavlicek9-source.github.io/bradavice-hra/rodice/nahled.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; }
@@ -406,6 +415,8 @@
   .dashLive.on { background: var(--teal-pale); }
   .dashLive .dot { width: 14px; height: 14px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 0 4px rgba(46,204,113,.25); animation: thinkPulse 1.2s infinite; flex: none; }
   .dashLive .dot.off { background: #b9ad97; box-shadow: none; animation: none; }
+  .dashHero { position: relative; aspect-ratio: 16 / 7; margin: 0 0 10px; border: 2px solid var(--ink); border-radius: 12px; overflow: hidden; background: #2a2138 center 45% / cover no-repeat; }
+  .dashHero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; }
   .dashKpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 8px; }
   .dashKpi div { text-align: center; border: 2px solid var(--ink); border-radius: 8px; padding: 6px 2px; background: #fffaf0; } .dashKpi b { display: block; font-size: 24px; } .dashKpi span { font-size: 13px; color: var(--muted2); }
   .dashWeek { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
@@ -843,7 +854,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-14a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-14b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -6210,7 +6221,8 @@ var VIDEOS = {
   klobouk:  { f: "video-klobouk.mp4", v: 1 },    /* Moudrý klobouk přemýšlí a zvolá */
   expres:   { f: "video-expres.mp4", v: 1 },     /* nový ročník: Bradavický expres */
   plaminek: { f: "video-plaminek.mp4", v: 1 },   /* milník plamínku: svíčka vzplane */
-  zkouska:  { f: "video-zkouska.mp4", v: 1 }     /* složená zkouška: vysvědčení s pečetí */
+  zkouska:  { f: "video-zkouska.mp4", v: 1 },    /* složená zkouška: vysvědčení s pečetí */
+  prehled:  { f: "video-prehled.mp4", v: 1 }     /* živý přehled pro rodiče: sova čte zprávu (záhlaví, dokola, bez zvuku) */
 };
 var vidMem = {}, vidPending = {};
 function vidGet(k) {
@@ -6256,6 +6268,7 @@ function videoMoment(k, then, waitMs) {
   });
 }
 var IMAGES = {
+  "prehled-zahlavi": { f: "prehled-zahlavi.webp", v: 1 },   /* 14. 10. 2026: záhlaví živého přehledu (Gemini 4) */
   "loznice-g": { f: "loznice-g-v2.webp", v: 2 },   /* 11. 10. 2026: ložnice uvnitř hradu (ChatGPT), malovaná jako Velká síň */
   "loznice-h": { f: "loznice-h.webp", v: 1 },
   "loznice-r": { f: "loznice-r.webp", v: 1 },
@@ -7447,6 +7460,7 @@ function screenDash() {
   var dc = dictCounts(S);
   var html = '<div class="topbar dashTop"><span class="who">' + (S.house ? houseIcon(S.house, 30) : svgCastle(28)) + ' <span>' + esc(S.name || "Studentka") + '<br><span class="yr">přehled pro rodiče · ' + (S.house ? esc(HOUSES[S.house].n) : "") + '</span></span></span>' +
     '<span class="chips"><span class="chip flame">' + flameIcon(16) + ' ' + (sk.current || 0) + '</span><span class="chip dust">' + svgCoin(18) + ' ' + (S.dust || 0) + '</span></span></div>' +
+    '<div class="dashHero" id="dashHero" data-img="prehled-zahlavi"></div>' +
     '<div class="card">' + dashLiveHTML() +
     '<h3>Dnes</h3><div class="dashKpi"><div><b>' + (dailyDone ? "✓" : "—") + '</b><span>denní vyučování</span></div><div><b>' + todays.length + '</b><span>' + (todays.length === 1 ? "hodina" : todays.length >= 2 && todays.length <= 4 ? "hodiny" : "hodin") + '</span></div>' +
       '<div><b>' + todays.reduce(function (a, x) { return a + (x.n || 0); }, 0) + '</b><span>otázek</span></div><div><b>' + todays.reduce(function (a, x) { return a + (x.dust || 0); }, 0) + '</b><span>galeonů</span></div></div>' +
@@ -7458,11 +7472,26 @@ function screenDash() {
     (vyjListHTML(S) ? '<h3>🪶 Vyjmenovaná slova</h3>' + vyjListHTML(S) : '') +
     joyHTML() + mailPanelHTML() +
     '<p class="muted center" id="dashUpd">Aktualizováno ' + (dashLast ? agoText(dashLast) : "teď") + ' · obnovuje se samo</p></div>';
-  var y = (typeof window !== "undefined" && window.scrollY) || 0;
+  var y = (typeof window !== "undefined" && window.scrollY) || 0, oldHero = el("dashHero");
   render(html); lastScreen = "dash";   /* render() lastScreen nuluje */
+  dashHeroFill(oldHero);
   if (y && W.scrollTo) W.scrollTo(0, y);
   var send = el("mlSend");
   if (send) send.onclick = function () { var tx = el("mlText").value.trim(); if (!tx) { el("mlMsg").textContent = "Napište vzkaz."; return; } mailSend(el("mlFrom").value, tx, parseInt(el("mlGift").value, 10) || 0); syncRun(); screenDash(); var m2 = el("mlMsg"); if (m2) m2.textContent = "Sova letí! Dopis čeká ve Velké síni."; };
+}
+/* Záhlaví přehledu: obrázek, a když je video, sova v něm čte dokola. Při obnovení každých 10 s se přenese
+   staré záhlaví (přesun v DOM v jednom kroku video nezastaví), jinak by video pokaždé začínalo znovu. */
+function dashHeroFill(oldHero) {
+  var h = el("dashHero"); if (!h) return;
+  if (oldHero && oldHero !== h && oldHero.getAttribute("data-filled")) { h.parentNode.replaceChild(oldHero, h); return; }
+  imgApply("#dashHero", "prehled-zahlavi", function (n, url) { n.style.backgroundImage = "url(" + url + ")"; n.setAttribute("data-filled", "1"); });
+  if (reducedMotion()) return;
+  vidGet("prehled").then(function (url) {
+    var n = el("dashHero"); if (!url || !n || n.querySelector("video")) return;
+    var v = document.createElement("video"); v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.setAttribute("muted", "");
+    v.src = url; n.appendChild(v); n.setAttribute("data-filled", "1");
+    var p = v.play(); if (p && p.catch) p.catch(function () {});
+  });
 }
 function screenDashCode() {
   render('<div class="card center"><div class="bigIcon">🦉</div><h2>Přehled pro rodiče</h2><p class="muted">Opište rodinný kód. Najdete ho ve hře: Pro rodiče → Zařízení a cloud.</p>' +
