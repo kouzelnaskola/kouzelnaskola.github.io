@@ -7327,7 +7327,8 @@ function ucetErrText(e) {
   if (/Posledniho/.test(m)) return "Posledního správce rodiny nejde odebrat.";
   if (/12 clenu/.test(m)) return "Rodina už má 12 členů.";
   if (/Nejste clenem/.test(m)) return "Tento e-mail zatím nepatří k žádné rodině.";
-  if (/not authorized|sending|smtp/i.test(m)) return "E-mail se teď nepodařilo odeslat (server ještě nemá nastaveného odesílatele). Zatím použijte rodinný kód.";
+  if (/not authorized/i.test(m)) return "Na tento e-mail zatím server posílat nesmí (chybí nastavený odesílatel). Zatím použijte rodinný kód.";
+  if (/sending|smtp/i.test(m)) return "Server e-mail neodeslal. Správce ať zkontroluje odesílatele v Supabase (SMTP: adresa a heslo pro aplikace). Zatím použijte rodinný kód.";
   if (/neprihlaseno|Neprihlaseno/.test(m)) return "Přihlášení vypršelo. Přihlaste se prosím znovu.";
   if (/expired|invalid|otp/i.test(m) || (e && e.code === "otp_expired")) return "Kód nesedí nebo už vypršel. Opište ho znovu, nebo si nechte poslat nový e-mail.";
   if (!e || !e.status) return "Nepodařilo se spojit se serverem. Zkontrolujte internet.";
