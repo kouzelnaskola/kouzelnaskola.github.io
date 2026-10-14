@@ -1,4 +1,4 @@
-# Bradavická škola — hra
+# Kouzelná škola — hra
 
-Veřejná kopie hry pro spuštění na tabletu přes GitHub Pages.
+Veřejná kopie hry (GitHub Pages): https://kouzelnaskola.github.io/
 Zdroj a vývoj jsou v soukromém repozitáři; tento obsah se přepisuje příkazem /vydej.

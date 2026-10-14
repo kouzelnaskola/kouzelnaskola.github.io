@@ -16,8 +16,8 @@
 <meta property="og:locale" content="cs_CZ">
 <meta property="og:title" content="Bradavická škola">
 <meta property="og:description" content="Kouzelná škola na deset minut denně: matematika, čeština a angličtina 3. třídy. Vyzkoušejte bez přihlášení.">
-<meta property="og:url" content="https://pavelpavlicek9-source.github.io/bradavice-hra/">
-<meta property="og:image" content="https://pavelpavlicek9-source.github.io/bradavice-hra/rodice/nahled.jpg">
+<meta property="og:url" content="https://kouzelnaskola.github.io/">
+<meta property="og:image" content="https://kouzelnaskola.github.io/rodice/nahled.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -858,7 +858,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-14c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-14d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -5094,7 +5094,7 @@ var SYNC_KEY = "bradaviceSync";
 var SYNC_URL = "https://cihtqgbsdobsgrxfdqrl.supabase.co";
 var SYNC_ANON = "sb_publishable_eDWQjAFSA7pBiH3CGMrUTQ_Byx59pVd";
 var SYNC_CODE_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
-var GAME_URL = "https://pavelpavlicek9-source.github.io/bradavice-hra/";
+var GAME_URL = "https://kouzelnaskola.github.io/";
 /* Kód z klávesnice: malá písmena, bez mezer, různé pomlčky → „-“ (iPad je umí zaměnit). */
 function syncNormCode(s) { return String(s || "").toLowerCase().replace(/[\u2010-\u2015\u2212]/g, "-").replace(/\s+/g, "").trim(); }
 function syncJoinLink() { return GAME_URL + "#kod=" + encodeURIComponent(syncCfg().code); }
