@@ -858,7 +858,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-14e";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-21a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3649,7 +3649,7 @@ function screenHome() {
     var prog = Math.min(S.streak.questsToday, 2);
     html += '<div class="card center">' +
       '<p class="qtext">' + svgFlame(28, "lit") + ' Odpracuj si plamínek zpět!</p>' +
-      '<p>Dokonči <b>dnes 2 vyučování</b> a tvůj plamínek <b>' + eb.streak + ' dní</b> se vrátí. Zvládneš to!</p>' +
+      '<p>Dokonči <b>dnes 2 celé hodiny</b> (vyučování nebo učebny) a tvůj plamínek <b>' + eb.streak + ' dní</b> se vrátí. Zvládneš to!</p>' +
       '<p class="muted">Dnes hotovo: ' + prog + ' / 2</p></div>';
   }
   var sv = sessionSaved();
@@ -3661,14 +3661,14 @@ function screenHome() {
       '<div id="abandonBox"><button class="btn secondary small" onclick="abandonAsk()">Opustit hodinu</button></div></div>';
   }
   html += '<button class="btn bigCta' + (doneToday ? " done" : "") + '" onclick="startDailyQuest()">' +
-    (doneToday ? "✨ Ještě jedno vyučování" : "🕯️ Dnešní vyučování") + '<span>' + (doneToday ? "dnešní plamínek už hoří — tohle je jen pro radost" : "10 otázek · plamínek poroste") + '</span></button>' +
+    (doneToday ? "✨ Ještě jedno vyučování" : "🕯️ Dnešní vyučování") + '<span>' + (doneToday ? "dnešní plamínek už hoří — tohle je jen pro radost" : "10 otázek napříč předměty · plamínek poroste") + '</span></button>' +
     '<div class="hallChips">' +
     '<span class="hourglass">' + houseIcon(S.house, 22) + ' <span>Body pro <b>' + esc(h.n) + '</b>: <b>' + housePoints(S) + '</b></span></span>' +
     '<span class="hchip">' + svgSnow(16) + ' amulety: <b>' + S.streak.freezes + '</b></span>' +
     (S.streak.goal ? '<span class="hchip">🎯 cíl <b>' + Math.min(S.streak.current, S.streak.goal) + ' / ' + S.streak.goal + '</b></span>' : '') +
     '</div>' +
     mailHomeHTML() + radioHomeHTML() + puzzleHomeHTML() + rewardLineHTML() +
-    '<p class="muted center hallHint">Každý den jedno vyučování a plamínek roste. Vynechaný den ho zhasne, ledový amulet ho ochrání.</p>' +
+    '<p class="muted center hallHint">Každý den jedna celá hodina — dnešní vyučování, nebo 10 otázek v kterékoli učebně z Rozvrhu — a plamínek roste. Vynechaný den ho zhasne, ledový amulet ho ochrání.</p>' +
     syncHomeLine() + navHTML("sin");
   render(html);
   lastScreen = "home";
@@ -3777,7 +3777,7 @@ function owlVisit(target, gold) {
    ===================================================================== */
 var TUT_STEPS = [
   { sel: ".perchOwl.onHall", t: "Ahoj! Jsem tvoje sova pošťačka. Ukážu ti, jak to v Bradavicích chodí." },
-  { sel: ".hall", t: "Tohle je Velká síň. Svíčka uprostřed je tvůj plamínek. Roste, když každý den dokončíš vyučování." },
+  { sel: ".hall", t: "Tohle je Velká síň. Svíčka uprostřed je tvůj plamínek. Roste, když každý den dokončíš celou hodinu." },
   { sel: ".bigCta", t: "Tady začíná dnešní vyučování: deset otázek. A víš, kdo ti je bude nosit? Já!" },
   { sel: ".hallChips .hourglass", t: "Za správné odpovědi dostáváš galeony. Každý galeon je zároveň bod pro tvou kolej. Když galeony utratíš, body ti zůstanou." },
   { sel: ".hallChips .hchip", t: "Ledový amulet ochrání plamínek, když jeden den vynecháš." },
@@ -4658,7 +4658,7 @@ function startTopicQuest(t) {
     '<div class="bigIcon">' + subjIcon(TOPICS[t].subj, 56) + '</div>' +
     '<h2>' + esc(TOPICS[t].n) + '</h2>' +
     '<p class="introFlavor">' + esc(intro) + '</p>' + charSayHTML(cl) +
-    '<p class="muted">10 otázek na procvičení. Hvězdy mistrovství: ' + starsHTML(t) + '<br>(Plamínek prodlouží jen dnešní vyučování.)</p>' +
+    '<p class="muted">10 otázek na procvičení. Hvězdy mistrovství: ' + starsHTML(t) + '<br>(Celá hodina prodlouží i plamínek.)</p>' +
     '<button class="btn" id="beginBtn">Vstoupit do učebny</button>' +
     '</div>');
   speakAs(cl);
@@ -5742,7 +5742,10 @@ function questComplete() {
   }
   var perfect = session.firstTry === session.total;
   postQueue = [];
-  if (session.mode === "daily") {
+  /* Plamínek (od 21. 10. 2026, táta): každá dokončená celá hodina — denní vyučování, hodina v učebně
+     i zkouška, aspoň 10 otázek. Hodina v učebně má stejných 10 otázek, plamínek tím nezlevňuje. */
+  var fullLesson = session.total >= 10 && (session.mode === "daily" || session.mode === "topic" || session.mode === "exam");
+  if (fullLesson) {
     S.questsDone++;
     if (perfect) S.perfectQuests++;
     var res = streakOnQuestComplete(S.streak, todayStr());
@@ -5754,7 +5757,8 @@ function questComplete() {
       if (e.type === "goal") postQueue.push({ kind: "goal", days: e.days });
     });
     if (firstEver || (S.questsDone > 0 && !S.streak.goal)) postQueue.unshift({ kind: "chooseGoal", first: true });
-  } else if (session.mode === "exam") {
+  }
+  if (session.mode === "exam") {
     var ex = S.exams[S.year] || { best: 0, passed: false, tries: 0 };
     ex.tries++;
     if (session.firstTry > ex.best) ex.best = session.firstTry;
@@ -5762,8 +5766,7 @@ function questComplete() {
     if (passedNow) ex.passed = true;
     S.exams[S.year] = ex;
     session.examPassed = passedNow;
-    if (perfect) S.perfectQuests++;
-  } else if (perfect) {
+  } else if (!fullLesson && perfect) {
     S.perfectQuests++;
   }
   checkBadges();
@@ -5788,7 +5791,7 @@ function screenQuestSummary(perfect) {
     html += heroCardHTML(session.firstTry + ' / ' + session.total, esc(EXAM_NAMES[S.year] ? EXAM_NAMES[S.year].split(" — ")[0] : "zkouška ročníku") + ' složena') +
       '<p class="qtext">' + svgCheck(20, "#2a7f7f") + ' Profesorka McGonagallová ti podává vysvědčení: <b>' + yearLabel(S.year) + ' zvládnut!</b></p>';
   }
-  if (session.mode === "daily") {
+  if (session.total >= 10 && (session.mode === "daily" || session.mode === "topic" || session.mode === "exam")) {
     html += '<p class="qtext">' + flameIcon(20) + ' Plamínek: <b>' + S.streak.current + '</b> ' + dayWord(S.streak.current) + ' v řadě</p>';
   }
   html += summaryTopicsHTML();
@@ -6026,7 +6029,7 @@ function screenLostNotice(prev, then) {
     '<div class="bigIcon">' + svgFlame(64, "off") + '</div>' +
     '<h1>Plamínek si zdříml</h1>' +
     '<p class="qtext">Pár dní ses ke hře nedostala a plamínek ' + prev + ' dní usnul. To se stane i nejlepším čarodějkám!</p>' +
-    '<div class="feedback ok"><b>Odpracuj si ho zpět:</b> dokonči <b>dnes 2 vyučování</b> a plamínek se vrátí v plné síle.</div>' +
+    '<div class="feedback ok"><b>Odpracuj si ho zpět:</b> dokonči <b>dnes 2 celé hodiny</b> a plamínek se vrátí v plné síle.</div>' +
     '<button class="btn" id="nextBtn">Jdu na to!</button></div>');
   el("nextBtn").onclick = then;
 }
@@ -6180,9 +6183,10 @@ function buyItem(id) {
     S.owned.push(id);
     if (!S.paid || typeof S.paid !== "object") S.paid = {};
     S.paid[id] = price;
-    if (it.cat === "pet" && !S.equipped.pet) S.equipped.pet = id;
-    if (it.cat === "hat" && !S.equipped.hat) S.equipped.hat = id;
-    if (it.cat === "petacc" && !S.equipped.petAcc) S.equipped.petAcc = id;
+    /* nově koupené se hned nasadí (21. 10. 2026: koupila si věc a v ložnici ji neviděla, protože nosila starou) */
+    if (it.cat === "pet") S.equipped.pet = id;
+    if (it.cat === "hat") S.equipped.hat = id;
+    if (it.cat === "petacc") S.equipped.petAcc = id;
   }
   checkBadges();
   saveState();
@@ -6408,6 +6412,23 @@ function roomPosOf(key, i, def) {
   var p = S.roomPos && S.roomPos[key];
   return p ? p : def || { x: ROOM_DEFAULTS[i % ROOM_DEFAULTS.length][0], y: ROOM_DEFAULTS[i % ROOM_DEFAULTS.length][1] };
 }
+/* Ozdoby bez uložené pozice: první výchozí místo, u kterého nic nestojí; když dojdou (víc než 16 ozdob),
+   rozházeně po podlaze. Dřív šla i-tá ozdoba na místo i % 16 a sedmnáctá se schovala přesně za první. */
+function decoSpots(decos) {
+  var pos = S.roomPos || {}, taken = [], out = {}, k = 0;
+  taken.push(pos.avatar || { x: 20, y: 6 });
+  if (S.equipped.pet) taken.push(pos.pet || { x: 32, y: 5 });
+  decos.forEach(function (d) { if (pos[d.id]) taken.push(pos[d.id]); });
+  var near = function (p) { return taken.some(function (t) { return Math.abs(t.x - p.x) < 7 && Math.abs(t.y - p.y) < 7; }); };
+  decos.forEach(function (d) {
+    if (pos[d.id]) return;
+    var p = null;
+    for (var j = 0; j < ROOM_DEFAULTS.length && !p; j++) { var c = { x: ROOM_DEFAULTS[j][0], y: ROOM_DEFAULTS[j][1] }; if (!near(c)) p = c; }
+    while (!p || near(p)) { k++; p = { x: 8 + (k * 23) % 84, y: 3 + (k * 7) % 26 }; if (k > 60) break; }
+    taken.push(p); out[d.id] = p;
+  });
+  return out;
+}
 function moverStyle(p, i) { return 'left:' + p.x + '%;bottom:' + p.y + '%;--dz:' + (1 - Math.min(90, p.y) / 100).toFixed(2) + ';animation-delay:' + (0.15 + (i || 0) * 0.1).toFixed(2) + 's'; }
 function screenTower() {
   var off = Array.isArray(S.roomOff) ? S.roomOff : [];
@@ -6434,8 +6455,9 @@ function screenTower() {
     (pet ? '<div class="mover" data-move="pet" style="' + moverStyle(roomPosOf("pet", 0, { x: 32, y: 5 })) + '"><div class="pet" data-img="' + pet.id + '">' + pet.e + '</div>' +
       (acc && !roomFree("acc") ? '<div class="petAcc" data-move="acc" data-img="' + acc.id + '">' + acc.e + '</div>' : '') + '</div>' : '') +
     (acc && (roomFree("acc") || !pet) ? '<div class="mover free" data-move="acc" style="' + moverStyle(roomFree("acc") ? S.roomPos.acc : { x: 40, y: 5 }) + '"><div class="petAcc" data-img="' + acc.id + '">' + acc.e + '</div></div>' : '');
+  var spots = decoSpots(decos);
   decos.forEach(function (d, i) {
-    scene += '<div class="mover deco' + (d.r === "l" ? " legend" : "") + (d.id === "dec_okno" ? " magicWin" : "") + '" data-move="' + d.id + '" data-img="' + d.id + '" style="' + moverStyle(roomPosOf(d.id, i), i) + '">' + d.e + '</div>';
+    scene += '<div class="mover deco' + (d.r === "l" ? " legend" : "") + (d.id === "dec_okno" ? " magicWin" : "") + '" data-move="' + d.id + '" data-img="' + d.id + '" style="' + moverStyle(roomPosOf(d.id, i, spots[d.id]), i) + '">' + d.e + '</div>';
   });
   scene += '</div>';
   var h = HOUSES[S.house];
@@ -6788,9 +6810,9 @@ function screenParent(section) {
     for (var ey in S.exams) if (S.exams[ey]) examRows += '<li>' + ey + '. ročník: nejlépe ' + S.exams[ey].best + ' / 15' + (S.exams[ey].passed ? " — složena" : "") + ' (pokusů: ' + S.exams[ey].tries + ')</li>';
     body =
       '<h3>📅 Posledních 7 dní</h3>' +
-      '<p class="muted">Dokončená denní vyučování: <b>' + doneWeek + ' ze 7</b> · plamínek <b>' + sk.current + '</b> ' + dayWord(sk.current) + ' (rekord ' + sk.best + ', cíl ' + (sk.goal || "nezvolen") + ', amulety ' + sk.freezes + '/2) · chyb za týden: <b>' + mistWeek + '</b></p>' +
+      '<p class="muted">Dny s dokončenou hodinou: <b>' + doneWeek + ' ze 7</b> · plamínek <b>' + sk.current + '</b> ' + dayWord(sk.current) + ' (rekord ' + sk.best + ', cíl ' + (sk.goal || "nezvolen") + ', amulety ' + sk.freezes + '/2) · chyb za týden: <b>' + mistWeek + '</b></p>' +
       '<table class="weekTable">' + weekRows + '</table>' +
-      '<p class="muted">Plamínek prodlouží jen dokončené denní vyučování (10 otázek). Při vynechaném dnu se spotřebuje amulet; bez amuletu hra do dvou dnů nabídne odpracování (2 vyučování v jednom dni) — nikdy výčitky.</p>' +
+      '<p class="muted">Plamínek prodlouží každá dokončená celá hodina (10 otázek: denní vyučování, hodina v učebně i zkouška). Při vynechaném dnu se spotřebuje amulet; bez amuletu hra do dvou dnů nabídne odpracování (2 vyučování v jednom dni) — nikdy výčitky.</p>' +
       joyHTML() +
       '<h3>Jak jí to jde</h3>' + (statRows || '<p class="muted">Zatím nehráno.</p>') +
       (vyjListHTML(S) ? '<h3>🪶 Vyjmenovaná slova po slovech</h3>' + vyjListHTML(S) : '') +
