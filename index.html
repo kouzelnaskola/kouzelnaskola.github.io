@@ -305,10 +305,20 @@
   .stavBox .btn.small { margin: 8px 0 0; }
   .howTo { text-align: left; margin: 12px auto; max-width: 440px; font-size: 19px; line-height: 1.5; padding-left: 26px; }
   .howTo li { margin: 6px 0; } .shareIco { display: inline-block; border: 2px solid var(--ink); border-radius: 4px; padding: 0 5px; font-size: 15px; }
+  .setupCard h2 { margin-top: 4px; }
+  .setupDots { display: flex; gap: 6px; justify-content: center; margin: 2px 0 6px; } .setupDots i { width: 26px; height: 5px; border-radius: 3px; background: #e2d6bd; } .setupDots i.on { background: var(--acc, var(--teal)); }
+  .setupChoice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; } .setupChoice.col { grid-template-columns: 1fr; }
+  .setupOpt { text-align: left; padding: 12px 14px; border: 2px solid var(--ink); border-radius: 12px; background: #fffaf0; font: inherit; color: var(--ink); cursor: pointer; }
+  .setupOpt b { display: block; font-size: 20px; } .setupOpt span { display: block; font-size: 15px; color: var(--muted2); margin-top: 2px; }
+  .setupOpt.on { border-color: var(--acc, var(--teal)); background: #eef6f4; box-shadow: 0 0 0 3px rgba(42,127,127,.18); }
+  .setupChoice.shake { animation: shake .4s; } @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  .setupCard ul.ticks { list-style: none; padding-left: 0; } .setupCard ul.ticks li { margin: 6px 0; }
+  .setupCard label { display: block; margin-top: 10px; } select.setupSel { width: 100%; }
+  pre.setupEx { background: #fffaf0; border: 1px dashed #c9b48a; border-radius: 8px; padding: 8px 12px; font-size: 16px; white-space: pre-wrap; margin: 8px 0; }
   .advSync > summary { cursor: pointer; font-weight: 700; margin: 16px 0 6px; }
   .pairDigits { font-size: 56px; font-weight: 700; letter-spacing: .12em; font-variant-numeric: tabular-nums; margin: 8px 0 4px; color: var(--acc, var(--ink)); }
   input.codeIn { font-size: 28px; text-align: center; letter-spacing: .2em; font-variant-numeric: tabular-nums; }
-  .welcomeAlt .linkBtn { background: none; border: 0; padding: 0; font: inherit; color: var(--muted2); text-decoration: underline; cursor: pointer; }
+  .linkBtn { background: none; border: 0; padding: 0; font: inherit; color: var(--muted2); text-decoration: underline; cursor: pointer; }
   .codeShow { font-family: Menlo, Consolas, monospace; font-size: 22px; letter-spacing: 2px; background: #fff; border: 2px dashed var(--ink); border-radius: 6px; padding: 8px 12px; margin: 6px 0; text-align: center; user-select: all; }
   textarea { min-height: 110px; font-size: .8em; }
   textarea.words { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 17px; min-height: 160px; line-height: 1.5; }
@@ -858,7 +868,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-21d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-21f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2640,7 +2650,8 @@ function defaultState() {
     chapters: cloneObj(DEFAULT_CHAPTERS),
     words: [],          /* slovíčka ze školy zadává rodič; lekce ze sešitu (SCHOOL_UNITS_SHIPPED) dostává jen rodina se sesit = true */
     unitsShipped: [],
-    sesit: false,       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
+    sesit: false,
+    parentSetup: "",    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
     wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
     dustEarned: 0,
@@ -2689,6 +2700,7 @@ function migrate(s) {
   /* hra uložená před zavedením lekcí: měla jen Unit 1 (dřívější výchozí seznam) */
   if (!Array.isArray(s.unitsShipped) && Array.isArray(s.words)) s.unitsShipped = ["Unit 1"];
   /* hra uložená před 21. 10. 2026 = Karolinčina rodina: lekce ze sešitu dostává dál */
+  if (typeof s.parentSetup !== "string") s.parentSetup = s.name ? "dříve" : "";   /* hra uložená před průvodcem ho nedostane */
   if (typeof s.sesit !== "boolean") s.sesit = Array.isArray(s.words) || Array.isArray(s.unitsShipped);
   if (s.version < 3) {
     /* Z Akademie: řád se na kolej nepřevádí (Moudrý klobouk je zážitek, projde
@@ -3671,6 +3683,7 @@ function screenHome() {
     (S.streak.goal ? '<span class="hchip">🎯 cíl <b>' + Math.min(S.streak.current, S.streak.goal) + ' / ' + S.streak.goal + '</b></span>' : '') +
     '</div>' +
     mailHomeHTML() + radioHomeHTML() + puzzleHomeHTML() + rewardLineHTML() +
+    (!DEMO && !S.parentSetup ? '<p class="center" style="margin:6px 0 0"><button class="linkBtn" onclick="screenParentLock()">👪 Rodiče: nastavte hru za dvě minuty</button></p>' : '') +
     '<p class="muted center hallHint">Každý den jedna celá hodina — dnešní vyučování, nebo 10 otázek v kterékoli učebně z Rozvrhu — a plamínek roste. Vynechaný den ho zhasne, ledový amulet ho ochrání.</p>' +
     syncHomeLine() + navHTML("sin");
   render(html);
@@ -3898,8 +3911,8 @@ function nodeHTML(t, i) {
   }
   var label = tp.subj === "hp" ? (tp.book > S.year ? tp.book + ". díl" : "Dějiny — zatím pár stránek")
     : tp.custom ? "Slovíčka ze školy" : "Zamčená učebna č. " + (i + 1);
-  var sub = tp.subj === "hp" ? (tp.book > S.year ? "otevře se v " + tp.book + ". ročníku" : "táta odškrtne dočtené kapitoly")
-    : tp.custom ? "táta sem napíše slovíčka" : "otevře se, až to proberete ve škole";
+  var sub = tp.subj === "hp" ? (tp.book > S.year ? "otevře se v " + tp.book + ". ročníku" : "rodič odškrtne dočtené kapitoly")
+    : tp.custom ? "rodič sem napíše slovíčka" : "otevře se, až to proberete ve škole";
   return '<button class="node locked" onclick="lockedNode()">' +
     '<span class="ni">' + svgLock(22) + '</span>' +
     '<span class="nt"><span class="nn">' + esc(label) + '</span>' +
@@ -5209,6 +5222,7 @@ function mergeStates(a, b) {
   var removed = {}; (m.wordsRemoved || []).concat(o.wordsRemoved || []).forEach(function (en) { removed[en] = true; });
   m.wordsRemoved = Object.keys(removed);
   m.sesit = !!(m.sesit || o.sesit);
+  if (!m.parentSetup && o.parentSetup) m.parentSetup = o.parentSetup;
   if (!m.wordsCleared || !o.wordsCleared) {
     var haveW = {}; (m.words || []).forEach(function (w) { haveW[w.en] = true; });
     (o.words || []).forEach(function (w) { if (!haveW[w.en] && !removed[w.en]) { m.words.push(w); haveW[w.en] = true; } });
@@ -6691,6 +6705,142 @@ function screenBadges() {
    RODIČOVSKÝ PANEL — zamčený dvouciferným násobením
    ===================================================================== */
 var parentLock = null;
+/* =====================================================================
+   PRŮVODCE NASTAVENÍM PRO RODIČE (21. 10. 2026): při prvním odemčení panelu u nové rodiny
+   (S.parentSetup prázdné) provede rodiče Harrym Potterem, školní látkou, slovíčky a účtem.
+   Každý krok se hned uloží, „Dokončím později“ nic neztratí. Znovu ho spustí rozcestník panelu.
+   ===================================================================== */
+var SETUP_PRESETS = {
+  zacatek:  { n: "Začátek 3. třídy", d: "sčítání a odčítání do 100, násobilka 2–5, tvrdé a měkké slabiky, abeceda", t: ["M1", "M2", "C1", "C2"] },
+  pololeti: { n: "Kolem pololetí", d: "navíc násobilka 6–10, dělení, párové souhlásky a vyjmenovaná slova po B, L a M", t: ["M1", "M2", "M3", "M4", "C1", "C2", "C3", "C4", "C5", "C6"] },
+  konec:    { n: "Konec 3. třídy", d: "všechna matematika a čeština 3. třídy", t: ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"] }
+};
+function setupSchoolTopics() { return TOPIC_ORDER.filter(function (t) { var j = TOPICS[t].subj; return j === "m" || j === "cj"; }); }
+function setupApplyPreset(k, st) {
+  st = st || S; var pr = SETUP_PRESETS[k]; if (!pr) return;
+  setupSchoolTopics().forEach(function (t) { st.unlocked[t] = pr.t.indexOf(t) !== -1; });
+}
+function setupPresetNow(st) {
+  st = st || S; var on = setupSchoolTopics().filter(function (t) { return st.unlocked[t]; }).sort().join(",");
+  for (var k in SETUP_PRESETS) if (SETUP_PRESETS[k].t.slice().sort().join(",") === on) return k;
+  return "";
+}
+/* Harry Potter: čteme díl y po kapitolu c (dřívější díly = dočtené), nebo zatím nečteme */
+function setupApplyHP(st, reads, y, c) {
+  if (!reads) { st.year = 1; st.chapters = { 1: 0 }; st.pendingYear = null; return; }
+  st.year = y; if (!st.chapters || typeof st.chapters !== "object") st.chapters = {};
+  for (var b = 1; b < y; b++) st.chapters[b] = YEARS[b].chapters;
+  st.chapters[y] = c; st.pendingYear = null;
+}
+/* uložení seznamu slovíček (panel i průvodce): smazaná slova se pamatují, aby je synchronizace nevrátila */
+function wordsApplyText(text) {
+  var parsed = parseWordList(text);
+  var nowEn = {}; parsed.forEach(function (w) { nowEn[w.en] = true; });
+  if (!Array.isArray(S.wordsRemoved)) S.wordsRemoved = [];
+  S.words.forEach(function (w) { if (!nowEn[w.en] && S.wordsRemoved.indexOf(w.en) === -1) S.wordsRemoved.push(w.en); });
+  S.wordsRemoved = S.wordsRemoved.filter(function (en) { return !nowEn[en]; });
+  S.words = parsed; S.wordsCleared = parsed.length === 0;
+  saveState();
+  return parsed;
+}
+var setupHP = null;
+function screenParentSetup(step) {
+  step = step || 0;
+  var N = 5, kid = S.name || "dítě";
+  var head = function (i, t) { return '<p class="muted center setupStep">Krok ' + i + ' z ' + N + '</p><div class="setupDots">' + [1, 2, 3, 4, 5].map(function (k) { return '<i' + (k <= i ? ' class="on"' : '') + '></i>'; }).join("") + '</div><h2 class="center">' + t + '</h2>'; };
+  var nav = function (next) { return '<div class="row2" style="margin-top:14px"><button class="btn secondary" id="suBack">← Zpět</button><button class="btn" id="suNext">' + (next || "Další →") + '</button></div>' +
+    '<p class="center" style="margin:8px 0 0"><button class="linkBtn" id="suLater">Dokončím později</button></p>'; };
+  var html = "";
+  if (step === 0) {
+    html = '<div class="bigIcon">' + svgLetter(90) + '</div><h2 class="center">Vítejte v Kouzelné škole</h2>' +
+      '<p class="qtext">Za dvě minuty hru nastavíte přesně pro vaše dítě: co spolu čtete, co se učí ve škole a jaká má slovíčka z angličtiny.</p>' +
+      '<p class="muted">Všechno jde později změnit tady v panelu. Panel je zamčený násobením, které dítě ve 3. třídě zpravidla ještě nevyřeší.</p>' +
+      '<label>Jméno dítěte</label><input type="text" id="suName" maxlength="20" value="' + esc(S.name || "") + '">' +
+      '<button class="btn gold" id="suNext" style="margin-top:12px">Začít nastavovat</button>' +
+      '<p class="center" style="margin:8px 0 0"><button class="linkBtn" id="suLater">Dokončím později</button></p>';
+  } else if (step === 1) {
+    if (setupHP === null) setupHP = S.parentSetup ? (S.year > 1 || chaptersRead(S, S.year) > 0) : null;
+    var yOpts = "", cOpts = "", yy = S.year || 1;
+    for (var y = 1; y <= 7; y++) yOpts += '<option value="' + y + '"' + (yy === y ? " selected" : "") + '>' + y + '. díl — ' + YEARS[y].title + '</option>';
+    for (var c = 0; c <= YEARS[yy].chapters; c++) cOpts += '<option value="' + c + '"' + (chaptersRead(S, yy) === c ? " selected" : "") + '>' + (c === 0 ? "teprve začínáme" : c === YEARS[yy].chapters ? "celý díl dočtený" : "dočtená " + c + ". kapitola") + '</option>';
+    html = head(1, "📚 Čtete spolu Harryho Pottera?") +
+      '<p class="muted">Učebna Dějin čar a kouzel se ptá jen na to, co už spolu máte přečtené. Nic dalšího se v otázkách, nápovědách ani špatných možnostech neobjeví.</p>' +
+      '<div class="setupChoice"><button class="setupOpt' + (setupHP === true ? " on" : "") + '" id="suHpYes"><b>Ano, čteme</b><span>vyberu díl a kapitolu</span></button>' +
+      '<button class="setupOpt' + (setupHP === false ? " on" : "") + '" id="suHpNo"><b>Zatím ne</b><span>otázky z knih počkají</span></button></div>' +
+      (setupHP ? '<label>Který díl čtete</label><select id="suYear" class="setupSel">' + yOpts + '</select><label>Kam jste dočetli</label><select id="suCh" class="setupSel">' + cOpts + '</select>' +
+        '<p class="muted" style="font-size:15px">Ročník ve hře odpovídá dílu knihy. Až díl dočtete, posuňte ročník v panelu (Čtení a učebny) a hra oslaví nový školní rok.</p>' : '') +
+      nav();
+  } else if (step === 2) {
+    var cur = setupPresetNow();
+    html = head(2, "🏫 Co už probrali ve škole?") +
+      '<p class="muted">Hra je pro 3. třídu. Vyberte, kde ve školním roce jste. Zamčené učebny dítě vidí jen jako zamčené, bez názvu, ať se těší.</p>' +
+      '<div class="setupChoice col">' + Object.keys(SETUP_PRESETS).map(function (k) { var pr = SETUP_PRESETS[k];
+        return '<button class="setupOpt' + (cur === k ? " on" : "") + '" data-preset="' + k + '"><b>' + pr.n + '</b><span>' + pr.d + '</span></button>'; }).join("") + '</div>' +
+      '<p class="muted" style="font-size:15px">' + (cur ? "" : "Teď máte vlastní výběr učeben. ") + 'Přesně po učebnách to jde nastavit v panelu (Čtení a učebny). Angličtina má zvlášť další krok.</p>' +
+      nav();
+  } else if (step === 3) {
+    html = head(3, "🪄 Slovíčka z angličtiny") +
+      '<p class="muted">Napište slovíčka, která se ' + esc(kid === "dítě" ? "dítě" : kid) + ' učí ve škole. Každé na vlastní řádek: anglicky, pomlčka, česky. Obrázek (emoji) na konci je nepovinný a přidá otázky s obrázky. Lekce oddělíte nadpisem <b># Unit 1</b>. Fungují i fráze.</p>' +
+      '<pre class="setupEx"># Unit 1\nowl - sova - 🦉\ncat - kočka - 🐱\nopen the door - otevři dveře</pre>' +
+      '<textarea class="words" id="suWords" placeholder="owl - sova - 🦉\ncat - kočka - 🐱">' + esc(wordsToText(S.words)) + '</textarea>' +
+      '<p class="muted" style="font-size:15px">Od 4 slov se otevře učebna Slovíčka ze školy. Hra slovo nejdřív učí poznávat, „umí“ ho, až ho ve dva různé dny zvládne z hlavy oběma směry (česky → anglicky i anglicky → česky). Výslovnost je britská. Bez slovíček ze školy se procvičují vestavěné okruhy (zvířata, věci kouzelníka).</p>' +
+      nav("Uložit a dál →") + '<p class="center" style="margin:4px 0 0"><button class="linkBtn" id="suSkip">Přeskočit, zadám později</button></p>';
+  } else if (step === 4) {
+    var u = ucetGet();
+    html = head(4, "☁️ Více zařízení a přehled v telefonu") +
+      '<p class="muted">Hraje se jen na tomto zařízení? Pak nic nepotřebujete, postup se ukládá tady. Chcete hrát i na tabletu, sledovat živý přehled v telefonu nebo přizvat druhého rodiče? Přihlaste se e-mailem. Heslo není potřeba, přijde vám kód.</p>' +
+      (DEMO ? '<div class="stavBox ne">V ukázce se přihlásit nejde.</div>'
+        : u ? '<div class="stavBox ok">' + svgCheck(16, "#1f6363") + ' Přihlášeno: <b>' + esc(u.email) + '</b></div>'
+        : '<button class="btn" id="suLogin">✉️ Přihlásit se e-mailem</button>') +
+      '<p class="muted" style="font-size:15px">Další rodiče pozvete a tablet připojíte v panelu (Zařízení a cloud → Rodina).</p>' +
+      nav(u ? "Dál →" : "Teď ne, dál →");
+  } else {
+    if (!S.parentSetup) S.parentSetup = todayStr();
+    saveState();
+    var pre = setupPresetNow(), wc = S.words.length;
+    html = '<div class="bigIcon">' + svgCheck(64, "#1f6363") + '</div><h2 class="center">Hotovo, hra je nastavená</h2>' +
+      '<ul class="ticks">' +
+      '<li><b>Harry Potter:</b> ' + (S.year === 1 && chaptersRead(S, 1) === 0 ? "zatím nic dočteného, otázky z knih počkají" : S.year + ". díl, " + (chaptersRead(S, S.year) ? "dočtená " + chaptersRead(S, S.year) + ". kapitola" : "teprve začínáte")) + '</li>' +
+      '<li><b>Škola:</b> ' + (pre ? SETUP_PRESETS[pre].n : "vlastní výběr učeben") + '</li>' +
+      '<li><b>Angličtina:</b> ' + (wc ? wc + " " + (wc === 1 ? "slovíčko" : wc < 5 ? "slovíčka" : "slovíček") + " ze školy" : "vestavěné okruhy, slovíčka ze školy můžete přidat kdykoli") + '</li>' +
+      '<li><b>Zařízení:</b> ' + (ucetGet() ? "přihlášeno e-mailem" : "jen toto zařízení") + '</li></ul>' +
+      '<h3>Kde co v panelu najdete</h3><ul class="ticks setupMap">' +
+      '<li><b>📅 Přehled:</b> posledních 7 dní, úspěšnost a chyby.</li>' +
+      '<li><b>📖 Čtení a učebny:</b> díl a kapitola, odemykání učeben podle školy.</li>' +
+      '<li><b>🪄 Slovíčka ze školy:</b> seznam slovíček a co opravdu umí.</li>' +
+      '<li><b>☁️ Zařízení a cloud:</b> přihlášení, rodina, tablet, doporučení kamarádům.</li>' +
+      '<li><b>🎁 Odměna a soví pošta:</b> společný cíl a dopisy od rodiny.</li></ul>' +
+      '<div class="row2"><button class="btn secondary" onclick="screenParent()">Do panelu</button><button class="btn gold" onclick="routeHome()">Zpět do hry</button></div>';
+  }
+  render(topbarHTML() + '<div class="card setupCard">' + html + '</div>');
+  var go = function (k) { screenParentSetup(k); if (W.scrollTo) W.scrollTo(0, 0); };
+  var on = function (id, fn) { var x = el(id); if (x) x.onclick = fn; };
+  on("suLater", function () { setupHP = null; screenParent(); });
+  on("suBack", function () { go(step - 1); });
+  if (step === 0) on("suNext", function () { var n = el("suName").value.replace(/\s+/g, " ").trim(); if (n) S.name = n; saveState(); go(1); });
+  if (step === 1) {
+    on("suHpYes", function () { setupHP = true; if (S.year === 1 && !chaptersRead(S, 1)) S.chapters[1] = 0; go(1); });
+    on("suHpNo", function () { setupHP = false; go(1); });
+    var ys = el("suYear"); if (ys) ys.onchange = function () { var y = parseInt(ys.value, 10); S.year = y; if (typeof S.chapters[y] !== "number") S.chapters[y] = 0; go(1); };
+    on("suNext", function () {
+      if (setupHP === null) { var o = document.querySelector(".setupChoice"); if (o) o.classList.add("shake"); return; }
+      if (setupHP) setupApplyHP(S, true, parseInt(el("suYear").value, 10), parseInt(el("suCh").value, 10)); else setupApplyHP(S, false);
+      saveState(); go(2);
+    });
+  }
+  if (step === 2) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-preset]"), function (b) { b.onclick = function () { setupApplyPreset(b.getAttribute("data-preset")); saveState(); go(2); }; });
+    on("suNext", function () { go(3); });
+  }
+  if (step === 3) {
+    on("suNext", function () { wordsApplyText(el("suWords").value); go(4); });
+    on("suSkip", function () { go(4); });
+  }
+  if (step === 4) {
+    on("suLogin", function () { screenLogin({ back: function () { screenParentSetup(4); }, done: function () { screenParentSetup(4); } }); });
+    on("suNext", function () { go(5); });
+  }
+}
 function screenParentLock() {
   var a = rnd(12, 19), b = rnd(3, 9);
   parentLock = a * b;
@@ -6701,7 +6851,7 @@ function screenParentLock() {
     '<button class="btn" id="lockBtn">Odemknout</button>' +
     '<button class="btn secondary" onclick="routeHome()">Zpět do hry</button></div>');
   el("lockBtn").onclick = function () {
-    if (parseInt(el("lockInput").value, 10) === parentLock) screenParent();
+    if (parseInt(el("lockInput").value, 10) === parentLock) { if (!S.parentSetup && !DEMO) screenParentSetup(0); else screenParent(); }
     else { el("lockInput").value = ""; el("lockInput").placeholder = "Zkuste to znovu"; }
   };
   el("lockInput").onkeydown = function (ev) { if (ev.key === "Enter") el("lockBtn").click(); };
@@ -6719,9 +6869,9 @@ var PARENT_SECTIONS = {
   cteni:     { e: "📖", n: "Čtení a učebny",    sub: "ročník, kapitola, co už probrali" },
   slovicka:  { e: "🪄", n: "Slovíčka ze školy", sub: "seznam, okruhy, co opravdu umí" },
   hlas:      { e: "🔊", n: "Hlas a zvuky",      sub: "výslovnost, hlášky, zvuky" },
-  zarizeni:  { e: "☁️", n: "Zařízení a cloud",  sub: "registrace, obrázky" },
+  zarizeni:  { e: "☁️", n: "Zařízení a cloud",  sub: "přihlášení, rodina, tablet, obrázky" },
   odmeny:    { e: "🎁", n: "Odměna a soví pošta", sub: "cíl domluvený s dítětem, dopisy od rodiny" },
-  studentka: { e: "🧙", n: "Studentka a záloha", sub: "jméno, kolej, záloha, reset" }
+  studentka: { e: "🧙", n: "Dítě a záloha", sub: "jméno, kolej, záloha, reset" }
 };
 function screenParent(section) {
   parentSection = section || null;
@@ -6737,7 +6887,7 @@ function screenParent(section) {
       cteni: yearLabel(S.year) + " · po " + chaptersRead(S, S.year) + ". kapitolu · " + unlockedTopics(S).length + " učeben",
       slovicka: S.words.length + " slov ze školy · 🌟 " + dc[2] + " z hlavy",
       hlas: (ttsProxyOk() ? "hlas ze serveru ✓" : ttsCfg().key ? "přímý klíč ✓" : "vestavěný hlas") + " · hlášky " + (mluveniOn() ? "zap." : "vyp.") + " · zvuky " + (sfxOn() ? "zap." : "vyp."),
-      zarizeni: syncOn() ? "zaregistrováno ✓ · " + (syncSt.last ? "sync " + syncWhen(syncSt.last) : "zatím nesynchronizováno") : "⚠️ nezaregistrováno",
+      zarizeni: (ucetOn() ? "přihlášeno ✓" : syncOn() ? "připojeno rodinným kódem ✓" : "⚠️ jen toto zařízení") + (syncOn() ? " · " + (syncSt.last ? "sync " + syncWhen(syncSt.last) : "zatím nesynchronizováno") : ""),
       odmeny: (function () { var o = S.rewards.filter(function (r) { return r.status === "open"; }).length, c = S.rewards.filter(function (r) { return r.status === "claimed"; }).length; return c ? "🎁 " + c + " k vyřízení!" : o ? o + " " + (o === 1 ? "aktivní odměna" : "aktivní odměny") : "zatím žádná"; })(),
       studentka: esc(S.name || "bez jména") + (S.house ? " · " + esc(HOUSES[S.house].n) : "")
     };
@@ -6746,7 +6896,8 @@ function screenParent(section) {
       return '<button class="menuBtn t' + ((i % 4) + 1) + '" onclick="screenParent(\'' + k + '\')"><span class="pe">' + sdef.e + '</span><b>' + sdef.n + '</b><span class="sub">' + subs[k] + '</span></button>';
     }).join("");
     render(topbarHTML() + '<div class="card"><h2 class="center">' + svgLock(22) + ' Pro rodiče</h2>' +
-      '<p class="muted center">Vyberte, co chcete nastavit nebo prohlédnout.</p>' +
+      '<p class="muted center">Tady hru přizpůsobíte dítěti: co spolu čtete, co se učí ve škole a jaká má slovíčka z angličtiny. Vyberte, co chcete nastavit nebo prohlédnout.</p>' +
+      '<button class="btn secondary" onclick="screenParentSetup(0)">🧭 Průvodce nastavením' + (S.parentSetup ? '' : ' (nedokončený)') + '</button>' +
       '<div class="subjectGrid parentGrid">' + tiles + '</div>' +
       '<button class="btn" onclick="routeHome()">Zpět do hry</button>' +
       '<p class="muted center" style="font-size:13px">Verze hry ' + GAME_VERSION + ' · ' + (typeof location !== "undefined" && /^https?:/.test(location.protocol) ? "web" : "soubor") + '</p></div>');
@@ -6814,7 +6965,7 @@ function screenParent(section) {
       '<div><label>Dočtená kapitola ' + S.year + '. dílu</label><select id="pChapter">' + chOpts + '</select></div></div>' +
       '<p class="muted">Otázek k ' + S.year + '. dílu je připraveno ' + hpCount + ' z ' + hpTotal + ' napsaných' + (hpTotal === 0 ? ' — k tomuto dílu zatím žádné nejsou, požádejte o balíček.' : '.') + ' Učebna dílu se otevře, jakmile jsou dostupné aspoň 3 otázky.</p>' +
       '<h3>Co už jste probrali ve škole</h3>' +
-      '<p class="muted">Zaškrtnutá učebna se odemkne: objeví se v rozvrhu a v denním vyučování. Zamčené učebny dcera vidí jen jako zamčené dveře — bez názvu, ať se těší. Odemykejte, až látku ve škole opravdu proberou: jedna příliš těžká otázka umí zkazit celou hru.</p>' +
+      '<p class="muted">Zaškrtnutá učebna se odemkne: objeví se v rozvrhu a v denním vyučování. Zamčené učebny dítě vidí jen jako zamčené dveře — bez názvu, ať se těší. Odemykejte, až látku ve škole opravdu proberou: jedna příliš těžká otázka umí zkazit celou hru.</p>' +
       '<h3 style="font-size:17px">' + svgQuill(17) + ' Čeština (Psaní brkem)</h3>' + cjT.map(unlockRow).join("") +
       '<h3 style="font-size:17px">' + svgCauldron(17) + ' Matematika (Lektvary)</h3>' + mT.map(unlockRow).join("") +
       '<h3>🧠 Počítání z hlavy (bonus)</h3>' +
@@ -6827,7 +6978,7 @@ function screenParent(section) {
   if (section === "slovicka") {
     body =
       '<h3>' + svgWand(18) + ' Slovíčka ze školy (Kouzelné formule)</h3>' +
-      '<p class="muted">Napište slova, která se má dcera právě naučit — každé na vlastní řádek jako <b>owl - sova</b> (oddělovač může být také =, : nebo čárka; volitelně třetí položka emoji: <b>owl - sova - 🦉</b>). Fráze a věty jsou v pořádku (<b>open the door - otevři dveře</b>) — krátké se píšou, dlouhé skládají ze slov. Lekce oddělujte řádkem <b># Unit 3</b> — nejnovější lekce se procvičuje nejčastěji (a v denním vyučování třikrát, dokud ji dcera neumí z hlavy). Druhý anglický tvar do závorky: <b>rubber (eraser) - guma</b>. ' +
+      '<p class="muted">Napište slova, která se má dítě právě naučit — každé na vlastní řádek jako <b>owl - sova</b> (oddělovač může být také =, : nebo čárka; volitelně třetí položka emoji: <b>owl - sova - 🦉</b>). Fráze a věty jsou v pořádku (<b>open the door - otevři dveře</b>) — krátké se píšou, dlouhé skládají ze slov. Lekce oddělujte řádkem <b># Unit 3</b> — nejnovější lekce se procvičuje nejčastěji (a v denním vyučování třikrát, dokud ji dítě neumí z hlavy). Druhý anglický tvar do závorky: <b>rubber (eraser) - guma</b>. ' +
       'Hra je procvičuje hlavně psaním: výběr správně napsaného slova mezi překlepy, doplnění písmene, skládání z písmenek a psaní na klávesnici. Při aspoň 4 slovech se otevře učebna „Slovíčka ze školy“ a v každém denním vyučování se objeví nejmíň dvakrát.</p>' +
       '<textarea class="words" id="pWords" placeholder="owl - sova\ncat - kočka\nbook - kniha">' + esc(wordsToText(S.words)) + '</textarea>' +
       '<button class="btn small" id="saveWords">Uložit slovíčka</button> <span class="muted" id="wordsMsg">Aktuálně: ' + S.words.length + ' slov.</span>' +
@@ -6981,7 +7132,7 @@ function screenParent(section) {
     if (typeof S.chapters[ny] !== "number") S.chapters[ny] = 0;
     saveState();
     reopen("cteni");
-    msg("parentMsg", "Ročník nastaven na " + ny + ". Dcera při návratu do Velké síně uvidí oslavu nového školního roku.");
+    msg("parentMsg", "Ročník nastaven na " + ny + ". Dítě při návratu do Velké síně uvidí oslavu nového školního roku.");
   });
   on("pChapter", "onchange", function () {
     S.chapters[S.year] = parseInt(el("pChapter").value, 10);
@@ -7000,13 +7151,7 @@ function screenParent(section) {
 
   /* slovíčka */
   on("saveWords", "onclick", function () {
-    var parsed = parseWordList(el("pWords").value);
-    var nowEn = {}; parsed.forEach(function (w) { nowEn[w.en] = true; });
-    if (!Array.isArray(S.wordsRemoved)) S.wordsRemoved = [];
-    S.words.forEach(function (w) { if (!nowEn[w.en] && S.wordsRemoved.indexOf(w.en) === -1) S.wordsRemoved.push(w.en); });
-    S.wordsRemoved = S.wordsRemoved.filter(function (en) { return !nowEn[en]; });
-    S.words = parsed; S.wordsCleared = parsed.length === 0;
-    saveState();
+    var parsed = wordsApplyText(el("pWords").value);
     el("pWords").value = wordsToText(parsed);
     msg("wordsMsg", "Uloženo: " + parsed.length + " slov" + (parsed.length < 4 ? " (učebna se otevře od 4 slov)." : "."));
   });
@@ -7218,6 +7363,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
+  setupApplyPreset: setupApplyPreset, setupApplyHP: setupApplyHP, setupPresetNow: setupPresetNow, SETUP_PRESETS: SETUP_PRESETS,
   ucetFromHash: ucetFromHash, ucetDecide: ucetDecide, ucetEmailOk: ucetEmailOk, ucetEmailNorm: ucetEmailNorm, jwtEmail: jwtEmail, UCET_KEY: UCET_KEY,
   SAVE_KEY: SAVE_KEY, SAVE_VERSION: SAVE_VERSION, OLD_KEYS: OLD_KEYS,
   TOPICS: TOPICS, TOPIC_ORDER: TOPIC_ORDER, DEFAULT_UNLOCKED: DEFAULT_UNLOCKED, YEARS: YEARS,
@@ -7546,6 +7692,7 @@ function demoState(name) {
   var s = migrate({});
   var today = todayStr();
   s.name = name || "Bára";
+  s.parentSetup = "ukázka";
   s.sesit = true; s.words = cloneObj(SCHOOL_WORDS_DEFAULT); s.unitsShipped = SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; });   /* ukázka předvede i Slovíčka ze školy */ s.house = HOUSE_KEYS[Math.floor(Math.random() * 4)]; s.since = addDays(today, -20);
   s.dust = 640; s.dustEarned = 980; s.questsDone = 12; s.perfectQuests = 4;
   s.owned = ["pet_sova", "acc_masle", "hat_klobouk", "dec_teleskop", "dec_globus", "dec_mapa", "dec_knihy", "dec_svicky"];
