@@ -858,7 +858,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-21b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-21c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3480,7 +3480,7 @@ function screenWelcome(note) {
     '<div class="bigIcon" id="welcomeArt">' + svgLetter(130) + '</div>' +
     '<h1>Bradavická škola</h1>' +
     '<p class="introFlavor">Na okenní římse přistála sova.<br>' +
-    'V zobáku nese dopis s voskovou pečetí:</p>' +
+    'V zobáku nese dopis s voskovou pečetí.</p>' +
     '<p class="qtext">„Milá studentko,<br>s potěšením Ti oznamujeme, že jsi přijata do Školy čar a kouzel v Bradavicích. ' +
     'Moudrý klobouk už na Tebe čeká.“</p>' +
     '<p class="muted">Jak se jmenuješ?</p>' +
@@ -4825,7 +4825,24 @@ function ttsPublicFetch(text, voice) {
     return fetch(syncCfg().url + "/storage/v1/object/public/hlas/" + voice + "/" + hex + ".mp3");
   }).then(function (r) { if (!r.ok) throw new Error("není"); return r.blob(); });
 }
+/* Věta bez jména dítěte: „Výborně, Emo! Deset bodů…“ → „Výborně! Deset bodů…“. Ukázka s vlastním jménem
+   tak přehraje předem namluvené věty (design/ukazka-hlas.mjs je nahrává i bez oslovení). */
+function ttsStripName(t, name) {
+  var out = String(t || "");
+  if (!name) return out;
+  [vok(name), name].filter(function (f, i, a) { return f && a.indexOf(f) === i; }).sort(function (a, b) { return b.length - a.length; }).forEach(function (f) {
+    var e = f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), end = "(?=[\\s!?.,…:;“”]|$)";
+    out = out.replace(new RegExp(",\\s*" + e + end, "g"), "")
+      .replace(new RegExp("(^|[.!?…]\\s+)" + e + ",\\s*(\\S)", "g"), function (m, a, c) { return a + c.toUpperCase(); })
+      .replace(new RegExp("(^|\\s)" + e + end, "g"), "$1");
+  });
+  return out.replace(/\s{2,}/g, " ").replace(/\s+([!?.,…])/g, "$1").trim();
+}
 function ttsSay(word, cfgOverride, lang, voiceForce) {
+  if (DEMO && lang === "cs" && S && S.name && S.name !== "Bára") {
+    word = ttsStripName(word, S.name);
+    if (!word || word.charAt(0) !== word.charAt(0).toUpperCase()) return Promise.resolve();   /* jméno uprostřed věty: raději ticho */
+  }
   var cfg = cfgOverride || ttsCfg();
   /* angličtina: Alice (nebo zvolený hlas); čeština: český hlas z panelu, jinak tentýž hlas; voiceForce = hlas postavy */
   var voice = voiceForce || (lang === "cs" ? (cfg.voiceCs || TTS_DEFAULT_VOICE_CS || cfg.voice || TTS_DEFAULT_VOICE) : (cfg.voice || TTS_DEFAULT_VOICE));
@@ -7509,10 +7526,10 @@ function screenJoinCode() {
   };
 }
 /* ukázková studentka: týden plamínku, pár věcí z obchodu, hvězdy v učebnách, odměna od rodičů */
-function demoState() {
+function demoState(name) {
   var s = migrate({});
   var today = todayStr();
-  s.name = "Bára"; s.house = HOUSE_KEYS[Math.floor(Math.random() * 4)]; s.since = addDays(today, -20);
+  s.name = name || "Bára"; s.house = HOUSE_KEYS[Math.floor(Math.random() * 4)]; s.since = addDays(today, -20);
   s.dust = 640; s.dustEarned = 980; s.questsDone = 12; s.perfectQuests = 4;
   s.owned = ["pet_sova", "acc_masle", "hat_klobouk", "dec_teleskop", "dec_globus", "dec_mapa", "dec_knihy", "dec_svicky"];
   s.equipped = { pet: "pet_sova", hat: "hat_klobouk", petAcc: "acc_masle" };
@@ -7525,15 +7542,29 @@ function demoState() {
   s.tutorialDone = false;   /* návštěvu provede sova */
   return s;
 }
-function startDemo() {
-  DEMO = true; S = demoState(); session = null;
+/* Ukázka se nejdřív zeptá na jméno dítěte (21. 10. 2026: rodiče kamarádky viděli jen „Báru“). */
+function startDemo(name) {
+  if (typeof name !== "string") { screenDemoName(); return; }
+  DEMO = true; S = demoState(name.trim()); session = null;
   applyHouseColors(); sfx("pop");
   screenHome();
+}
+function screenDemoName() {
+  render('<div class="card center"><div class="bigIcon">' + svgLetter(100) + '</div><h2>Vyzkoušejte Bradavice</h2>' +
+    '<p class="qtext">Jak se jmenuje dítě, které bude hrát? Profesoři ho budou oslovovat jménem.</p>' +
+    '<input type="text" id="dmName" maxlength="20" placeholder="Jméno dítěte" autocomplete="off">' +
+    '<button class="btn gold" id="dmGo">✨ Spustit ukázku</button>' +
+    '<p class="muted" style="font-size:14px">Ukázka má hotový postup jako po pár týdnech hraní. Nic se neuloží ani nepošle.</p>' +
+    '<p class="muted" style="font-size:14px;margin:0"><button class="linkBtn" id="dmSkip">Přeskočit (ukázková studentka Bára)</button></p></div>');
+  var go = function () { startDemo(el("dmName").value.replace(/\s+/g, " ").trim()); };
+  el("dmGo").onclick = go;
+  el("dmName").onkeydown = function (e) { if (e.key === "Enter") go(); };
+  el("dmSkip").onclick = function () { startDemo(""); };
 }
 function demoEnd() { DEMO = false; S = loadState(); session = null; applyHouseColors(); routeHome(); }
 function screenDemoInfo() {
   render(topbarHTML() + '<div class="card center"><div class="bigIcon">👀</div><h2>Tohle je ukázka</h2>' +
-    '<p class="qtext">Hraješ za ukázkovou studentku. Můžeš zkusit všechno: vyučování, Rozvrh s mapou hradu, Příčnou ulici, ložnici i panel pro rodiče.</p>' +
+    '<p class="qtext">Hraješ ukázku s hotovým postupem. Můžeš zkusit všechno: vyučování, Rozvrh s mapou hradu, Příčnou ulici, ložnici i panel pro rodiče.</p>' +
     '<p class="muted">Nic se neukládá a nic se neposílá na server. Po zavření nebo obnovení stránky ukázka zmizí.</p>' +
     '<button class="btn gold" onclick="demoEnd()">✨ Založit vlastní profil</button><button class="btn secondary" onclick="tutStart()">🦉 Provést hrou se sovou</button><button class="btn secondary" onclick="screenHome()">Pokračovat v ukázce</button></div>' + navHTML("ja"));
 }
