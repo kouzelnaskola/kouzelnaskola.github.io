@@ -858,7 +858,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-21c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-21d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2638,8 +2638,9 @@ function defaultState() {
     house: null,
     year: DEFAULT_YEAR,
     chapters: cloneObj(DEFAULT_CHAPTERS),
-    words: cloneObj(SCHOOL_WORDS_DEFAULT),
-    unitsShipped: SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; }),
+    words: [],          /* slovíčka ze školy zadává rodič; lekce ze sešitu (SCHOOL_UNITS_SHIPPED) dostává jen rodina se sesit = true */
+    unitsShipped: [],
+    sesit: false,       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
     wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
     dustEarned: 0,
@@ -2687,6 +2688,8 @@ function migrate(s) {
   var d = defaultState();
   /* hra uložená před zavedením lekcí: měla jen Unit 1 (dřívější výchozí seznam) */
   if (!Array.isArray(s.unitsShipped) && Array.isArray(s.words)) s.unitsShipped = ["Unit 1"];
+  /* hra uložená před 21. 10. 2026 = Karolinčina rodina: lekce ze sešitu dostává dál */
+  if (typeof s.sesit !== "boolean") s.sesit = Array.isArray(s.words) || Array.isArray(s.unitsShipped);
   if (s.version < 3) {
     /* Z Akademie: řád se na kolej nepřevádí (Moudrý klobouk je zážitek, projde
        jím znovu), ale hvězdný prach → galeony, plamínek, statistiky, odznaky
@@ -2705,13 +2708,13 @@ function migrate(s) {
   for (var e in d.equipped) if (!(e in s.equipped)) s.equipped[e] = d.equipped[e];
   if (!s.chapters || typeof s.chapters !== "object") s.chapters = cloneObj(DEFAULT_CHAPTERS);
   if (!Array.isArray(s.words)) s.words = [];
-  if (!s.words.length && !s.wordsCleared) { s.words = cloneObj(SCHOOL_WORDS_DEFAULT); s.unitsShipped = SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; }); }
+  if (s.sesit && !s.words.length && !s.wordsCleared) { s.words = cloneObj(SCHOOL_WORDS_DEFAULT); s.unitsShipped = SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; }); }
   /* lekce ze sešitu: doplnit každé slovo, které chybí a táta ho nesmazal (S.wordsRemoved);
      starým slovům doplnit číslo lekce. Nezávisí na unitsShipped — starší verze hry ho mohla
      přenést synchronizací bez slov (8. 10. 2026). Smazání všeho (wordsCleared) se respektuje. */
   if (!Array.isArray(s.unitsShipped)) s.unitsShipped = [];
   if (!Array.isArray(s.wordsRemoved)) s.wordsRemoved = [];
-  SCHOOL_UNITS_SHIPPED.forEach(function (u) {
+  if (s.sesit) SCHOOL_UNITS_SHIPPED.forEach(function (u) {
     var have = {}; s.words.forEach(function (w) { have[w.en] = w; });
     u.words.forEach(function (w) { var x = have[w.en]; if (x && !x.b) { x.b = w.b; x.bl = w.bl; if (w.alt && !x.alt) x.alt = w.alt; } });
     if (!s.wordsCleared) u.words.forEach(function (w) { if (!have[w.en] && s.wordsRemoved.indexOf(w.en) === -1) s.words.push(cloneObj(w)); });
@@ -5205,6 +5208,7 @@ function mergeStates(a, b) {
   /* slova: sjednocení obou zařízení (jinak by starší verze hry mohla slova „ztratit“), bez slov smazaných tátou */
   var removed = {}; (m.wordsRemoved || []).concat(o.wordsRemoved || []).forEach(function (en) { removed[en] = true; });
   m.wordsRemoved = Object.keys(removed);
+  m.sesit = !!(m.sesit || o.sesit);
   if (!m.wordsCleared || !o.wordsCleared) {
     var haveW = {}; (m.words || []).forEach(function (w) { haveW[w.en] = true; });
     (o.words || []).forEach(function (w) { if (!haveW[w.en] && !removed[w.en]) { m.words.push(w); haveW[w.en] = true; } });
@@ -7446,7 +7450,18 @@ function famSectionHTML() {
     (u ? '<div class="stavBox ok">' + svgCheck(16, "#1f6363") + ' Přihlášeno: <b>' + esc(u.email) + '</b></div><div id="famBox"><p class="muted">Načítám rodinu…</p></div>'
        : '<p class="muted">Přihlaste se svým e-mailem. Postup se uloží pod vaši rodinu, další rodiče pozvete e-mailem a tablet dítěte připojíte šesti číslicemi. Heslo není potřeba.</p>' +
          '<button class="btn small" id="famLogin">✉️ Přihlásit se e-mailem</button>') +
-    '<p class="muted" id="famMsg"></p>';
+    '<p class="muted" id="famMsg"></p>' +
+    '<h3 style="font-size:17px">💌 Doporučit kamarádům</h3><p class="muted">Pošlete odkaz rodičům spolužáků: otevře se stránka pro rodiče s ukázkou hry. Ve zprávě se ukáže obrázek se sovou.</p>' +
+    '<button class="btn small" id="famShare">Doporučit hru…</button> <span class="muted" id="shareMsg"></span>';
+}
+/* Doporučení: sdílení iPhonu/iPadu (Zprávy, WhatsApp, e-mail), jinak zkopírovat text s odkazem */
+function shareGame() {
+  var url = GAME_URL + "pro-rodice.html";
+  var text = "Doma se učíme s Kouzelnou školou: deset minut denně matematika, čeština a angličtina jako škola čar a kouzel. Je zdarma a bez reklam, ukázku zkusíte bez registrace.";
+  if (typeof navigator !== "undefined" && navigator.share) { navigator.share({ title: "Kouzelná škola", text: text, url: url }).catch(function () {}); return; }
+  var all = text + " " + url;
+  var done = function () { ucetMsg("shareMsg", "Text s odkazem je zkopírovaný, vložte ho do zprávy nebo e-mailu."); };
+  try { navigator.clipboard.writeText(all).then(done, function () { ucetMsg("shareMsg", all); }); } catch (e) { ucetMsg("shareMsg", all); }
 }
 function famBoxHTML(r) {
   if (!r) return '<p class="muted">K tomuto e-mailu zatím žádná rodina nepatří.</p><button class="btn small" id="famCreate">Uložit postup tohoto zařízení pod můj e-mail</button> <button class="btn small secondary" id="famLogout">Odhlásit</button>';
@@ -7467,6 +7482,7 @@ function famBoxHTML(r) {
 }
 function famWire() {
   var back = function () { screenParent("zarizeni"); };
+  var sh = el("famShare"); if (sh) sh.onclick = shareGame;
   var lg = el("famLogin"); if (lg) lg.onclick = function () { screenLogin({ back: back, done: ucetBackToPanel }); };
   var box = el("famBox"); if (!box) return;
   ucetRpc("moje_rodina", {}).then(function (r) {
@@ -7529,7 +7545,8 @@ function screenJoinCode() {
 function demoState(name) {
   var s = migrate({});
   var today = todayStr();
-  s.name = name || "Bára"; s.house = HOUSE_KEYS[Math.floor(Math.random() * 4)]; s.since = addDays(today, -20);
+  s.name = name || "Bára";
+  s.sesit = true; s.words = cloneObj(SCHOOL_WORDS_DEFAULT); s.unitsShipped = SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; });   /* ukázka předvede i Slovíčka ze školy */ s.house = HOUSE_KEYS[Math.floor(Math.random() * 4)]; s.since = addDays(today, -20);
   s.dust = 640; s.dustEarned = 980; s.questsDone = 12; s.perfectQuests = 4;
   s.owned = ["pet_sova", "acc_masle", "hat_klobouk", "dec_teleskop", "dec_globus", "dec_mapa", "dec_knihy", "dec_svicky"];
   s.equipped = { pet: "pet_sova", hat: "hat_klobouk", petAcc: "acc_masle" };
