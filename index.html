@@ -858,7 +858,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-21a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-21b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2659,7 +2659,7 @@ function defaultState() {
     birthday: "",     /* narozeniny "MM-DD" (rodič v panelu), oslava ve Velké síni */
     puzzle: null,     /* hlavolam týdne: { w, solved, tries } */
     radioHeard: 0,    /* týden (weekNo), kdy už slyšela Bradavický rozhlas */
-    teachDay: "",     /* den, kdy už dostala galeony za „Zkoušej tátu“ */
+    teachDay: "",     /* nepoužívá se: „Zkoušej tátu“ odebráno 21. 10. 2026 (táta), pole zůstává kvůli starým zálohám */
     live: null,       /* živě pro přehled rodičů: { at, active, mode, topic, i, n, ok } */
     lessonLog: [],    /* dokončené hodiny: [{ d, t, mode, topic, n, ok, dust }] (posledních 60) */
     bdayYear: 0,      /* rok, kdy už byl narozeninový dárek */
@@ -4404,51 +4404,6 @@ function micWire(lang, accept, onOk) {
   };
 }
 
-/* =====================================================================
-   ZKOUŠEJ TÁTU (Lenny's: Mark Pincus — tvořit, ne jen spotřebovávat): dítě v roli učitelky položí rodiči
-   5 otázek z toho, co samo umí (násobilka, vyjmenovaná slova, slovíčka). Rodič klepne, dítě vidí, jestli má
-   pravdu, a může mu to vysvětlit. Za učení jednou denně 5 galeonů.
-   ===================================================================== */
-function teachItems() {
-  var out = [], fx = Object.keys(S.factLv || {}).filter(function (k) { return S.factLv[k].l >= 1; });
-  shuffle(fx).slice(0, 3).forEach(function (k) {
-    if (/^\d+x\d+$/.test(k)) { var ab = k.split("x").map(Number), ans = ab[0] * ab[1]; out.push({ q: "Kolik je " + ab[0] + " × " + ab[1] + "?", o: shuffle(numOptions(ans, [ab[0], -ab[0], ab[1], -ab[1]])), c: ans }); }
-    else { var id = k.slice(2), bq = null; VYJ_TOPICS.forEach(function (t) { BANKS[t].forEach(function (q) { if (q.id === id) bq = q; }); });
-      if (bq) out.push({ q: bq.q, o: shuffle(bq.o), c: bq.o[0] }); }
-  });
-  var ws = Object.keys(S.wordLv || {}).filter(function (k) { return S.wordLv[k].l >= 1; }), all = allVocab(S);
-  shuffle(ws).slice(0, 3).forEach(function (en) { var w = all.filter(function (x) { return x.en === en; })[0]; if (!w) return; var m = vocabMeaningQ(w, all, all); out.push({ q: "Co znamená anglicky „" + en + "“?", o: m.opts, c: m.correct }); });
-  if (out.length < 5) unlockedTopics(S).filter(function (t) { return GENS[t]; }).forEach(function (t) { if (out.length < 5) { var g = GENS[t](S); out.push({ q: g.q, o: shuffle(g.opts), c: g.correct }); } });
-  return shuffle(out).slice(0, 5);
-}
-function screenTeach() {
-  var items = teachItems(), i = 0, ok = 0;
-  if (!items.length) { render(topbarHTML() + '<div class="card center"><h2>🎓 Zkoušej tátu</h2><p class="qtext">Nejdřív se něco nauč ve vyučování, pak budeš zkoušet ty!</p><button class="btn" onclick="screenProfile()">Zpět</button></div>' + navHTML("ja")); return; }
-  var show = function () {
-    if (i >= items.length) {
-      var reward = S.teachDay !== todayStr(); if (reward) { S.teachDay = todayStr(); giveDust(5); saveState(); }
-      render(topbarHTML() + '<div class="card center celebrate"><div class="bigIcon">🎓</div><h2>Zkoušení skončilo</h2><p class="qtext">Táta zvládl <b>' + ok + ' z ' + items.length + '</b>.</p>' +
-        '<p class="muted">' + (ok === items.length ? "Výborný student! Dej mu jedničku." : "Příště se mu to povede, když mu to vysvětlíš.") + '</p>' +
-        (reward ? '<p class="qtext">+5 ' + svgCoin(18) + ' galeonů za to, že jsi dnes učila ty!</p>' : '') +
-        '<button class="btn gold" onclick="screenProfile()">Hotovo</button></div>' + navHTML("ja"));
-      confettiRain(null, 30); sfx("fanfare"); return;
-    }
-    var it = items[i];
-    render(topbarHTML() + '<div class="card"><p class="progress">🎓 Zkoušíš tátu · otázka ' + (i + 1) + ' z ' + items.length + '</p>' +
-      '<p class="qtext">' + esc(it.q) + '</p><p class="muted">Podej tátovi tablet a ať odpoví.</p>' +
-      it.o.map(function (o, k) { return '<button class="opt" data-ti="' + k + '">' + esc(String(o)) + '</button>'; }).join("") + '<div id="teachFb"></div></div>' + navHTML("ja"));
-    Array.prototype.forEach.call(document.querySelectorAll("[data-ti]"), function (b) {
-      b.onclick = function () {
-        var pickV = it.o[+b.getAttribute("data-ti")], good = String(pickV) === String(it.c);
-        Array.prototype.forEach.call(document.querySelectorAll("[data-ti]"), function (x) { x.disabled = true; if (String(it.o[+x.getAttribute("data-ti")]) === String(it.c)) x.classList.add("correct"); });
-        if (good) { ok++; sfx("ok"); } else { b.classList.add("wrong"); sfx("bad"); }
-        el("teachFb").innerHTML = '<div class="feedback ' + (good ? "ok" : "bad") + '">' + (good ? "Táta má pravdu! 👏" : "Táta se spletl! Správně je <b>" + esc(String(it.c)) + "</b>. Vysvětli mu to.") + '</div><button class="btn" id="teachNext">Další otázka</button>';
-        el("teachNext").onclick = function () { i++; show(); };
-      };
-    });
-  };
-  show();
-}
 /* CO JI DNES ROZZÁŘILO (Lenny's: Josh Woodward, „metrika jsou oči“): jedno klepnutí rodiče po hodině,
    přehled za 14 dní ukáže, co dítě opravdu baví a co se dá zrušit. S.joy = [{ d, k }], nejvýš 60 záznamů. */
 var JOY = [["hodina", "📚 Vyučování"], ["hagrid", "🧔 Postavy a hlasy"], ["sova", "🦉 Sova"], ["obchod", "🛍️ Příčná ulice"], ["loznice", "🛏️ Ložnice"], ["mapa", "🗺️ Mapa hradu"], ["slovicka", "✨ Slovíčka"], ["nic", "😐 Nic zvláštního"]];
@@ -4560,7 +4515,6 @@ function screenProfile() {
     '</div>' +
     '<p class="muted center" style="margin-top:12px">Průkaz je jako fotka — ukaž ho, komu chceš!</p>' +
     '<button class="btn secondary" onclick="screenBadges()">' + svgBadgeIcon(20) + ' Zeď odznaků — ' + S.badges.length + ' / ' + BADGES.length + '</button>' +
-    '<button class="btn secondary" onclick="screenTeach()">🎓 Zkoušej tátu</button>' +
     '<button class="btn secondary" onclick="tutStart()">🦉 Provést hrou se sovou</button></div>' + navHTML("ja"));
 }
 function lockedNode() {
@@ -7222,7 +7176,6 @@ W.screenMail = screenMail;
 W.screenPuzzle = screenPuzzle;
 W.screenRadio = screenRadio;
 W.screenNoteBuilder = screenNoteBuilder;
-W.screenTeach = screenTeach;
 W.screenDash = screenDash;
 W.bonusGo = bonusGo;
 W.joyTap = joyTap;
