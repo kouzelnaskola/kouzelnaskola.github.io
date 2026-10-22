@@ -892,7 +892,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-22g";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-22h";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -4069,7 +4069,7 @@ function mapGroundSVG() {
     paths + spots + trees + '</svg>';
 }
 function mapTagHTML(sp) {
-  if (sp.k === "hajenka") { var ls = Object.keys(S.lessonSeen || {}).length; return '<div class="bldTag">🏡 Výklad' + (ls ? ' <span class="bldStars">' + ls + '</span>' : '') + '</div>'; }
+  if (sp.k === "hajenka") return '<div class="bldTag">🏡 Výklad</div>';   /* bez počtu: „Výklad 1“ mátlo (táta 22. 10.) */
   if (sp.k === "hrad") {
     var ex = S.exams[S.year];
     return '<div class="bldTag">' + (examOpen(S) ? svgTrophy(16) : svgLock(14)) + ' Zkouška' + (ex && ex.passed ? ' ✓' : '') + '</div>';
