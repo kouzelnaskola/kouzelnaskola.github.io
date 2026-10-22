@@ -306,6 +306,10 @@
   .howTo { text-align: left; margin: 12px auto; max-width: 440px; font-size: 19px; line-height: 1.5; padding-left: 26px; }
   .howTo li { margin: 6px 0; } .shareIco { display: inline-block; border: 2px solid var(--ink); border-radius: 4px; padding: 0 5px; font-size: 15px; }
   .setupCard h2 { margin-top: 4px; }
+  .zvChips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+  .zvChip { border: 2px solid var(--ink); border-radius: 20px; background: #fffaf0; padding: 6px 12px; font: inherit; font-size: 16px; color: var(--ink); cursor: pointer; }
+  .zvChip.on { background: var(--teal); border-color: var(--teal-d); color: #fff; }
+  textarea.zvText { min-height: 70px; margin-bottom: 10px; }
   .genderPick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px; } .genderPick .setupOpt { text-align: center; } .genderPick.shake { animation: shake .4s; }
   .setupDots { display: flex; gap: 6px; justify-content: center; margin: 2px 0 6px; } .setupDots i { width: 26px; height: 5px; border-radius: 3px; background: #e2d6bd; } .setupDots i.on { background: var(--acc, var(--teal)); }
   .setupChoice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; } .setupChoice.col { grid-template-columns: 1fr; }
@@ -881,7 +885,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-22d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-22f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2684,7 +2688,8 @@ function defaultState() {
     unitsShipped: [],
     sesit: false,
     parentSetup: "",
-    gender: "",         /* "f" holka, "m" kluk; "" = nezvoleno (gt() odhadne podle jména) */    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
+    gender: "",
+    examOpen: {},       /* ročník → true: rodič otevřel zkoušku ročníku dřív, než je díl dočtený */         /* "f" holka, "m" kluk; "" = nezvoleno (gt() odhadne podle jména) */    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
     wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
     dustEarned: 0,
@@ -2733,6 +2738,7 @@ function migrate(s) {
   /* hra uložená před zavedením lekcí: měla jen Unit 1 (dřívější výchozí seznam) */
   if (!Array.isArray(s.unitsShipped) && Array.isArray(s.words)) s.unitsShipped = ["Unit 1"];
   /* hra uložená před 21. 10. 2026 = Karolinčina rodina: lekce ze sešitu dostává dál */
+  if (!s.examOpen || typeof s.examOpen !== "object") s.examOpen = {};
   if (typeof s.gender !== "string") s.gender = s.name ? "f" : "";   /* hra uložená před 21. 10. 2026 = Karolinka */
   if (typeof s.parentSetup !== "string") s.parentSetup = s.name ? "dříve" : "";   /* hra uložená před průvodcem ho nedostane */
   if (typeof s.sesit !== "boolean") s.sesit = Array.isArray(s.words) || Array.isArray(s.unitsShipped);
@@ -4057,7 +4063,7 @@ function mapTagHTML(sp) {
   if (sp.k === "hajenka") return "";
   if (sp.k === "hrad") {
     var ex = S.exams[S.year];
-    return '<div class="bldTag">' + svgTrophy(16) + ' Zkouška' + (ex && ex.passed ? ' ✓' : '') + '</div>';
+    return '<div class="bldTag">' + (examOpen(S) ? svgTrophy(16) : svgLock(14)) + ' Zkouška' + (ex && ex.passed ? ' ✓' : '') + '</div>';
   }
   var got = 0, max = 0, news = false;
   TOPIC_ORDER.forEach(function (t) { if (TOPICS[t].subj === sp.subj && isUnlocked(t, S)) { got += topicStars(S, t); max += 3; if (recentStars[t]) news = true; } });
@@ -4690,9 +4696,26 @@ function startTopicQuest(t) {
   };
 }
 var examCl = null;
+/* Zkouška ročníku se otevře na konci školního roku (22. 10. 2026, táta: Karolinka ji chtěla zkoušet, i když
+   neměla nic odstudované): až je díl knihy dočtený, nebo když ji rodič otevře v panelu (S.examOpen). Složená se dá opakovat. */
+function examOpen(st) {
+  st = st || S; var y = st.year, ex = st.exams && st.exams[y];
+  return !!(ex && ex.passed) || !!(st.examOpen && st.examOpen[y]) || chaptersRead(st, y) >= YEARS[y].chapters;
+}
 function screenExamIntro() {
   var y = S.year, name = EXAM_NAMES[y] || ("Závěrečná zkouška " + y + ". ročníku");
   var ex = S.exams[y];
+  if (!examOpen(S)) {
+    var chR = chaptersRead(S, y), reading = !(y === 1 && chR === 0);
+    render(topbarHTML(true) + '<div class="card center">' +
+      '<div class="bigIcon">' + svgLock(56) + '</div><h2>' + esc(name) + '</h2>' +
+      '<p class="qtext">Zkouška se otevře na konci školního roku.</p>' +
+      '<p>' + (reading ? 'Až s rodiči dočtete ' + y + '. díl, <i>' + esc(YEARS[y].title) + '</i>, profesorka McGonagallová otevře Velkou síň ke zkoušce. Dočteno: <b>' + chR + '. kapitola z ' + YEARS[y].chapters + '</b>.'
+        : 'Až bude správný čas, otevřou ji rodiče.') + '</p>' +
+      '<p class="muted">Do té doby sbírej hvězdy v učebnách. Na zkoušce se ti budou hodit.</p>' +
+      '<button class="btn" onclick="screenMap()">Zpět na mapu hradu</button></div>' + navHTML("rozvrh"));
+    return;
+  }
   render(topbarHTML(true) +
     '<div class="card center">' +
     '<div class="bigIcon">' + svgTrophy(64) + '</div>' +
@@ -5318,6 +5341,8 @@ function mergeStates(a, b) {
   m.sesit = !!(m.sesit || o.sesit);
   if (!m.parentSetup && o.parentSetup) m.parentSetup = o.parentSetup;
   if (!m.gender && o.gender) m.gender = o.gender;
+  if (!m.examOpen || typeof m.examOpen !== "object") m.examOpen = {};
+  for (var exy in (o.examOpen || {})) if (o.examOpen[exy]) m.examOpen[exy] = true;
   if (!m.wordsCleared || !o.wordsCleared) {
     var haveW = {}; (m.words || []).forEach(function (w) { haveW[w.en] = true; });
     (o.words || []).forEach(function (w) { if (!haveW[w.en] && !removed[w.en]) { m.words.push(w); haveW[w.en] = true; } });
@@ -6976,7 +7001,8 @@ var PARENT_SECTIONS = {
   hlas:      { e: "🔊", n: "Hlas a zvuky",      sub: "výslovnost, hlášky, zvuky" },
   zarizeni:  { e: "☁️", n: "Zařízení a cloud",  sub: "přihlášení, rodina, tablet, obrázky" },
   odmeny:    { e: "🎁", n: "Odměna a soví pošta", sub: "cíl domluvený s dítětem, dopisy od rodiny" },
-  studentka: { e: "🧙", n: "Dítě a záloha", sub: "jméno, kolej, záloha, reset" }
+  studentka: { e: "🧙", n: "Dítě a záloha", sub: "jméno, kolej, záloha, reset" },
+  zpetna:    { e: "💬", n: "Zpětná vazba", sub: "dvě minuty, pomůže hru vylepšit" }
 };
 function screenParent(section) {
   parentSection = section || null;
@@ -6994,6 +7020,7 @@ function screenParent(section) {
       hlas: (ttsProxyOk() ? "hlas ze serveru ✓" : ttsCfg().key ? "přímý klíč ✓" : "vestavěný hlas") + " · hlášky " + (mluveniOn() ? "zap." : "vyp.") + " · zvuky " + (sfxOn() ? "zap." : "vyp."),
       zarizeni: (ucetOn() ? "přihlášeno ✓" : syncOn() ? "připojeno rodinným kódem ✓" : "⚠️ jen toto zařízení") + (syncOn() ? " · " + (syncSt.last ? "sync " + syncWhen(syncSt.last) : "zatím nesynchronizováno") : ""),
       odmeny: (function () { var o = S.rewards.filter(function (r) { return r.status === "open"; }).length, c = S.rewards.filter(function (r) { return r.status === "claimed"; }).length; return c ? "🎁 " + c + " k vyřízení!" : o ? o + " " + (o === 1 ? "aktivní odměna" : "aktivní odměny") : "zatím žádná"; })(),
+      zpetna: zvLast() ? "odesláno " + czDate(zvLast()) + " · díky!" : (S.since && dateDiffDays(S.since, todayStr()) >= 5 ? "✨ jak se vám hra líbí?" : "dvě minuty, pomůže hru vylepšit"),
       studentka: esc(S.name || "bez jména") + (S.house ? " · " + esc(HOUSES[S.house].n) : "")
     };
     var tiles = Object.keys(PARENT_SECTIONS).map(function (k, i) {
@@ -7069,6 +7096,9 @@ function screenParent(section) {
       '<div class="row"><div><label>Ročník (díl knihy)</label><select id="pYear">' + yearOpts + '</select></div>' +
       '<div><label>Dočtená kapitola ' + S.year + '. dílu</label><select id="pChapter">' + chOpts + '</select></div></div>' +
       '<p class="muted">Otázek k ' + S.year + '. dílu je připraveno ' + hpCount + ' z ' + hpTotal + ' napsaných' + (hpTotal === 0 ? ' — k tomuto dílu zatím žádné nejsou, požádejte o balíček.' : '.') + ' Učebna dílu se otevře, jakmile jsou dostupné aspoň 3 otázky.</p>' +
+      '<h3>🏆 Zkouška ročníku</h3>' +
+      '<p class="muted">Zkouška se dítěti otevře sama na konci školního roku, až nastavíte, že je ' + S.year + '. díl dočtený. Do té doby ji vidí zamčenou s vysvětlením. Když chcete, otevřete ji dřív (třeba na konci školního roku, i když knihu ještě čtete).</p>' +
+      '<div class="chkRow"><input type="checkbox" id="pExamOpen"' + (S.examOpen && S.examOpen[S.year] ? " checked" : "") + '><span><b>Zkouška ' + S.year + '. ročníku otevřená</b> <span class="muted">— ' + (examOpen(S) && !(S.examOpen && S.examOpen[S.year]) ? "už je otevřená (díl dočtený nebo složená)" : "i před dočtením dílu") + '</span></span></div>' +
       '<h3>Co už jste probrali ve škole</h3>' +
       '<p class="muted">Zaškrtnutá učebna se odemkne: objeví se v rozvrhu a v denním vyučování. Zamčené učebny dítě vidí jen jako zamčené dveře — bez názvu, ať se těší. Odemykejte, až látku ve škole opravdu proberou: jedna příliš těžká otázka umí zkazit celou hru.</p>' +
       '<h3 style="font-size:17px">' + svgQuill(17) + ' Čeština (Psaní brkem)</h3>' + cjT.map(unlockRow).join("") +
@@ -7186,6 +7216,23 @@ function screenParent(section) {
         : '<p class="muted">Najednou mohou být nejvýš tři odměny. Až některou vyřídíte, můžete přidat další.</p>') + mailPanelHTML();
   }
 
+  if (section === "zpetna") {
+    var zvOpts = function (name, list) { return '<div class="zvChips" data-name="' + name + '">' + list.map(function (o) { return '<button type="button" class="zvChip" data-v="' + esc(o) + '">' + esc(o) + '</button>'; }).join("") + '</div>'; };
+    body =
+      '<h3>💬 Jak se vám hra líbí?</h3>' +
+      '<p class="muted">Dvě minuty. Každá odpověď pomůže hru vylepšit pro vaše dítě i ostatní děti. Nic z toho není povinné.' + (zvLast() ? ' Naposledy jste poslali ' + czDate(zvLast()) + ', můžete poslat znovu.' : '') + '</p>' +
+      '<label>Jak moc dítě hra baví?</label>' + zvOpts("bavi", ["😐 Moc ne", "🙂 Trochu", "😊 Baví", "🤩 Hodně"]) +
+      '<label>Jak se ke hře dostává?</label>' + zvOpts("jak", ["Samo si řekne", "Po připomenutí", "Jen se mnou"]) +
+      '<label>Co ho baví nejvíc? <span class="muted">(víc možností)</span></label>' + zvOpts("nej", ["Sova s otázkami", "Plamínek", "Ložnice a Příčná ulice", "Mapa hradu", "Profesoři s hlasem", "Harry Potter", "Slovíčka", "Násobilka", "Vyjmenovaná slova"]) +
+      '<label for="zvBad">Co nefunguje, zlobí nebo nudí?</label><textarea id="zvBad" class="zvText" maxlength="1500" placeholder="Třeba: na iPadu se zasekla sova, vyjmenovaná slova jsou moc těžká…"></textarea>' +
+      '<label for="zvHard">Bylo něco moc těžké, nebo naopak moc lehké?</label><textarea id="zvHard" class="zvText" maxlength="800"></textarea>' +
+      '<label>Bude podle vás hrát i za měsíc?</label>' + zvOpts("mesic", ["Určitě ne", "Spíš ne", "Nevím", "Spíš ano", "Určitě ano"]) +
+      '<label for="zvMore">Cokoli dalšího</label><textarea id="zvMore" class="zvText" maxlength="1500"></textarea>' +
+      '<label for="zvMail">E-mail, kdybyste chtěli odpověď <span class="muted">(nepovinné)</span></label><input type="text" inputmode="email" id="zvMail" autocapitalize="none" spellcheck="false" value="' + esc((ucetGet() || {}).email || "") + '">' +
+      '<p class="muted" style="font-size:14px">Spolu s odpověďmi se pošle verze hry, typ zařízení a pár čísel o hraní (kolik hodin, plamínek, odemčené učebny). Jméno dítěte se neposílá.</p>' +
+      '<button class="btn" id="zvSend">Odeslat zpětnou vazbu</button> <span class="muted" id="zvMsg"></span>';
+  }
+
   if (section === "studentka") {
     var houseOpts = HOUSE_KEYS.map(function (k) { return '<option value="' + k + '"' + (S.house === k ? " selected" : "") + '>' + HOUSES[k].n + '</option>'; }).join("");
     body =
@@ -7242,6 +7289,7 @@ function screenParent(section) {
     reopen("cteni");
     msg("parentMsg", "Ročník nastaven na " + ny + ". Dítě při návratu do Velké síně uvidí oslavu nového školního roku.");
   });
+  on("pExamOpen", "onchange", function () { if (!S.examOpen) S.examOpen = {}; if (el("pExamOpen").checked) S.examOpen[S.year] = true; else delete S.examOpen[S.year]; saveState(); msg("parentMsg", el("pExamOpen").checked ? "Zkouška " + S.year + ". ročníku je otevřená." : "Zkouška se otevře, až bude díl dočtený."); });
   on("pChapter", "onchange", function () {
     S.chapters[S.year] = parseInt(el("pChapter").value, 10);
     saveState();
@@ -7363,6 +7411,26 @@ function screenParent(section) {
     msg("syncMsg", "Synchronizuji…");
     syncRun().then(syncReport);
   });
+  if (section === "zpetna") {
+    Array.prototype.forEach.call(document.querySelectorAll(".zvChips"), function (g) {
+      var multi = g.getAttribute("data-name") === "nej";
+      Array.prototype.forEach.call(g.querySelectorAll(".zvChip"), function (b) {
+        b.onclick = function () { if (!multi) Array.prototype.forEach.call(g.querySelectorAll(".zvChip"), function (x) { if (x !== b) x.classList.remove("on"); }); b.classList.toggle("on"); };
+      });
+    });
+    on("zvSend", "onclick", function () {
+      var d = zvCollect();
+      if (!d.bavi && !d.jak && !d.nej.length && !d.mesic && !d.nefunguje && !d.tezke && !d.dalsi) { msg("zvMsg", "Vyplňte prosím aspoň něco."); return; }
+      if (d.email && !ucetEmailOk(d.email)) { msg("zvMsg", "E-mail nevypadá správně (nebo ho nechte prázdný)."); return; }
+      el("zvSend").disabled = true; msg("zvMsg", "Odesílám…");
+      zvSend(d).then(function () {
+        zvMark(); var f = el("zvSend"); if (f) f.disabled = false;
+        Array.prototype.forEach.call(document.querySelectorAll(".zvChip.on"), function (x) { x.classList.remove("on"); });
+        ["zvBad", "zvHard", "zvMore"].forEach(function (id) { var x = el(id); if (x) x.value = ""; });
+        msg("zvMsg", "Odesláno. Moc děkujeme!");
+      }, function (e) { var f = el("zvSend"); if (f) f.disabled = false; msg("zvMsg", e && e.status === 404 ? "Odesílání se na serveru ještě nastavuje. Zkuste to prosím později." : ucetErrText(e)); });
+    });
+  }
   if (section === "zarizeni") famWire();
   on("syncOff", "onclick", function () { syncSaveCfg(""); reopen("zarizeni", "hRegistrace"); msg("syncMsg", "Registrace zrušena. Postup na serveru zůstává, toto zařízení se dál ukládá jen místně."); });
   if (el("imgMsg")) {
@@ -7479,6 +7547,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
+  examOpen: examOpen,
   gt: gt, kidGender: kidGender, SORTING: SORTING, CHAR_LINES: CHAR_LINES, TUT_STEPS: TUT_STEPS, ttsWarmList: ttsWarmList,
   setupApplyPreset: setupApplyPreset, setupApplyHP: setupApplyHP, setupPresetNow: setupPresetNow, SETUP_PRESETS: SETUP_PRESETS,
   ucetFromHash: ucetFromHash, ucetDecide: ucetDecide, ucetEmailOk: ucetEmailOk, ucetEmailNorm: ucetEmailNorm, jwtEmail: jwtEmail, UCET_KEY: UCET_KEY,
@@ -7601,6 +7670,30 @@ function ucetErrText(e) {
   return "Něco se nepovedlo (" + e.status + "). Zkuste to prosím znovu.";
 }
 function ucetMsg(id, t) { var x = el(id); if (x) x.textContent = t; }
+/* =====================================================================
+   ZPĚTNÁ VAZBA OD RODIČŮ (22. 10. 2026): formulář v panelu → Supabase (supabase/zpetna-vazba.sql,
+   tabulka zpetna_vazba bez přímého přístupu, čte jen správce v Table Editoru). Jméno dítěte se neposílá.
+   ===================================================================== */
+var ZV_KEY = "bradaviceZV";
+function zvLast() { try { return localStorage.getItem(ZV_KEY) || ""; } catch (e) { return ""; } }
+function zvMark() { try { localStorage.setItem(ZV_KEY, todayStr()); } catch (e) {} }
+function zvDevice() {
+  var ua = (typeof navigator !== "undefined" && navigator.userAgent) || "", t = /iPad|Macintosh.*Mobile/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1) ? "iPad" : /iPhone/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : /Macintosh/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : "jiné";
+  return t + (isStandalone() ? " · z plochy" : isWeb() ? " · prohlížeč" : " · soubor");
+}
+function zvCollect() {
+  var pick = function (name) { return Array.prototype.map.call(document.querySelectorAll('.zvChips[data-name="' + name + '"] .zvChip.on'), function (b) { return b.getAttribute("data-v"); }); };
+  var val = function (id) { var x = el(id); return x ? x.value.trim() : ""; };
+  var sk = S.streak || {};
+  return {
+    bavi: pick("bavi")[0] || "", jak: pick("jak")[0] || "", nej: pick("nej"), mesic: pick("mesic")[0] || "",
+    nefunguje: val("zvBad"), tezke: val("zvHard"), dalsi: val("zvMore"), email: ucetEmailNorm(val("zvMail")),
+    verze: GAME_VERSION, zarizeni: zvDevice(), ucet: ucetOn(), rodina: syncOn(),
+    hra: { dniOd: S.since ? dateDiffDays(S.since, todayStr()) : null, hodin: S.questsDone || 0, plaminek: sk.current || 0, rekord: sk.best || 0,
+      rocnik: S.year, rod: kidGender(), ucebny: unlockedTopics(S).length, slovicekSkola: (S.words || []).length }
+  };
+}
+function zvSend(d) { return authFetch("/rest/v1/rpc/poslat_zpetnou_vazbu", { p: d }); }
 /* Přihlášení rodiče: e-mail → (tlačítko v e-mailu, nebo opsané číslice) → ucetPoPrihlaseni */
 function screenLogin(opts) {
   opts = opts || {};
