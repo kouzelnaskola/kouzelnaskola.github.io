@@ -448,6 +448,18 @@
   .fg.l1 { background: var(--mustard-pale); border-color: var(--mustard-d); }
   .fg.l2 { background: var(--teal); border-color: var(--teal-d); color: #fff; font-weight: 700; }
   .fg.new { color: #b9ad97; }
+  .vyjCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin: 8px 0; }
+  .vyjCard { border: 2px solid var(--ink); border-radius: 14px; background: #fffaf0; padding: 10px 12px; }
+  .vyjHead { display: flex; align-items: center; gap: 10px; }
+  .vyjL { flex: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; background: var(--acc, var(--teal)); color: #fff; }
+  .vyjBar { flex: 1; height: 10px; border-radius: 6px; background: #e8dfcc; overflow: hidden; display: flex; }
+  .vyjBar i { display: block; height: 100%; } .vyjBar .b2 { background: var(--teal); } .vyjBar .b1 { background: var(--mustard); }
+  .vyjSay { flex: none; border: 2px solid var(--ink); border-radius: 50%; width: 40px; height: 40px; background: #fff; font-size: 18px; cursor: pointer; }
+  .vyjSay.busy, .vyjW.busy { opacity: .55; }
+  .vyjWords { margin: 8px 0 4px; line-height: 1.9; font-size: 18px; }
+  .vyjW { border: 0; background: none; padding: 0 2px; font: inherit; color: var(--ink); cursor: pointer; border-bottom: 1px dotted #b9ad97; }
+  .vyjW:active { color: var(--teal); } .vyjDot { color: #b9ad97; margin: 0 3px; }
+  .vyjSub { font-size: 14px; color: var(--muted2); }
   .vyjRow { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 6px 0; } .vyjRow b { width: 44px; font-size: 14px; color: var(--muted2); }
   .vyjChip { font-size: 14px; padding: 2px 8px; border-radius: 12px; border: 1.5px solid #b9ad97; background: #fff; }
   .vyjChip.l1 { background: var(--mustard-pale); border-color: var(--mustard-d); } .vyjChip.l2 { background: var(--teal); border-color: var(--teal-d); color: #fff; }
@@ -869,7 +881,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-22c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-22d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1675,14 +1687,33 @@ function pickByLevel(list, keyOf, state) {
   for (var i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; }
   return list[list.length - 1];
 }
+/* Řady vyjmenovaných slov, jak se učí ve škole (22. 10. 2026: dřív se bubliny skládaly z cvičných vět —
+   opakovaly se a byly mezi nimi i protipříklady). Kartička písmene: řada slov (klepnutí = slovo nahlas),
+   🔊 přečte celou řadu, ukazatel podle cvičení dané učebny (stupně v S.factLv „v:<id>“). */
+var VYJ_LISTS = {
+  C4:  ["být", "bydlit", "obyvatel", "byt", "příbytek", "nábytek", "dobytek", "obyčej", "bystrý", "bylina", "kobyla", "býk", "Přibyslav"],
+  C5:  ["slyšet", "mlýn", "blýskat se", "polykat", "plynout", "plýtvat", "vzlykat", "lysý", "lýtko", "lýko", "lyže", "pelyněk", "plyš"],
+  C6:  ["my", "mýt", "myslit", "mýlit se", "hmyz", "myš", "hlemýžď", "mýtit", "zamykat", "smýkat", "dmýchat", "chmýří", "nachomýtnout se", "Litomyšl"],
+  C7:  ["pýcha", "pytel", "pysk", "netopýr", "slepýš", "pyl", "kopyto", "klopýtat", "třpytit se", "zpytovat", "pykat", "pýr", "pýřit se", "čepýřit se"],
+  C8:  ["syn", "sytý", "sýr", "syrový", "sychravý", "usychat", "sýkora", "sýček", "sysel", "syčet", "sypat"],
+  C9:  ["vy", "vysoký", "výt", "výskat", "zvykat", "žvýkat", "vydra", "výr", "vyžle", "povyk", "výheň"],
+  C10: ["brzy", "jazyk", "nazývat se", "Ruzyně"]
+};
+function vyjLetter(t) { return TOPICS[t].n.replace("Vyjmenovaná slova po ", ""); }
+function vyjRowText(t) { return "Vyjmenovaná slova po " + vyjLetter(t) + ": " + VYJ_LISTS[t].join(", ") + "."; }
 function vyjListHTML(state) {
-  var tot = [0, 0, 0], rows = VYJ_TOPICS.filter(function (t) { return isUnlocked(t, state); }).map(function (t) {
-    return '<div class="vyjRow"><b>' + TOPICS[t].n.replace("Vyjmenovaná slova ", "") + '</b>' + BANKS[t].map(function (q) {
-      var x = state.factLv && state.factLv["v:" + q.id], l = x ? x.l : 0; tot[l]++;
-      return '<span class="vyjChip l' + l + '">' + esc(vyjWord(q)) + '</span>'; }).join("") + '</div>';
+  var tot = [0, 0, 0], cards = VYJ_TOPICS.filter(function (t) { return isUnlocked(t, state); }).map(function (t) {
+    var c = [0, 0, 0], n = BANKS[t].length;
+    BANKS[t].forEach(function (q) { var x = state.factLv && state.factLv["v:" + q.id], l = x ? x.l : 0; c[l]++; tot[l]++; });
+    var pc = function (k) { return n ? Math.round(100 * c[k] / n) : 0; };
+    return '<div class="vyjCard"><div class="vyjHead"><span class="vyjL">' + vyjLetter(t) + '</span>' +
+      '<div class="vyjBar" title="Umím ' + c[2] + ', jde mi ' + c[1] + ' z ' + n + '"><i class="b2" style="width:' + pc(2) + '%"></i><i class="b1" style="width:' + pc(1) + '%"></i></div>' +
+      '<button type="button" class="vyjSay" data-say="' + esc(vyjRowText(t)) + '" aria-label="Přečíst řadu po ' + vyjLetter(t) + '">🔊</button></div>' +
+      '<div class="vyjWords">' + VYJ_LISTS[t].map(function (w) { return '<button type="button" class="vyjW" data-say="' + esc(w) + '">' + esc(w) + '</button>'; }).join('<span class="vyjDot">·</span>') + '</div>' +
+      '<div class="vyjSub">Umím ' + c[2] + ' z ' + n + ' cvičení' + (c[1] ? ' · jde mi ' + c[1] : '') + '</div></div>';
   }).join("");
-  if (!rows) return "";
-  return rows + '<div class="fgLegend"><span class="fg l2"></span> Umím ' + tot[2] + ' <span class="fg l1"></span> Jde mi ' + tot[1] + ' <span class="fg l0"></span> Zatím ne ' + tot[0] + '</div>';
+  if (!cards) return "";
+  return '<div class="vyjCards">' + cards + '</div><div class="fgLegend"><span class="fg l2"></span> Umím ' + tot[2] + ' <span class="fg l1"></span> Jde mi ' + tot[1] + ' <span class="fg l0"></span> Zatím ne ' + tot[0] + ' <span class="muted">· klepni na slovo a uslyšíš ho</span></div>';
 }
 function pickFact(state, aMin, aMax) {
   var today = todayStr(), list = [], w = [];
@@ -4478,7 +4509,7 @@ function screenMapSubject(subj) {
   var html = topbarHTML() + '<div class="card"><button class="btn secondary small backMap" onclick="screenMap()">← Mapa hradu</button>' +
     '<h2 class="center subjTitle">' + subjIcon(subj, 30) + ' ' + esc(SUBJECTS[subj].n) + '</h2><p class="muted center">' + esc(SUBJECTS[subj].sub) + '</p>' +
     subjectRoomsHTML(subj) + (subj === "m" && (isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3 class="center" style="margin-top:18px">🧪 Moje násobilka</h3><p class="muted center">Příklad umíš, když ho spočítáš správně ve dva různé dny.</p>' + factGridHTML(S) : '') +
-    (subj === "cj" && vyjListHTML(S) ? '<h3 class="center" style="margin-top:18px">🪶 Moje vyjmenovaná slova</h3><p class="muted center">Slovo umíš, když ho doplníš správně ve dva různé dny.</p>' + vyjListHTML(S) : '') +
+    (subj === "cj" && vyjListHTML(S) ? '<h3 class="center" style="margin-top:18px">🪶 Moje vyjmenovaná slova</h3><p class="muted center">Klepni na 🔊 a poslechni si celou řadu. Cvičení umíš, když ho doplníš správně ve dva různé dny.</p>' + vyjListHTML(S) : '') +
     '</div>' + navHTML("rozvrh");
   render(html);
   TOPIC_ORDER.forEach(function (t) { if (TOPICS[t].subj === subj) delete recentStars[t]; });
@@ -4937,8 +4968,15 @@ function ttsWire() {
   window.addEventListener("online", setNet); window.addEventListener("offline", setNet);
   document.addEventListener("DOMContentLoaded", setNet); if (document.body) setNet();
   document.addEventListener("click", function (ev) {
-    var b = ev.target && ev.target.closest ? ev.target.closest(".sayBtn") : null;
+    var b = ev.target && ev.target.closest ? ev.target.closest(".sayBtn, .vyjW, .vyjSay") : null;
     if (!b) return;
+    if (b.classList.contains("vyjW") || b.classList.contains("vyjSay")) {   /* vyjmenovaná slova: česky, hlasem vypravěče */
+      ev.preventDefault(); ev.stopPropagation();
+      if (b.classList.contains("busy")) return;
+      b.classList.add("busy");
+      ttsSay(b.getAttribute("data-say"), null, "cs").then(function () { b.classList.remove("busy"); }, function () { b.classList.remove("busy"); });
+      return;
+    }
     ev.preventDefault(); ev.stopPropagation();
     if (b.classList.contains("busy")) return;
     b.classList.add("busy"); b.classList.remove("fail");
