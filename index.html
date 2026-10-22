@@ -452,6 +452,13 @@
   .fg.l1 { background: var(--mustard-pale); border-color: var(--mustard-d); }
   .fg.l2 { background: var(--teal); border-color: var(--teal-d); color: #fff; font-weight: 700; }
   .fg.new { color: #b9ad97; }
+  .lsVis { margin: 12px 0 6px; } .lsText { font-size: 20px; line-height: 1.6; text-align: center; background: #fffaf0; border: 1px dashed #c9b48a; border-radius: 10px; padding: 10px 12px; }
+  .lsPair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; } .lsLetters { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
+  .lsLetters span { min-width: 34px; padding: 4px 8px; border: 2px solid var(--ink); border-radius: 8px; background: #fffaf0; font-size: 20px; font-weight: 700; } .lsLetters.big span { min-width: 30px; font-size: 18px; } .lsLetters span.hi { background: var(--mustard-pale); border-color: var(--mustard-d); }
+  .lsDuo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; font-size: 20px; padding: 6px 0; border-bottom: 1px dashed #e0cfa9; } .lsDuo small { flex-basis: 100%; font-size: 14px; color: var(--muted2); }
+  .lsY { color: var(--teal-d); font-weight: 700; } .lsI { color: var(--coral); font-weight: 700; } .vyjW .vy { color: var(--mustard-d); }
+  .lsWords { display: grid; gap: 8px; } .lsWord { display: flex; align-items: center; gap: 10px; border: 2px solid var(--ink); border-radius: 12px; padding: 8px 12px; background: #fffaf0; } .lsEmoji { font-size: 30px; } .lsWord b { font-size: 22px; } .lsWord .muted { flex: 1; }
+  .lsQ { margin-top: 12px; border-top: 1px dashed #c9b48a; padding-top: 10px; }
   .vyjCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin: 8px 0; }
   .vyjCard { border: 2px solid var(--ink); border-radius: 14px; background: #fffaf0; padding: 10px 12px; }
   .vyjHead { display: flex; align-items: center; gap: 10px; }
@@ -885,7 +892,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-22f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-22g";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2689,7 +2696,8 @@ function defaultState() {
     sesit: false,
     parentSetup: "",
     gender: "",
-    examOpen: {},       /* ročník → true: rodič otevřel zkoušku ročníku dřív, než je díl dočtený */         /* "f" holka, "m" kluk; "" = nezvoleno (gt() odhadne podle jména) */    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
+    examOpen: {},
+    lessonSeen: {},     /* učebna → datum, kdy dítě vidělo výklad v hájence */       /* ročník → true: rodič otevřel zkoušku ročníku dřív, než je díl dočtený */         /* "f" holka, "m" kluk; "" = nezvoleno (gt() odhadne podle jména) */    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
     wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
     dustEarned: 0,
@@ -2739,6 +2747,7 @@ function migrate(s) {
   if (!Array.isArray(s.unitsShipped) && Array.isArray(s.words)) s.unitsShipped = ["Unit 1"];
   /* hra uložená před 21. 10. 2026 = Karolinčina rodina: lekce ze sešitu dostává dál */
   if (!s.examOpen || typeof s.examOpen !== "object") s.examOpen = {};
+  if (!s.lessonSeen || typeof s.lessonSeen !== "object") s.lessonSeen = {};
   if (typeof s.gender !== "string") s.gender = s.name ? "f" : "";   /* hra uložená před 21. 10. 2026 = Karolinka */
   if (typeof s.parentSetup !== "string") s.parentSetup = s.name ? "dříve" : "";   /* hra uložená před průvodcem ho nedostane */
   if (typeof s.sesit !== "boolean") s.sesit = Array.isArray(s.words) || Array.isArray(s.unitsShipped);
@@ -4060,7 +4069,7 @@ function mapGroundSVG() {
     paths + spots + trees + '</svg>';
 }
 function mapTagHTML(sp) {
-  if (sp.k === "hajenka") return "";
+  if (sp.k === "hajenka") { var ls = Object.keys(S.lessonSeen || {}).length; return '<div class="bldTag">🏡 Výklad' + (ls ? ' <span class="bldStars">' + ls + '</span>' : '') + '</div>'; }
   if (sp.k === "hrad") {
     var ex = S.exams[S.year];
     return '<div class="bldTag">' + (examOpen(S) ? svgTrophy(16) : svgLock(14)) + ' Zkouška' + (ex && ex.passed ? ' ✓' : '') + '</div>';
@@ -4132,13 +4141,8 @@ function mapGo(k) {
   if (mapDragged) { mapDragged = false; return; }
   var sp = MAP_SPOTS.filter(function (x) { return x.k === k; })[0], el = document.getElementById("cmap");
   if (!sp) return;
-  if (k === "hajenka") {
-    var b = el && el.querySelector(".b-hajenka");
-    if (b) { b.classList.remove("wig"); void b.offsetWidth; b.classList.add("wig"); }
-    sfx("tile"); return;
-  }
   sfx("tile");
-  var go = function () { cancelAnimationFrame(mapRaf); if (mapFull) fsSet(false); mapFull = false; if (k === "hrad") screenExamIntro(); else screenMapSubject(sp.subj); };
+  var go = function () { cancelAnimationFrame(mapRaf); if (mapFull) fsSet(false); mapFull = false; if (k === "hrad") screenExamIntro(); else if (k === "hajenka") screenHut(); else screenMapSubject(sp.subj); };
   if (!el || reducedMotion()) { go(); return; }
   mapView.rz = mapRz(el);
   el.style.setProperty("--zx", (50 - sp.x) + "%"); el.style.setProperty("--zy", (50 - sp.y + 8) + "%");
@@ -4685,14 +4689,275 @@ function startTopicQuest(t) {
     '<h2>' + esc(TOPICS[t].n) + '</h2>' +
     '<p class="introFlavor">' + esc(intro) + '</p>' + charSayHTML(cl) +
     '<p class="muted">10 otázek na procvičení. Hvězdy mistrovství: ' + starsHTML(t) + '<br>(Celá hodina prodlouží i plamínek.)</p>' +
-    '<button class="btn" id="beginBtn">Vstoupit do učebny</button>' +
+    (lessonHas(t) && !(S.lessonSeen && S.lessonSeen[t]) ? '<button class="btn gold" id="lessonFirst">🏡 Nejdřív mi to vysvětli</button><button class="btn secondary" id="beginBtn">Vstoupit do učebny</button>'
+      : '<button class="btn" id="beginBtn">Vstoupit do učebny</button>' + (lessonHas(t) ? '<p class="center" style="margin:6px 0 0"><button class="linkBtn" id="lessonAgain">🏡 Připomenout výklad</button></p>' : '')) +
     '</div>');
   speakAs(cl);
+  var lf = el("lessonFirst") || el("lessonAgain"); if (lf) lf.onclick = function () { screenLesson(t, 0); };
   el("beginBtn").onclick = function () {
     sessionDropUnfinished(true);
     session = newSession("topic", buildTopicItems(t, S, 10), 10);
     session.topic = t;
     showQuestion();
+  };
+}
+/* =====================================================================
+   HÁJENKA: VÝKLAD LÁTKY (22. 10. 2026, táta: „uzavřít cyklus vysvětlit → procvičit → zkouška“).
+   Každá učebna má 2–5 karet: jedna myšlenka, obrázek (kuličky, kotlíky, skoky, řada vyjmenovaných slov…),
+   učitel ji řekne nahlas a dítě si ji hned zkusí (zkušební otázka BEZ galeonů, statistik, chyb i stupňů).
+   Hagrid v hájence hostí (NEUČÍ): Lektvary a Psaní brkem vykládá McGonagallová, Formule Hagrid (jen slovíčka),
+   Dějiny Brumbál. Nabídka při prvním vstupu do učebny, znovu v hájence a po 2 chybách za sebou v hodině.
+   Nový obsah pro dítě = i karta výkladu; texty se značkami {holka|kluk}. Viděné: S.lessonSeen[t] = datum.
+   ===================================================================== */
+var LESSON_WHO = { m: "mcg", cj: "mcg", en: "hagrid", hp: "brumbal" };
+var LESSONS = {
+  M1: [
+    { t: "Desítky a jednotky", say: "Každé číslo do sta má desítky a jednotky. Čtyřicet sedm jsou čtyři desítky a sedm jednotek.",
+      vis: { k: "text", h: "<b>47</b> = <b>4</b> desítky + <b>7</b> jednotek<br>10 + 10 + 10 + 10 + 7" },
+      try: { q: "Kolik desítek má číslo 63?", correct: 6, opts: [6, 3, 60, 9], why: "63 = 6 desítek a 3 jednotky." } },
+    { t: "Skok na desítku", say: "Při sčítání skoč nejdřív na nejbližší desítku. Třicet osm a pět: skočím o dvě na čtyřicet a pak o tři na čtyřicet tři.",
+      vis: { k: "jumps", op: "+", a: 38, b: 5 }, try: { op: "+", a: 47, b: 6 } },
+    { t: "Odčítání: skok dolů", say: "Při odčítání skáču dolů. Padesát dva bez sedmi: o dvě dolů na padesát a pak o pět na čtyřicet pět.",
+      vis: { k: "jumps", op: "-", a: 52, b: 7 }, try: { op: "-", a: 63, b: 8 } },
+    { t: "Zkouška obráceně", say: "Odčítání si vždy zkontroluj sčítáním. Padesát dva bez sedmi je čtyřicet pět, protože čtyřicet pět a sedm je zase padesát dva.",
+      vis: { k: "text", h: "52 − 7 = <b>45</b><br>zkouška: 45 + 7 = <b>52</b> ✓" }, try: { op: "-", a: 81, b: 4 } }
+  ],
+  M2: [
+    { t: "Násobení je sčítání hromádek", say: "Tři krát čtyři jsou tři hromádky po čtyřech kuličkách. Spočítej je: čtyři, osm, dvanáct.",
+      vis: { k: "balls", a: 3, b: 4 }, try: { a: 2, b: 5 } },
+    { t: "Prohodit nevadí", say: "Čtyři krát tři je stejně jako tři krát čtyři. Řady a sloupce se jen otočí, kuliček je pořád dvanáct.",
+      vis: { k: "balls", a: 4, b: 3 }, try: { a: 5, b: 3 } },
+    { t: "Řada pětky", say: "Násobky pěti končí vždy nulou nebo pětkou: pět, deset, patnáct, dvacet, dvacet pět.",
+      vis: { k: "text", h: "5 · 10 · 15 · 20 · 25 · 30 · 35 · 40 · 45 · 50" }, try: { a: 5, b: 7 } },
+    { t: "Čtyřka je dvakrát dvojka", say: "Čtyři krát šest je dvakrát šest a ještě jednou dvakrát šest: dvanáct a dvanáct je dvacet čtyři.",
+      vis: { k: "text", h: "4 × 6 = 2 × 6 + 2 × 6 = 12 + 12 = <b>24</b>" }, try: { a: 4, b: 7 } }
+  ],
+  M3: [
+    { t: "Desítka je nejlehčí", say: "Násobit deseti je snadné: připiš nulu. Sedm krát deset je sedmdesát.",
+      vis: { k: "text", h: "7 × 10 = 7<b>0</b> · 3 × 10 = 3<b>0</b> · 9 × 10 = 9<b>0</b>" }, try: { a: 10, b: 6 } },
+    { t: "Devítka na prstech", say: "Devět krát čtyři: polož ruce na stůl a skloň čtvrtý prst zleva. Nalevo zůstanou tři prsty, napravo šest. Výsledek je třicet šest.",
+      vis: { k: "text", h: "9 × 4 → skloň 4. prst: <b>3</b> prsty | <b>6</b> prstů → <b>36</b><br>9 × 7 → <b>6</b> | <b>3</b> → <b>63</b>" }, try: { a: 9, b: 6 } },
+    { t: "Šestka ze známé pětky", say: "Šest krát sedm neznáš? Vezmi pět krát sedm, to je třicet pět, a přidej ještě jednu sedmičku. Čtyřicet dva.",
+      vis: { k: "balls", a: 6, b: 7 }, try: { a: 7, b: 6 } },
+    { t: "Osmička je dvakrát čtyřka", say: "Osm krát šest je dvakrát čtyři krát šest. Dvakrát dvacet čtyři je čtyřicet osm.",
+      vis: { k: "text", h: "8 × 6 = 4 × 6 + 4 × 6 = 24 + 24 = <b>48</b>" }, try: { a: 8, b: 7 } }
+  ],
+  M4: [
+    { t: "Dělení je rozdávání", say: "Dvanáct kamínků rozdělím do tří kotlíků, do každého stejně. V každém jsou čtyři. Dvanáct děleno třemi je čtyři.",
+      vis: { k: "pots", n: 12, d: 3 }, try: { n: 15, d: 3 } },
+    { t: "Dělení je násobení pozpátku", say: "Dvacet děleno čtyřmi? Zeptej se: čtyři krát kolik je dvacet? Čtyři krát pět. Výsledek je pět.",
+      vis: { k: "text", h: "20 ÷ 4 = ?<br>4 × <b>?</b> = 20 → 4 × <b>5</b> = 20<br>20 ÷ 4 = <b>5</b>" }, try: { n: 24, d: 6 } },
+    { t: "Zkouška násobením", say: "Výsledek si vždy ověř: osmnáct děleno dvěma je devět, protože devět krát dva je osmnáct.",
+      vis: { k: "pots", n: 18, d: 2 }, try: { n: 36, d: 4 } }
+  ],
+  M5: [
+    { t: "Stovky jako jednotky", say: "Tři sta a čtyři sta: tři stovky a čtyři stovky je sedm stovek. Sedm set.",
+      vis: { k: "text", h: "300 + 400 → 3 + 4 = 7 → <b>700</b>" }, try: { q: "200 + 500 = ?", correct: 700, opts: [700, 600, 800, 900], why: "2 stovky + 5 stovek = 7 stovek." } },
+    { t: "Desítky do tisíce", say: "Tři sta čtyřicet a padesát: počítám desítky. Třicet čtyři desítek a pět desítek je třicet devět desítek, tedy tři sta devadesát.",
+      vis: { k: "text", h: "340 + 50 → 34 + 5 = 39 desítek → <b>390</b>" }, try: { q: "460 + 30 = ?", correct: 490, opts: [490, 460, 430, 790], why: "46 desítek + 3 desítky = 49 desítek = 490." } },
+    { t: "Odčítání stovek", say: "Osm set bez tří set: osm stovek bez tří stovek je pět stovek.",
+      vis: { k: "text", h: "800 − 300 → 8 − 3 = 5 → <b>500</b>" }, try: { q: "900 − 400 = ?", correct: 500, opts: [500, 400, 600, 1300], why: "9 stovek − 4 stovky = 5 stovek." } }
+  ],
+  M6: [
+    { t: "Číslo se dívá na sousedy", say: "Čtyřicet sedm leží mezi čtyřiceti a padesáti. Blíž má k padesáti, proto zaokrouhlíme na padesát.",
+      vis: { k: "text", h: "40 · · · · · · <b>47</b> · · 50<br>blíž k 50 → <b>50</b>" }, try: { q: "Zaokrouhli číslo 73 na desítky.", correct: 70, opts: [70, 80, 73, 60], why: "73 je blíž k 70 než k 80." } },
+    { t: "Pravidlo pětky", say: "Podívej se na jednotky. Nula až čtyři: dolů. Pět až devět: nahoru. Osmdesát pět má pětku, jde nahoru na devadesát.",
+      vis: { k: "text", h: "0 1 2 3 4 → dolů ⬇️<br>5 6 7 8 9 → nahoru ⬆️<br>8<b>5</b> → 90 · 7<b>2</b> → 70" }, try: { q: "Zaokrouhli číslo 65 na desítky.", correct: 70, opts: [70, 60, 65, 80], why: "Jednotky 5 → nahoru, 65 ≈ 70." } },
+    { t: "Na stovky", say: "Při zaokrouhlování na stovky se dívej na desítky. Tři sta čtyřicet sedm má čtyři desítky, jde dolů na tři sta. Tři sta šedesát dva jde nahoru na čtyři sta.",
+      vis: { k: "text", h: "3<b>4</b>7 → 300 · 3<b>6</b>2 → 400" }, try: { q: "Zaokrouhli číslo 281 na stovky.", correct: 300, opts: [300, 200, 280, 290], why: "Desítky 8 → nahoru, 281 ≈ 300." } }
+  ],
+  M7: [
+    { t: "Když to nevyjde přesně", say: "Třináct kamínků do čtyř kotlíků: do každého tři a jeden zbyde. Třináct děleno čtyřmi je tři, zbytek jedna.",
+      vis: { k: "rest", n: 13, d: 4 }, try: { q: "14 ÷ 4 = ?", correct: "3, zbytek 2", opts: ["3, zbytek 2", "3, zbytek 0", "2, zbytek 2", "4, zbytek 2"], why: "4 × 3 = 12 a 2 zbydou." } },
+    { t: "Zbytek je vždy menší", say: "Zbytek musí být menší než to, čím dělíš. Sedmnáct děleno pěti: tři kotlíky po pěti je patnáct, zbývají dva. Dva je méně než pět, dobře.",
+      vis: { k: "rest", n: 17, d: 5 }, try: { q: "19 ÷ 5 = ?", correct: "3, zbytek 4", opts: ["3, zbytek 4", "2, zbytek 9", "4, zbytek 1", "3, zbytek 3"], why: "5 × 3 = 15, zbývají 4." } },
+    { t: "Zkouška", say: "Výsledek ověř: tři krát čtyři je dvanáct, a jedna navíc je třináct. Sedí.",
+      vis: { k: "text", h: "13 ÷ 4 = 3, zbytek 1<br>zkouška: 3 × 4 + 1 = <b>13</b> ✓" }, try: { q: "23 ÷ 4 = ?", correct: "5, zbytek 3", opts: ["5, zbytek 3", "5, zbytek 2", "6, zbytek 1", "4, zbytek 3"], why: "4 × 5 = 20, zbývají 3." } }
+  ],
+  M8: [
+    { t: "Metr a centimetr", say: "Jeden metr je sto centimetrů. Tři metry jsou tři sta centimetrů.",
+      vis: { k: "text", h: "1 m = <b>100</b> cm · 1 cm = <b>10</b> mm<br>3 m = <b>300</b> cm" }, try: { q: "Kolik centimetrů jsou 4 m?", correct: 400, opts: [400, 40, 4000, 104], why: "1 m = 100 cm, takže 4 m = 400 cm." } },
+    { t: "Hodina a minuty", say: "Hodina má šedesát minut. Půl hodiny je třicet minut, čtvrt hodiny patnáct.",
+      vis: { k: "text", h: "1 h = <b>60</b> min<br>½ h = <b>30</b> min · ¼ h = <b>15</b> min · ¾ h = <b>45</b> min" }, try: { q: "Kolik minut je půl hodiny?", correct: 30, opts: [30, 50, 15, 60], why: "60 minut děleno dvěma je 30." } },
+    { t: "Kilogram a litr", say: "Kilogram je tisíc gramů, litr je tisíc mililitrů. Dva kilogramy jsou dva tisíce gramů.",
+      vis: { k: "text", h: "1 kg = <b>1000</b> g · 1 l = <b>1000</b> ml<br>2 kg = <b>2000</b> g" }, try: { q: "Kolik gramů jsou 3 kg?", correct: 3000, opts: [3000, 300, 30, 1003], why: "1 kg = 1000 g, takže 3 kg = 3000 g." } }
+  ],
+  M9: [
+    { t: "Nejdřív otázka", say: "U slovní úlohy si nejdřív přečti, na co se ptá. Teprve potom hledej čísla.",
+      vis: { k: "text", h: "„Harry má 12 čokoládových žabek a 5 snědl. <b>Kolik mu zbylo?</b>“<br>ptá se na <b>zbytek</b> → odčítání: 12 − 5 = <b>7</b>" },
+      try: { q: "Ron má 15 Bertíkových fazolek a 6 snědl. Kolik mu zbylo?", correct: 9, opts: [9, 21, 8, 11], why: "Zbylo = odčítání: 15 − 6 = 9." } },
+    { t: "Dohromady, nebo zbylo?", say: "Dohromady, celkem, přidal: to je sčítání. Zbylo, snědl, rozdal: to je odčítání.",
+      vis: { k: "text", h: "dohromady · celkem · dostal · přidal → <b>+</b><br>zbylo · snědl · rozdal · utratil → <b>−</b>" },
+      try: { q: "Hermiona má 8 knih a z knihovny si půjčila 6. Kolik knih má dohromady?", correct: 14, opts: [14, 2, 13, 15], why: "Dohromady = sčítání: 8 + 6 = 14." } },
+    { t: "Stejné hromádky jsou krát", say: "Když je něco po stejných hromádkách, násobíš. Čtyři kotlíky po pěti žabkách je čtyři krát pět, dvacet žabek.",
+      vis: { k: "balls", a: 4, b: 5 }, try: { q: "V každé ze 3 krabiček je 6 čokoládových žabek. Kolik je žabek celkem?", correct: 18, opts: [18, 9, 12, 21], why: "3 krabičky po 6 = 3 × 6 = 18." } }
+  ],
+  C1: [
+    { t: "Tvrdé a měkké souhlásky", say: "Tvrdé souhlásky jsou jako tvrdý kámen: h, ch, k, r, d, t, n. Po nich píšeme tvrdé y. Měkké jsou jako polštář: ž, š, č, ř, c, j, ď, ť, ň. Po nich píšeme měkké i.",
+      vis: { k: "pair", t1: "tvrdé 🪨 → y", l1: ["h", "ch", "k", "r", "d", "t", "n"], t2: "měkké 🛏️ → i", l2: ["ž", "š", "č", "ř", "c", "j", "ď", "ť", "ň"] }, try: { id: "c1_01" } },
+    { t: "Past: di, ti, ni", say: "Když slyšíš ďi, ťi, ňi, píšeš di, ti, ni bez háčku. Třeba ticho nebo divadlo. Když slyšíš tvrdé dy, ty, ny, píšeš y.",
+      vis: { k: "text", h: "slyšíš <b>ďi</b> → píšeš <b>di</b>: divadlo<br>slyšíš <b>ťi</b> → píšeš <b>ti</b>: ticho<br>slyšíš <b>dy</b> → píšeš <b>dy</b>: hody" }, try: { id: "c1_15" } },
+    { t: "Obojetné počkají", say: "Souhlásky b, l, m, p, s, v, z jsou obojetné. U nich rozhodují vyjmenovaná slova. Ta se naučíš v dalších učebnách.",
+      vis: { k: "text", h: "obojetné: <b>b l m p s v z</b><br>→ vyjmenovaná slova" }, try: { id: "c1_08" } }
+  ],
+  C2: [
+    { t: "Abeceda", say: "Abeceda má pevné pořadí. Zazpívej si ji pomalu a ukazuj si na prstech.", vis: { k: "abc" }, try: { id: "c2_01" } },
+    { t: "Ch má vlastní místo", say: "Pozor na jednu past: ch je samostatné písmeno a patří hned za h.", vis: { k: "text", h: "… G, <b>H, CH, I</b>, J …" }, try: { id: "c2_02" } },
+    { t: "Řazení slov", say: "Slova řadíme podle prvního písmene. Když je stejné, rozhodne druhé. Slovo kočka je před slovem kůň, protože o je v abecedě dřív než ů.",
+      vis: { k: "text", h: "k<b>o</b>čka · k<b>ů</b>ň · k<b>v</b>ětina<br>o → ů → v" }, try: { id: "c2_09" } }
+  ],
+  C3: [
+    { t: "Párové souhlásky", say: "Některé souhlásky znějí na konci slova stejně: b jako p, d jako t, v jako f, z jako s. Říkáme jim párové.",
+      vis: { k: "pair", t1: "znělé", l1: ["b", "d", "ď", "v", "z", "ž", "h"], t2: "neznělé", l2: ["p", "t", "ť", "f", "s", "š", "ch"], pairs: true }, try: { id: "c3_01" } },
+    { t: "Prodluž slovo", say: "Nevíš, co napsat? Prodluž slovo: dub, duby. Had, hadi. Teď slyšíš, co tam patří.",
+      vis: { k: "text", h: "du<b>?</b> → du<b>b</b>y → du<b>b</b><br>ha<b>?</b> → ha<b>d</b>i → ha<b>d</b><br>le<b>?</b> → l<b>v</b>i → le<b>v</b>" }, try: { id: "c3_02" } },
+    { t: "I uprostřed slova", say: "Stejná past bývá uprostřed slova: tužka, tužek. Rybka, ryba. Slovo změň tak, aby po souhlásce byla samohláska.",
+      vis: { k: "text", h: "tu<b>ž</b>ka → tužek<br>ry<b>b</b>ka → ryba<br>sla<b>d</b>ký → sladit" }, try: { id: "c3_09" } }
+  ],
+  C11: [
+    { t: "Kdo? Co?", say: "Zeptej se slova: kdo, co? Když odpoví, je to podstatné jméno. Názvy osob, zvířat a věcí.",
+      vis: { k: "text", h: "kdo? co? → <b>podstatné jméno</b><br>kočka · les · maminka · koláč" }, try: { id: "c11_01" } },
+    { t: "Jaký? Jaká? Jaké?", say: "Jaký je les? Hluboký. Jaká je čepice? Červená. Slova, která něco popisují, jsou přídavná jména.",
+      vis: { k: "text", h: "jaký? jaká? jaké? → <b>přídavné jméno</b><br>hluboký · červená · veselé" }, try: { id: "c11_04" } },
+    { t: "Co dělá?", say: "Co dělá pes? Štěká. Co dělá maminka? Peče. Slova, která říkají, co kdo dělá, jsou slovesa.",
+      vis: { k: "text", h: "co dělá? → <b>sloveso</b><br>štěká · peče · zpívá · spí" }, try: { id: "c11_02" } },
+    { t: "Malá slůvka před jmény", say: "Na, pod, za, v: malá slůvka, která stojí před podstatným jménem. To jsou předložky.",
+      vis: { k: "text", h: "<b>na</b> stole · <b>pod</b> postelí · <b>za</b> domem → <b>předložka</b>" }, try: { id: "c11_03" } }
+  ],
+  C12: [
+    { t: "Co věta chce", say: "Věta oznamovací něco oznamuje a má tečku. Tázací se ptá a má otazník. Rozkazovací přikazuje a mívá vykřičník. Přací si něco přeje: kéž by, ať.",
+      vis: { k: "text", h: "Venku svítí slunce<b>.</b> → oznamovací<br>Kolik je hodin<b>?</b> → tázací<br>Zavři okno<b>!</b> → rozkazovací<br><b>Kéž by</b> už byly prázdniny! → přací" }, try: { id: "c12_02" } },
+    { t: "Věta, nebo souvětí?", say: "Spočítej slovesa. Jedno sloveso: věta. Dvě a víc: souvětí. Prší, a proto zůstaneme doma. Dvě slovesa, je to souvětí.",
+      vis: { k: "text", h: "Kočka <b>spí</b> na gauči. → 1 sloveso → <b>věta</b><br><b>Prší</b>, a proto <b>zůstaneme</b> doma. → 2 slovesa → <b>souvětí</b>" }, try: { id: "c12_07" } }
+  ]
+};
+/* vyjmenovaná slova: jedna šablona pro všechna písmena (řada → pravidlo → dvojice, které se pletou) */
+var VYJ_LESSON = {
+  C4:  { ex: "bydlit → <b>bydlím</b>, bydliště<br>obyvatel → <b>obývat</b>, obydlí<br>ale: bít, bílý, bílek → měkké i", pairs: [["být", "bít", "být = jsem, jsi, budu · bít = tlouct"], ["bydlo", "bidlo", "bydlo = živobytí · bidlo = tyč"], ["nabýt", "nabít", "nabýt = získat · nabít = baterii nebo mobil"]] },
+  C5:  { ex: "slyšet → <b>slyším</b>, neslyšný<br>mlýn → <b>mlynář</b><br>ale: lípa, líný, list → měkké i", pairs: [["mlýn", "mlít", "mlýn = stavba · mlít = drtit obilí"], ["lyže", "líže", "lyže na sníh · líže zmrzlinu"], ["lysý", "lísá se", "lysý = holý · lísá se = mazlí se"]] },
+  C6:  { ex: "mýt → <b>umýt</b>, myčka<br>myslit → <b>myšlenka</b>, smysl<br>ale: milý, mísa, minuta → měkké i", pairs: [["my", "mi", "my = všichni · mi = mně"], ["mýt", "mít", "mýt nádobí · mít hračku"], ["mýval", "míval", "mýval = zvíře · míval = dřív měl"]] },
+  C7:  { ex: "pýcha → <b>pyšný</b>, pyšnit se<br>pytel → <b>pytlík</b><br>ale: pivo, písek, pila → měkké i", pairs: [["pyl", "pil", "pyl na květu · pil vodu"], ["pýcha", "píchá", "pýcha = namyšlenost · píchá = bodá"], ["slepýš", "slepíš", "slepýš = ještěrka · slepíš lepidlem"]] },
+  C8:  { ex: "sýr → <b>sýrový</b><br>sypat → <b>nasypat</b>, sypký<br>ale: síla, sít, sítko → měkké i", pairs: [["sypat", "sípat", "sypat písek · sípat = chraptět"], ["syrový", "sírový", "syrový = nevařený · sírový = ze síry"]] },
+  C9:  { ex: "vysoký → <b>výška</b>, vysoko<br>zvykat → <b>zvyk</b><br>předpona vy-/vý-: <b>vy</b>letět, <b>vý</b>let<br>ale: vidět, víla, visí → měkké i", pairs: [["výr", "vír", "výr = sova · vír = točící se voda"], ["vysel", "visel", "vysel semínka · visel na větvi"], ["výt", "vít", "vlk vyje · vít věnec"]] },
+  C10: { ex: "jazyk → <b>jazýček</b>, jazykový<br>nazývat se → <b>nazývá se</b>, název<br>ale: zima, zítra, cizí, brzičko → měkké i", pairs: [["nazývat", "nazívat", "nazývat jménem · nazívat se = zívat"]] }
+};
+function vyjLessonCards(t) {
+  var m = VYJ_LESSON[t], L = vyjLetter(t), ids = (BANKS[t] || []).map(function (q) { return q.id; });
+  if (!m) return null;
+  return [
+    { t: "Řada po " + L, say: vyjRowText(t), vis: { k: "row", t: t } },
+    { t: "Pravidlo", say: "Po " + L + " píšeme tvrdé y jen v těchto vyjmenovaných slovech a ve slovech od nich odvozených. Uvnitř slova je všude jinde měkké i.", vis: { k: "text", h: m.ex }, try: ids[0] ? { id: ids[0] } : null },
+    { t: "Dvojice, které se pletou", say: "Některá slova znějí stejně, a přitom se píšou jinak. Rozhoduje, co slovo znamená.", vis: { k: "pairs", list: m.pairs }, try: ids[1] ? { id: ids[1] } : null }
+  ];
+}
+/* angličtina: seznámení se slovíčky po třech (Hagrid jen uvádí, slova čte Alice) */
+function vocabLessonCards(t, st) {
+  st = st || S;
+  var pool = vocabPool(t, st); if (pool.length < 3) return null;
+  var fresh = pool.filter(function (w) { return wordLevel(st, w.en) < 2; });
+  if (t === "E0") { var nu = newestUnit(pool); var nw = fresh.filter(function (w) { return w.b === nu; }); if (nw.length >= 3) fresh = nw; }
+  if (fresh.length < 3) fresh = pool;
+  var cards = [{ t: "Slovíčka ze školy" === TOPICS[t].n ? "Nová slovíčka" : TOPICS[t].n, say: "Anglický slovíčka? Ty tě naučím já! Každý si nejdřív poslechni, pak zkus, co znamená." }];
+  for (var i = 0; i < Math.min(9, fresh.length); i += 3) {
+    var ws = fresh.slice(i, i + 3); if (ws.length < 3) break;
+    cards.push({ t: "Tři slovíčka", say: "Klepni na každý slovíčko a poslechni si, jak zní. Pak ho zkus říct nahlas, jo?", vis: { k: "words", list: ws }, try: { en: ws[0].en } });
+  }
+  return cards.length > 1 ? cards : null;
+}
+function lessonCards(t, st) {
+  st = st || S;
+  if (LESSONS[t]) return LESSONS[t];
+  var tp = TOPICS[t]; if (!tp) return null;
+  if (VYJ_LESSON[t]) return vyjLessonCards(t);
+  if (tp.subj === "en") return vocabLessonCards(t, st);
+  if (tp.subj === "hp") return [{ t: tp.n, say: "V této učebně se ptám jen na to, co už jste s rodiči přečetli. Vzpomeň si na příběh. Nic víc nepotřebuješ.", vis: { k: "text", h: "📜 " + esc(tp.book ? YEARS[tp.book].title : tp.n) + "<br>otázky jen z dočtených kapitol" } }];
+  return null;
+}
+function lessonHas(t, st) { var c = lessonCards(t, st); return !!(c && c.length); }
+function lessonWho(t) { return LESSON_WHO[(TOPICS[t] || {}).subj] || "mcg"; }
+/* zkušební otázka karty: bez galeonů, statistik, chyb i stupňů — jen vyzkoušet, co jsem právě slyšel{a|} */
+function lessonTry(t, tr, st) {
+  st = st || S;
+  if (!tr) return null;
+  if (tr.id) { var bq = (BANKS[t] || []).filter(function (x) { return x.id === tr.id; })[0]; if (!bq) return null; return { q: bq.q, opts: shuffle(bq.o.slice()), correct: bq.o[0], why: bq.why || "" }; }
+  if (tr.en) { var pool = vocabPool(t, st), w = pool.filter(function (x) { return x.en === tr.en; })[0]; if (!w) return null; var v = vocabListenQ(w, pool, allVocab(st)); return { q: v.q, opts: v.opts, correct: v.correct, why: v.why, word: w.en, big: !!v.bigOpts }; }
+  if (tr.q) return { q: tr.q, opts: shuffle((tr.opts || numOptions(tr.correct)).slice()), correct: tr.correct, why: tr.why || "" };
+  if ((t === "M2" || t === "M3") && tr.a) { var ans = tr.a * tr.b; return { q: tr.a + " × " + tr.b + " = ?", opts: shuffle(numOptions(ans, [tr.a, -tr.a, tr.b, -tr.b, 1, -1, 2, -2])), correct: ans, why: tr.a + " × " + tr.b + " = " + ans }; }
+  if (t === "M4" && tr.n) { var qd = tr.n / tr.d; return { q: tr.n + " ÷ " + tr.d + " = ?", opts: shuffle(numOptions(qd, [1, -1, 2, -2, 3, -3])), correct: qd, why: tr.n + " ÷ " + tr.d + " = " + qd + ", protože " + qd + " × " + tr.d + " = " + tr.n }; }
+  if (t === "M1" && tr.op) { var a1 = tr.op === "+" ? tr.a + tr.b : tr.a - tr.b, sym = tr.op === "+" ? " + " : " − "; return { q: tr.a + sym + tr.b + " = ?", opts: shuffle(numOptions(a1)), correct: a1, why: mathHint({ dbg: { t: "M1", op: tr.op, a: tr.a, b: tr.b, ans: a1 } }) || (tr.a + sym + tr.b + " = " + a1) }; }
+  return null;
+}
+function lessonVisHTML(t, v) {
+  if (!v) return "";
+  var row = function (n, e) { return new Array(n + 1).join(e); };
+  if (v.k === "balls") return '<div class="lsVis">' + altExplainHTML({ topic: "M2", dbg: { a: v.a, b: v.b } }) + '</div>';
+  if (v.k === "pots") return '<div class="lsVis">' + altExplainHTML({ topic: "M4", dbg: { n: v.n, d: v.d } }) + '</div>';
+  if (v.k === "jumps") return '<div class="lsVis">' + altExplainHTML({ topic: "M1", dbg: { op: v.op, a: v.a, b: v.b } }) + '</div>';
+  if (v.k === "rest") { var q = Math.floor(v.n / v.d), r = v.n % v.d, g = ""; for (var j = 0; j < v.d; j++) g += '<div class="altRow">🫕 ' + row(q, "💎") + '</div>'; return '<div class="lsVis"><p>' + v.n + ' kamínků do ' + v.d + ' kotlíků:</p>' + g + '<div class="altRow">zbyde: ' + row(r, "💎") + '</div><p>' + v.n + ' ÷ ' + v.d + ' = <b>' + q + ', zbytek ' + r + '</b></p></div>'; }
+  if (v.k === "row") return '<div class="lsVis vyjWords">' + (VYJ_LISTS[v.t] || []).map(function (w) { return '<button type="button" class="vyjW" data-say="' + esc(w) + '">' + esc(w).replace(/([yý])/g, '<b class="vy">$1</b>') + '</button>'; }).join('<span class="vyjDot">·</span>') + '</div><p class="muted center">Klepni na slovo a uslyšíš ho. Žluté y si zapamatuj.</p>';
+  if (v.k === "pair") return '<div class="lsVis lsPair"><div><b>' + esc(v.t1) + '</b><div class="lsLetters">' + v.l1.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join("") + '</div></div><div><b>' + esc(v.t2) + '</b><div class="lsLetters">' + v.l2.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join("") + '</div></div></div>';
+  if (v.k === "pairs") return '<div class="lsVis">' + v.list.map(function (p) { return '<div class="lsDuo"><span class="lsY">' + esc(p[0]) + '</span> × <span class="lsI">' + esc(p[1]) + '</span><small>' + esc(p[2]) + '</small></div>'; }).join("") + '</div>';
+  if (v.k === "abc") return '<div class="lsVis lsLetters big">' + "A B C Č D Ď E F G H CH I J K L M N Ň O P Q R Ř S Š T Ť U V W X Y Z Ž".split(" ").map(function (c) { return '<span' + (c === "CH" ? ' class="hi"' : '') + '>' + c + '</span>'; }).join("") + '</div>';
+  if (v.k === "words") return '<div class="lsVis lsWords">' + v.list.map(function (w) { return '<div class="lsWord"><span class="lsEmoji">' + (w.e || "✨") + '</span><b class="qword">' + esc(w.en) + '</b><span class="muted">' + esc(w.cs) + '</span>' + sayBtnHTML(w.en, true) + '</div>'; }).join("") + '</div>';
+  if (v.k === "text") return '<div class="lsVis lsText">' + v.h + '</div>';
+  return "";
+}
+var lessonRet = null;   /* kam po výkladu: { fn, label } (návrat do hodiny), jinak do učebny */
+function screenHut() {
+  var byS = {}, order = ["m", "cj", "en", "hp"];
+  unlockedTopics(S).forEach(function (t) { if (lessonHas(t)) { var sj = TOPICS[t].subj; (byS[sj] = byS[sj] || []).push(t); } });
+  var jm = S.name ? vok(S.name) : "{čarodějko|čaroději}";
+  var cl = { c: "hagrid", ch: CHARS.hagrid, text: gt("Pojď dál, " + jm + "! Tesák, lehni. Tak co ti dneska máme vysvětlit?") };
+  var list = order.filter(function (sj) { return byS[sj]; }).map(function (sj) {
+    return '<h3 style="font-size:17px">' + subjIcon(sj, 18) + ' ' + esc(SUBJECTS[sj].n) + '</h3>' + byS[sj].map(function (t) {
+      var seen = S.lessonSeen && S.lessonSeen[t];
+      return '<div class="chkRow"><span style="flex:1"><b>' + esc(TOPICS[t].n) + '</b>' + (seen ? ' <span class="muted">· viděno ' + czDate(seen) + '</span>' : '') + '</span><button class="btn small' + (seen ? ' secondary' : '') + '" onclick="screenLesson(\'' + t + '\')">' + (seen ? "Znovu" : "Vysvětlit") + '</button></div>';
+    }).join("");
+  }).join("");
+  render(topbarHTML() + '<div class="card"><button class="btn secondary small backMap" onclick="screenMap()">← Mapa hradu</button>' +
+    '<h2 class="center">🏡 Hagridova hájenka</h2>' + charSayHTML(cl) +
+    '<p class="muted center">Tady ti vysvětlíme, co se v učebnách cvičí. Krátce, s obrázkem a hned si to zkusíš. Bez bodů, jen pro pochopení.</p>' +
+    (list || '<p class="muted center">Zatím není co vysvětlovat. Až se otevře učebna, bude tu její výklad.</p>') +
+    '</div>' + navHTML("rozvrh"));
+  lessonRet = null;
+  speakAs(cl);
+}
+function screenLesson(t, i, ret) {
+  var cards = lessonCards(t); if (!cards) { screenHut(); return; }
+  i = i || 0; if (ret) lessonRet = ret;
+  var c = cards[i], N = cards.length, who = lessonWho(t), ch = CHARS[who], last = i === N - 1;
+  var cl = { c: who, ch: ch, text: gt(c.say) };
+  var tr = lessonTry(t, c.try);
+  var html = topbarHTML() + '<div class="card lsCard">' +
+    '<p class="muted center setupStep">' + esc(TOPICS[t].n) + ' · karta ' + (i + 1) + ' z ' + N + '</p><div class="setupDots">' + cards.map(function (x, k) { return '<i' + (k <= i ? ' class="on"' : '') + '></i>'; }).join("") + '</div>' +
+    '<h2 class="center">' + esc(c.t) + '</h2>' + charSayHTML(cl) + lessonVisHTML(t, c.vis) +
+    (tr ? '<div id="lsTry"><button class="btn gold" id="lsTryBtn">✏️ Zkus to</button></div>' : '') +
+    '<div class="row2" style="margin-top:14px">' + (i > 0 ? '<button class="btn secondary" id="lsPrev">← Zpět</button>' : '<button class="btn secondary" id="lsPrev">← ' + (lessonRet ? "Zpět do hodiny" : "Hájenka") + '</button>') +
+    (last ? '<button class="btn" id="lsNext">' + (lessonRet ? lessonRet.label || "Zpět do hodiny" : "Jdu do učebny →") + '</button>' : '<button class="btn" id="lsNext">Další →</button>') + '</div>' +
+    (last && !lessonRet ? '<p class="center" style="margin:8px 0 0"><button class="linkBtn" onclick="screenHut()">Zpět do hájenky</button></p>' : '') +
+    '</div>' + navHTML("rozvrh");
+  render(html);
+  if (last && !DEMO) { if (!S.lessonSeen || typeof S.lessonSeen !== "object") S.lessonSeen = {}; if (!S.lessonSeen[t]) { S.lessonSeen[t] = todayStr(); saveState(); } }
+  speakAs(cl);
+  var go = function (k) { screenLesson(t, k); if (W.scrollTo) W.scrollTo(0, 0); };
+  el("lsPrev").onclick = function () { if (i > 0) go(i - 1); else if (lessonRet) { var f = lessonRet.fn; lessonRet = null; f(); } else screenHut(); };
+  el("lsNext").onclick = function () { if (!last) go(i + 1); else if (lessonRet) { var f = lessonRet.fn; lessonRet = null; f(); } else startTopicQuest(t); };
+  var tb = el("lsTryBtn");
+  if (tb) tb.onclick = function () {
+    var box = el("lsTry");
+    box.innerHTML = '<div class="lsQ"><p class="qtext center">' + esc(tr.q) + '</p>' + (tr.word ? '<div class="sayRow">' + sayBtnHTML(tr.word) + '</div>' : '') +
+      tr.opts.map(function (o, k) { return '<button class="opt' + (tr.big ? " bigOpt emojiOpt" : String(o).length <= 3 ? " bigOpt" : "") + '" data-k="' + k + '">' + esc(o) + '</button>'; }).join("") + '<div id="lsFb"></div></div>';
+    if (tr.word) setTimeout(function () { ttsSay(tr.word, null, "en").catch(function () {}); }, 300);
+    Array.prototype.forEach.call(box.querySelectorAll(".opt"), function (b) {
+      b.onclick = function () {
+        var ok = String(tr.opts[parseInt(b.getAttribute("data-k"), 10)]) === String(tr.correct);
+        Array.prototype.forEach.call(box.querySelectorAll(".opt"), function (x) { x.disabled = true; if (String(tr.opts[parseInt(x.getAttribute("data-k"), 10)]) === String(tr.correct)) x.classList.add("correct"); });
+        if (!ok) b.classList.add("wrong");
+        el("lsFb").innerHTML = '<div class="feedback ' + (ok ? "ok" : "bad") + '">' + (ok ? gt("✅ Přesně tak! Pochopil{a|} jsi to.") : "Správně je: <b>" + esc(tr.correct) + "</b>. Nic se neděje, proto to zkoušíme tady.") + (tr.why ? "<br><span class=\"muted\">" + esc(tr.why) + "</span>" : "") + '</div>';
+        sfx(ok ? "ok" : "bad");
+        var nb = el("lsNext"); if (nb) { nb.classList.add("gold"); nb.focus(); }
+      };
+    });
   };
 }
 var examCl = null;
@@ -5343,6 +5608,8 @@ function mergeStates(a, b) {
   if (!m.gender && o.gender) m.gender = o.gender;
   if (!m.examOpen || typeof m.examOpen !== "object") m.examOpen = {};
   for (var exy in (o.examOpen || {})) if (o.examOpen[exy]) m.examOpen[exy] = true;
+  if (!m.lessonSeen || typeof m.lessonSeen !== "object") m.lessonSeen = {};
+  for (var lst in (o.lessonSeen || {})) if (o.lessonSeen[lst] && (!m.lessonSeen[lst] || o.lessonSeen[lst] > m.lessonSeen[lst])) m.lessonSeen[lst] = o.lessonSeen[lst];
   if (!m.wordsCleared || !o.wordsCleared) {
     var haveW = {}; (m.words || []).forEach(function (w) { haveW[w.en] = true; });
     (o.words || []).forEach(function (w) { if (!haveW[w.en] && !removed[w.en]) { m.words.push(w); haveW[w.en] = true; } });
@@ -5788,6 +6055,7 @@ function answerQ(it, chosen, btn) {
       '<div class="stitle">' + svgCheck(18) + ' +' + gained + ' ' + svgCoin(17) + ' ' + galeonWord(gained) + '!</div>' +
       (it.why ? '<div class="swhy">' + esc(it.why) + '</div>' : '') + (it.word ? '<div class="sayRow">' + sayBtnHTML(it.word) + '</div>' : '') + note +
       '<button class="btn" id="nextBtn">Pokračovat</button></div></div>';
+    session.wrongRun = 0;
     sparkles();
     if (it.kind !== "build") sfx("ok");
     /* série správně napoprvé: po 3, 6, 9… pochválí postava předmětu svým hlasem (u zkoušky ne, ať nevyrušuje) */
@@ -5805,7 +6073,7 @@ function answerQ(it, chosen, btn) {
     fxCoinsToChip(gained);
   } else {
     if (btn) btn.classList.add("wrong");
-    if (!it.bonus) session.okRun = 0;
+    if (!it.bonus) { session.okRun = 0; session.wrongRun = (session.wrongRun || 0) + 1; }
     if (it.kind !== "card") sfx("bad");
     if (!it.bonus) st.w++;
     var shown = it.kind === "build" ? "poskládáno s " + it._slips + " zaváháním" : it.kind === "card" ? "řekla, že ještě neví" : String(chosen);
@@ -5827,6 +6095,10 @@ function answerQ(it, chosen, btn) {
       '<button class="btn red" id="nextBtn">Pokračovat</button></div></div>';
   }
   if (!correct && it.retry) altExplainWire(it);
+  if (!correct && !it.bonus && session.mode !== "exam" && (session.wrongRun || 0) >= 2 && lessonHas(it.topic)) {
+    var nb0 = el("nextBtn"); if (nb0) nb0.insertAdjacentHTML("beforebegin", '<button class="btn secondary" id="lessonBtn">🏡 Ukázat výklad</button>');
+    var lb = el("lessonBtn"); if (lb) lb.onclick = function () { session.index++; session.wrongRun = 0; sessionPersist(); var tt = it.topic; screenLesson(tt, 0, { fn: function () { showQuestion(); }, label: "Zpět do hodiny →" }); };
+  }
   sheetToBody();
   checkBadges();
   saveState();
@@ -5961,11 +6233,11 @@ function altExplainHTML(it) {
   var d = it.dbg || {}, t = it.topic, row = function (n, e) { return new Array(n + 1).join(e); };
   if ((t === "M2" || t === "M3") && d.a && d.b) {
     var rows = ""; for (var i = 0; i < d.a; i++) rows += '<div class="altRow">' + row(d.b, "🔮") + '</div>';
-    return '<p>' + d.a + ' × ' + d.b + ' je ' + d.a + ' řad po ' + d.b + ' kuličkách:</p>' + rows + '<p>Spočítej je: <b>' + (d.a * d.b) + '</b>.</p>';
+    return '<p>' + d.a + ' × ' + d.b + ' je ' + d.a + (d.a <= 4 ? ' řady' : ' řad') + ' (hromádky) po ' + d.b + ' kuličkách:</p>' + rows + '<p>Spočítej je: <b>' + (d.a * d.b) + '</b>.</p>';
   }
   if (t === "M4" && d.n && d.d) {
     var g = ""; for (var j = 0; j < d.d; j++) g += '<div class="altRow">🫕 ' + row(d.n / d.d, "💎") + '</div>';
-    return '<p>' + d.n + ' kamínků rozdělíme do ' + d.d + ' kotlíků, do každého stejně:</p>' + g + '<p>V každém kotlíku je <b>' + (d.n / d.d) + '</b>, proto ' + d.n + ' : ' + d.d + ' = ' + (d.n / d.d) + '.</p>';
+    return '<p>' + d.n + ' kamínků rozdělíme do ' + d.d + ' kotlíků, do každého stejně:</p>' + g + '<p>V každém kotlíku je <b>' + (d.n / d.d) + '</b>, proto ' + d.n + ' ÷ ' + d.d + ' = ' + (d.n / d.d) + '.</p>';
   }
   if (t === "M1" && d.a != null && d.b != null) {
     if (d.op === "+") { var up = 10 - d.a % 10; return up < 10 && d.b > up ? '<p>Skákej po číselné ose. Začni na <b>' + d.a + '</b>, skoč o ' + up + ' na desítku <b>' + (d.a + up) + '</b>, pak ještě o ' + (d.b - up) + ' na <b>' + (d.a + d.b) + '</b>.</p>' : '<p>Začni na <b>' + d.a + '</b> a přičti ' + d.b + ': <b>' + (d.a + d.b) + '</b>.</p>'; }
@@ -7067,6 +7339,7 @@ function screenParent(section) {
     var examRows = "";
     for (var ey in S.exams) if (S.exams[ey]) examRows += '<li>' + ey + '. ročník: nejlépe ' + S.exams[ey].best + ' / 15' + (S.exams[ey].passed ? " — složena" : "") + ' (pokusů: ' + S.exams[ey].tries + ')</li>';
     body =
+      (Object.keys(S.lessonSeen || {}).length ? '<p class="muted">🏡 Výklad v hájence viděl{a|}: ' + Object.keys(S.lessonSeen).map(function (t) { return esc((TOPICS[t] || {}).n || t); }).join(", ") + '.</p>' : '') +
       '<h3>📅 Posledních 7 dní</h3>' +
       '<p class="muted">Dny s dokončenou hodinou: <b>' + doneWeek + ' ze 7</b> · plamínek <b>' + sk.current + '</b> ' + dayWord(sk.current) + ' (rekord ' + sk.best + ', cíl ' + (sk.goal || "nezvolen") + ', amulety ' + sk.freezes + '/2) · chyb za týden: <b>' + mistWeek + '</b></p>' +
       '<table class="weekTable">' + weekRows + '</table>' +
@@ -7547,7 +7820,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
-  examOpen: examOpen,
+  CHARS: CHARS, examOpen: examOpen, LESSONS: LESSONS, lessonCards: lessonCards, lessonTry: lessonTry, lessonHas: lessonHas, lessonVisHTML: lessonVisHTML, lessonWho: lessonWho, VYJ_LESSON: VYJ_LESSON,
   gt: gt, kidGender: kidGender, SORTING: SORTING, CHAR_LINES: CHAR_LINES, TUT_STEPS: TUT_STEPS, ttsWarmList: ttsWarmList,
   setupApplyPreset: setupApplyPreset, setupApplyHP: setupApplyHP, setupPresetNow: setupPresetNow, SETUP_PRESETS: SETUP_PRESETS,
   ucetFromHash: ucetFromHash, ucetDecide: ucetDecide, ucetEmailOk: ucetEmailOk, ucetEmailNorm: ucetEmailNorm, jwtEmail: jwtEmail, UCET_KEY: UCET_KEY,
@@ -7902,7 +8175,7 @@ function demoState(name) {
   var s = migrate({});
   var today = todayStr();
   s.name = name || "Bára";
-  s.parentSetup = "ukázka";
+  s.parentSetup = "ukázka"; s.lessonSeen = { M2: addDays(today, -3), C1: addDays(today, -1) };
   s.gender = name ? (demoGender || kidGender({ name: name })) : "f";
   s.sesit = true; s.words = cloneObj(SCHOOL_WORDS_DEFAULT); s.unitsShipped = SCHOOL_UNITS_SHIPPED.map(function (u) { return u.name; });   /* ukázka předvede i Slovíčka ze školy */ s.house = HOUSE_KEYS[Math.floor(Math.random() * 4)]; s.since = addDays(today, -20);
   s.dust = 640; s.dustEarned = 980; s.questsDone = 12; s.perfectQuests = 4;
@@ -8151,6 +8424,7 @@ function screenDash() {
     (todays.length ? todays.map(function (x) { return '<div class="chkRow"><span style="flex:1">' + x.t + ' · ' + esc(x.topic) + '</span><b>' + x.ok + ' / ' + x.n + '</b></div>'; }).join("") : '<p class="muted">Dnes zatím nehrála.</p>') +
     '<h3>Posledních 7 dní</h3><div class="dashWeek">' + days.join("") + '</div><p class="muted">Plamínek ' + (sk.current || 0) + ' ' + dayWord(sk.current || 0) + ' · rekord ' + (sk.best || 0) + (sk.goal ? ' · cíl ' + sk.goal : '') + ' · ledové amulety ' + (sk.freezes || 0) + '</p>' +
     '<h3>Kde chybuje (7 dní)</h3>' + (mistHTML || '<p class="muted">Žádné chyby, výborně.</p>') +
+    (Object.keys(S.lessonSeen || {}).length ? '<p class="muted">🏡 Výklad: ' + Object.keys(S.lessonSeen).map(function (t) { return esc((TOPICS[t] || {}).n || t); }).join(", ") + '</p>' : '') +
     '<h3>Co umí</h3><p>🌟 Slovíčka z hlavy <b>' + dc[2] + '</b> · 👀 poznává <b>' + dc[1] + '</b> · 🥚 nová ' + dc[0] + '</p>' +
     ((isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3>🧪 Násobilka</h3>' + factGridHTML(S) : '') +
     (vyjListHTML(S) ? '<h3>🪶 Vyjmenovaná slova</h3>' + vyjListHTML(S) : '') +
