@@ -892,7 +892,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-22h";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-22i";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -5239,16 +5239,20 @@ function ttsWarmList(st) {
   Object.keys(VOCAB_SETS).forEach(function (t) { if (st.unlocked && st.unlocked[t]) VOCAB_SETS[t].forEach(function (w) { push(w.en); if (w.alt) push(w.alt); }); });
   return out;
 }
-var ttsWarmBusy = false;
+/* Jedno stahování najednou; další volání se k běžícímu připojí a dostává průběh (22. 10. 2026: tlačítko v panelu
+   hlásilo jen „už běží“, protože stahování po uložení slovíček běželo na pozadí). Uvízlé slovo po 20 s = „fail“. */
+var ttsWarmJob = null;
 function ttsWarmAll(onEach) {
-  if (ttsWarmBusy || !ttsOnline()) return Promise.resolve(null);
-  ttsWarmBusy = true;
-  var list = ttsWarmList(), i = 0, res = { cache: 0, "new": 0, none: 0, fail: 0, total: list.length };
+  if (!ttsOnline()) return Promise.resolve(null);
+  if (ttsWarmJob) { if (onEach) { ttsWarmJob.listeners.push(onEach); onEach(ttsWarmJob.i, ttsWarmJob.n, ttsWarmJob.res); } return ttsWarmJob.p; }
+  var list = ttsWarmList(), job = { i: 0, n: list.length, res: { cache: 0, "new": 0, none: 0, fail: 0, total: list.length }, listeners: onEach ? [onEach] : [] };
+  var one = function (w) { return new Promise(function (res) { var done = false; var t = setTimeout(function () { if (!done) { done = true; res("fail"); } }, 20000); ttsWarm(w).then(function (r) { if (!done) { done = true; clearTimeout(t); res(r); } }); }); };
   var next = function () {
-    if (i >= list.length) { ttsWarmBusy = false; return Promise.resolve(res); }
-    return ttsWarm(list[i++]).then(function (r) { res[r]++; if (onEach) onEach(i, list.length, res); return new Promise(function (ok) { setTimeout(ok, r === "new" ? 250 : 0); }); }).then(next);
+    if (job.i >= list.length) { ttsWarmJob = null; return Promise.resolve(job.res); }
+    return one(list[job.i]).then(function (r) { job.i++; job.res[r]++; job.listeners.forEach(function (fn) { try { fn(job.i, job.n, job.res); } catch (e) {} }); return new Promise(function (ok) { setTimeout(ok, r === "new" ? 250 : 0); }); }).then(next);
   };
-  return next();
+  ttsWarmJob = job; job.p = next();
+  return job.p;
 }
 function ttsWire() {
   if (typeof document === "undefined" || !document.addEventListener) return;
@@ -7579,18 +7583,19 @@ function screenParent(section) {
   });
 
   /* slovíčka */
+  if (ttsWarmJob && el("ttsWarmMsg")) ttsWarmAll(function (i, n) { msg("ttsWarmMsg", "Staženo " + i + " z " + n + "…"); }).then(function (r) { if (r) msg("ttsWarmMsg", "Hotovo: " + (r.cache + r["new"]) + " z " + r.total + " slov má výslovnost v zařízení."); });
   on("ttsWarmBtn", "onclick", function () {
     if (!ttsOnline()) { msg("ttsWarmMsg", "Zařízení je offline."); return; }
     msg("ttsWarmMsg", "Stahuji…");
-    ttsWarmAll(function (i, n) { msg("ttsWarmMsg", "Staženo " + i + " z " + n + "…"); }).then(function (r) {
-      if (!r) { msg("ttsWarmMsg", "Stahování už běží."); return; }
+    ttsWarmAll(function (i, n) { msg("ttsWarmMsg", "Staženo " + i + " z " + n + "… (nová slova server namlouvá, chvíli to trvá)"); }).then(function (r) {
+      if (!r) { msg("ttsWarmMsg", "Zařízení je offline."); return; }
       msg("ttsWarmMsg", "Hotovo: " + (r.cache + r["new"]) + " z " + r.total + " slov má výslovnost v zařízení" + (r["new"] ? " (nově " + r["new"] + ")" : "") + (r.none + r.fail ? ". " + (r.none + r.fail) + " přečte hlas zařízení." : "."));
     });
   });
   on("saveWords", "onclick", function () {
     var parsed = wordsApplyText(el("pWords").value);
     el("pWords").value = wordsToText(parsed);
-    msg("wordsMsg", "Uloženo: " + parsed.length + " slov" + (parsed.length < 4 ? " (učebna se otevře od 4 slov)." : "."));
+    msg("wordsMsg", "Uloženo: " + parsed.length + " slov" + (parsed.length < 4 ? " (učebna se otevře od 4 slov)." : ".") + (ttsProxyOk() && ttsOnline() ? " Výslovnost se stahuje na pozadí." : ""));
   });
 
   /* hlas a zvuky */
