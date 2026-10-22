@@ -869,7 +869,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-22b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-22c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3305,9 +3305,9 @@ function avatarKey() {
 function avatarHTML(size) {
   var k = avatarKey();
   if (!k) return S.house ? houseIcon(S.house, size) : svgBadgeIcon(size);
-  var boy = k === "postava" && kidGender() === "m";   /* obrázek postavy je zatím jen kouzelnice; kluk má emoji kouzelníka */
+  var boy = k === "postava" && kidGender() === "m";   /* kluk: kouzelník (obrázek postava-carodej, do stažení emoji) */
   var e = k === "postava" ? (boy ? "🧙‍♂️" : "🧙‍♀️") : shopById(k).e;
-  return '<span class="ava"' + (boy ? '' : ' data-img="' + k + '"') + ' style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.82) + 'px">' + e + '</span>';
+  return '<span class="ava" data-img="' + (boy ? "postava-carodej" : k) + '" style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.82) + 'px">' + e + '</span>';
 }
 function setAvatar(k) { S.avatar = k || null; saveState(); sfx("pop"); }
 function avatarPick(k, back) { setAvatar(k); if (back === "shop") screenShop(); else screenProfile(); }
@@ -6333,9 +6333,9 @@ function videoMoment(k, then, waitMs) {
 var IMAGES = {
   "prehled-zahlavi": { f: "prehled-zahlavi.webp", v: 1 },   /* 14. 10. 2026: záhlaví živého přehledu (Gemini 4) */
   "loznice-g": { f: "loznice-g-v2.webp", v: 2 },   /* 11. 10. 2026: ložnice uvnitř hradu (ChatGPT), malovaná jako Velká síň */
-  "loznice-h": { f: "loznice-h.webp", v: 1 },
-  "loznice-r": { f: "loznice-r.webp", v: 1 },
-  "loznice-s": { f: "loznice-s.webp", v: 1 },
+  "loznice-h": { f: "loznice-h-v2.webp", v: 2 },   /* 22. 10. 2026: hradní ložnice i pro Mrzimor, Havraspár a Zmijozel */
+  "loznice-r": { f: "loznice-r-v2.webp", v: 2 },
+  "loznice-s": { f: "loznice-s-v2.webp", v: 2 },
   "sin": { f: "velka-sin.webp", v: 1 },
   /* mapa hradu (Rozvrh ve 3D): podklad shora a stavby z mřížky 3 × 2 */
   "mapa-podklad": { f: "mapa-podklad.webp", v: 1 }, "mapa-hrad": { f: "mapa-hrad.webp", v: 1 }, "mapa-lektvary": { f: "mapa-lektvary.webp", v: 1 },
@@ -6345,6 +6345,7 @@ var IMAGES = {
   "pet_sova": { f: "pet-sova.webp", v: 1 }, "pet_dracek": { f: "pet-dracek.webp", v: 1 }, "pet_kocka": { f: "pet-kocka.webp", v: 1 },
   "pet_liska": { f: "pet-liska.webp", v: 1 }, "pet_ropucha": { f: "pet-ropucha.webp", v: 1 },
   "postava": { f: "postava-carodejka.webp", v: 1 },
+  "postava-carodej": { f: "postava-carodej.webp", v: 1 },   /* 22. 10. 2026: postavička pro kluky */
   /* věci z Příčné ulice (čepice, doplňky, výbava, amulet): soubor = id s pomlčkou */
   "acc_masle": { f: "acc-masle.webp", v: 1 }, "acc_korunka": { f: "acc-korunka.webp", v: 1 },
   "hat_klobouk": { f: "hat-klobouk.webp", v: 1 }, "hat_venec": { f: "hat-venec.webp", v: 1 }, "hat_celenka": { f: "hat-celenka.webp", v: 1 }, "hat_sala": { f: "hat-sala.webp", v: 1 },
@@ -6495,7 +6496,7 @@ function screenTower() {
     '<span class="twinkle" style="top:12%;left:14%">🕯️</span>' +
     '<span class="twinkle" style="top:26%;left:44%">✧</span>' +
     '<span class="twinkle" style="top:9%;left:66%">✦</span>' +
-    '<div class="mover" data-move="avatar" style="' + moverStyle(roomPosOf("avatar", 0, { x: 20, y: 6 })) + '"><div class="avatar"' + (kidGender() === "f" ? ' data-img="postava"' : '') + '>' + (kidGender() === "f" ? "🧙‍♀️" : "🧙‍♂️") + '</div>' +
+    '<div class="mover" data-move="avatar" style="' + moverStyle(roomPosOf("avatar", 0, { x: 20, y: 6 })) + '"><div class="avatar" data-img="' + (kidGender() === "f" ? "postava" : "postava-carodej") + '">' + (kidGender() === "f" ? "🧙‍♀️" : "🧙‍♂️") + '</div>' +
       (hat && !roomFree("hat") ? '<div class="avatarHat" data-move="hat" data-img="' + hat.id + '">' + hat.e + '</div>' : '') + '</div>' +
     (hat && roomFree("hat") ? '<div class="mover free" data-move="hat" style="' + moverStyle(S.roomPos.hat) + '"><div class="avatarHat" data-img="' + hat.id + '">' + hat.e + '</div></div>' : '') +
     (pet ? '<div class="mover" data-move="pet" style="' + moverStyle(roomPosOf("pet", 0, { x: 32, y: 5 })) + '"><div class="pet" data-img="' + pet.id + '">' + pet.e + '</div>' +
