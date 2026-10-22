@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bradavická škola · pro rodiče</title>
+<title>Kouzelná škola · pro rodiče</title>
 <meta name="description" content="Deset minut denního procvičování pro děti, které milují Harryho Pottera: matematika, čeština a angličtina 3. třídy jako kouzelná škola. Zdarma, bez reklam, hrát jde hned bez registrace.">
 <link rel="icon" href="apple-touch-icon.png">
 <meta property="og:type" content="website">
@@ -17,283 +17,380 @@
 <meta name="twitter:card" content="summary_large_image">
 <style>
   :root {
-    --ink: #3a2f28; --paper: #f6efe0; --card: #fffdf7; --muted: #6d5f52;
-    --red: #a3282c; --red-d: #7b1f22; --gold: #d9a032; --gold-pale: #f3e3c0;
-    --teal: #2a7f7f; --teal-pale: #cfe5e5; --blue: #2e4a8c; --green: #2b7a4b; --coral: #e2694f;
-    --shadow: rgba(58,47,40,.18);
+    --ink: #33281f; --muted: #6d5f52; --paper: #fbf6ea; --paper2: #f3ead6; --edge: #e4d6b8;
+    --leather: #4a201b; --leather2: #2c120f; --gold: #d8ad55; --gold2: #f3d791; --red: #9c2a2a; --teal: #2a6f6f;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 18px/1.55 "Iowan Old Style", Georgia, "Times New Roman", serif; }
-  body::before { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .5; z-index: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.72 0 0 0 0 0.66 0 0 0 0 0.52 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
-  main, header, footer { position: relative; z-index: 1; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-  a { color: var(--red-d); }
-  h1, h2, h3 { line-height: 1.15; margin: 0 0 .4em; }
-  h1 { font-size: clamp(34px, 6vw, 58px); letter-spacing: -.5px; }
-  h2 { font-size: clamp(26px, 4vw, 38px); }
-  h3 { font-size: 21px; }
-  p { margin: 0 0 1em; }
-  .muted { color: var(--muted); }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 22px; border: 2px solid var(--ink); border-radius: 10px;
-    font: inherit; font-weight: 700; font-size: 19px; text-decoration: none; color: var(--ink); background: var(--card); box-shadow: 4px 4px 0 var(--shadow); transition: transform .12s; }
-  .btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--shadow); }
-  .btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--shadow); }
-  .btn.gold { background: var(--gold); color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.2); }
-  .btn.red { background: var(--red); color: #fff; }
-  .card { background: var(--card); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 5px 5px 0 var(--shadow); padding: 22px; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font: 19px/1.6 var(--serif); color: var(--ink); background: #e9dfca;
+    background-image: radial-gradient(ellipse at 50% 0, #f1e8d4 0, #e2d5b8 70%, #d6c6a3 100%); }
+  img { max-width: 100%; display: block; }
+  a { color: var(--red); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4em; padding: .75em 1.3em; border-radius: 999px;
+    font: 600 18px var(--serif); text-decoration: none; border: 2px solid var(--gold); color: var(--gold2); background: transparent; cursor: pointer; }
+  .btn.gold { background: linear-gradient(#f3d791, #d0a14a); color: #3a220e; border-color: #f3d791; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+  .btn.ink { border-color: var(--ink); color: var(--ink); }
+  .btn.red { background: var(--red); border-color: var(--red); color: #fff; }
 
-  /* hero */
-  .hero { position: relative; overflow: hidden; color: #fff8e8; border-bottom: 3px solid var(--ink);
-    background: #1c2541 url("rodice/velka-sin.webp") center 35% / cover no-repeat; }
-  .hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,24,48,.55) 0%, rgba(20,24,48,.35) 40%, rgba(30,20,10,.82) 100%); }
-  .hero .wrap { position: relative; padding-top: calc(28px + env(safe-area-inset-top)); padding-bottom: 56px; }
-  .topnav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 70px; }
-  .brand { font-weight: 700; font-size: 20px; color: #fff8e8; text-decoration: none; }
-  .topnav .btn { padding: 8px 14px; font-size: 16px; }
-  .hero h1 { max-width: 760px; text-shadow: 0 2px 12px rgba(0,0,0,.45); }
-  .hero .lead { font-size: clamp(19px, 2.4vw, 23px); max-width: 640px; text-shadow: 0 1px 8px rgba(0,0,0,.5); }
-  .ctaRow { display: flex; flex-wrap: wrap; gap: 14px; margin: 26px 0 14px; }
-  .heroNote { font-size: 15px; opacity: .9; }
-  .heroOwl { position: absolute; right: 4%; bottom: 30px; width: min(30vw, 250px); filter: drop-shadow(0 10px 14px rgba(0,0,0,.45)); animation: owlFloat 5s ease-in-out infinite; }
-  @keyframes owlFloat { 50% { transform: translateY(-14px) rotate(-2deg); } }
-  @media (max-width: 760px) { .heroOwl { position: static; width: 140px; display: block; margin: 10px 0 -10px auto; } .topnav { margin-bottom: 36px; } }
+  /* ---------- obálka ---------- */
+  .cover { min-height: 100svh; position: relative; overflow: hidden; color: var(--gold2);
+    background: radial-gradient(ellipse at 50% 35%, #6a2c24 0, var(--leather) 45%, var(--leather2) 100%);
+    padding: calc(env(safe-area-inset-top, 0px) + 18px) 18px 28px; display: flex; flex-direction: column; }
+  .cover::before { content: ""; position: absolute; inset: 0; opacity: .35; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .cover .frame { position: absolute; inset: 14px; border: 2px solid rgba(216,173,85,.55); border-radius: 6px; pointer-events: none; }
+  .cover .frame::after { content: ""; position: absolute; inset: 7px; border: 1px solid rgba(216,173,85,.35); border-radius: 3px; }
+  .coverTop { position: relative; display: flex; justify-content: space-between; align-items: center; max-width: 1040px; width: 100%; margin: 0 auto; padding: 10px 18px; }
+  .coverTop .brand { color: var(--gold2); text-decoration: none; font-weight: 700; letter-spacing: .04em; }
+  .coverTop .btn { padding: .45em 1em; font-size: 16px; }
+  .coverBody { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 760px; margin: 0 auto; padding: 10px 8px; }
+  .medal { width: min(260px, 58vw); aspect-ratio: 1; border-radius: 50%; padding: 10px; margin: 6px 0 18px;
+    background: conic-gradient(from 20deg, #f3d791, #a9782f, #f3d791, #b98a3a, #f3d791); box-shadow: 0 10px 40px rgba(0,0,0,.45); }
+  .medal div { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #2d1a14 center 38% / cover no-repeat; }
+  .kicker { font-variant: small-caps; letter-spacing: .25em; font-size: 15px; opacity: .85; }
+  .cover h1 { margin: .15em 0 .2em; font-size: clamp(42px, 9vw, 82px); line-height: 1; letter-spacing: .02em; font-weight: 700;
+    background: linear-gradient(180deg, #fff1c4 0, #e6bf6c 55%, #b9873a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 2px 0 rgba(0,0,0,.15); }
+  .cover .sub { font-size: clamp(19px, 3.2vw, 24px); color: #f7e6c0; max-width: 34em; margin: 0 auto 22px; }
+  .ctaRow { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .cover .note { font-size: 15px; opacity: .8; margin-top: 16px; }
+  .openBook { position: relative; margin: 22px auto 0; color: var(--gold2); text-decoration: none; font-size: 15px; letter-spacing: .1em; font-variant: small-caps; opacity: .9; }
+  .openBook span { display: block; font-size: 22px; animation: nudge 2.4s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: translateY(6px); } }
 
-  section { padding: 64px 0; }
-  .eyebrow { display: inline-block; font-size: 14px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--red); margin-bottom: 8px; }
-  .intro { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
-  @media (max-width: 820px) { .intro { grid-template-columns: 1fr; } }
-  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .fact { text-align: center; padding: 16px 10px; }
-  .fact b { display: block; font-size: 34px; color: var(--red); line-height: 1.1; }
-  .fact span { font-size: 15px; color: var(--muted); }
+  /* ---------- kniha ---------- */
+  .book { max-width: 900px; margin: 0 auto; padding: 34px 16px 120px; }
+  .page { position: relative; background: var(--paper); border-radius: 4px 10px 10px 4px; padding: clamp(28px, 6vw, 64px) clamp(22px, 7vw, 76px) 52px;
+    margin: 0 0 30px; box-shadow: 0 1px 0 var(--edge), 0 2px 0 #fff8e6, 0 3px 0 var(--edge), 0 4px 0 #fff8e6, 0 5px 0 var(--edge), 0 18px 40px rgba(60,40,20,.18);
+    background-image: linear-gradient(90deg, rgba(90,60,30,.14) 0, rgba(90,60,30,0) 26px), radial-gradient(ellipse at 70% 20%, #fffdf6 0, var(--paper) 60%, var(--paper2) 100%); }
+  .page::after { content: ""; position: absolute; top: 8px; bottom: 8px; right: -5px; width: 6px; border-radius: 0 6px 6px 0;
+    background: repeating-linear-gradient(180deg, #efe3c7 0 2px, #d9c79f 2px 3px); }
+  .chapNo { display: block; text-align: center; font-variant: small-caps; letter-spacing: .3em; color: var(--red); font-size: 15px; }
+  .page h2 { text-align: center; font-size: clamp(30px, 5.4vw, 44px); line-height: 1.15; margin: .2em 0 .1em; }
+  .orn { text-align: center; color: #b18a45; letter-spacing: .6em; margin: .2em 0 1.2em; font-size: 18px; }
+  .lead::first-letter { float: left; font-size: 3.6em; line-height: .85; padding: .06em .12em 0 0; color: var(--red); font-weight: 700; }
+  .lead { font-size: 21px; }
+  .folio { position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; font-size: 14px; color: #a08b6b; letter-spacing: .2em; }
+  .between { text-align: center; color: #9b7a43; font-size: 26px; margin: -6px 0 24px; }
+  details.more { margin-top: 22px; border-top: 1px dashed #cdb98f; padding-top: 12px; }
+  details.more > summary { cursor: pointer; list-style: none; color: var(--red); font-weight: 600; display: inline-flex; gap: .4em; align-items: center; }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more > summary::before { content: "📖"; }
+  details.more[open] > summary::after { content: " — sbalit"; color: var(--muted); font-weight: 400; }
+  details.more[open] > summary { margin-bottom: 10px; }
+  .page.full .short { display: none; }
 
-  /* jak to vypadá: telefony */
-  .loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
-  @media (max-width: 900px) { .loop { grid-template-columns: repeat(2, 1fr); } }
-  .phone { margin: 0; }
-  .phone img { width: 100%; display: block; border: 3px solid var(--ink); border-radius: 22px; box-shadow: 6px 6px 0 var(--shadow); background: #fff; }
-  .phone figcaption { margin-top: 12px; font-size: 16px; }
-  .phone figcaption b { display: block; font-size: 18px; }
-  .step { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; background: var(--red); color: #fff; font-weight: 700; align-items: center; justify-content: center; font-size: 15px; margin-right: 6px; vertical-align: 2px; }
+  /* obsah */
+  .toc ol { list-style: none; padding: 0; margin: 0 auto; max-width: 520px; counter-reset: ch; }
+  .toc li { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; }
+  .toc li a { color: var(--ink); text-decoration: none; }
+  .toc li a:hover { color: var(--red); }
+  .toc .rn { width: 2.4em; color: var(--red); font-variant: small-caps; }
+  .toc .dots { flex: 1; border-bottom: 2px dotted #c9b48a; transform: translateY(-5px); }
+  .toc .pg { color: var(--muted); font-size: 16px; }
 
-  /* proč to funguje */
-  .why { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-  @media (max-width: 760px) { .why { grid-template-columns: 1fr; } }
-  .why .card { position: relative; padding-left: 82px; }
-  .why .ico { position: absolute; left: 20px; top: 20px; width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--ink); display: flex; align-items: center; justify-content: center; font-size: 24px; background: var(--gold-pale); }
-  .why .card:nth-child(4n+2) .ico { background: var(--teal-pale); } .why .card:nth-child(4n+3) .ico { background: #f7d9d0; } .why .card:nth-child(4n+4) .ico { background: #d5deee; }
-  .why h3 { margin-bottom: 6px; }
-  .why p { margin: 0; font-size: 17px; }
-  .why .src { display: block; margin-top: 8px; font-size: 14px; color: var(--muted); font-style: italic; }
-
-  /* učivo */
-  .subjects { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  @media (max-width: 900px) { .subjects { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 480px) { .subjects { grid-template-columns: 1fr; } }
-  .subj { border-top: 8px solid var(--red); }
-  .subj.m { border-top-color: var(--gold); } .subj.en { border-top-color: var(--teal); } .subj.hp { border-top-color: var(--blue); }
+  /* tabule s obrázky */
+  .plates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 18px 0 6px; }
+  .plates.two { grid-template-columns: repeat(2, 1fr); max-width: 620px; margin-left: auto; margin-right: auto; }
+  .plate { margin: 0; background: #fffdf7; padding: 8px 8px 10px; border: 1px solid #e0cfa9; box-shadow: 0 6px 16px rgba(60,40,20,.14); transform: rotate(-.6deg); }
+  .plate:nth-child(even) { transform: rotate(.7deg); }
+  .plate img { border-radius: 10px; border: 1px solid #ddd0b6; }
+  .plate figcaption { font-size: 15px; line-height: 1.4; margin-top: 8px; color: var(--muted); }
+  .plate figcaption b { display: block; color: var(--ink); font-size: 16px; }
+  .facts { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 22px 0 4px; }
+  .facts div { text-align: center; min-width: 120px; padding: 10px 14px; border: 1px solid #dcc79b; border-radius: 10px; background: #fffaf0; }
+  .facts b { display: block; font-size: 34px; color: var(--red); line-height: 1.1; }
+  .facts span { font-size: 15px; color: var(--muted); }
+  .spells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 16px; }
+  .spell { background: #fffaf0; border: 1px solid #e0cfa9; border-radius: 10px; padding: 14px 16px; }
+  .spell h3 { margin: 0 0 4px; font-size: 19px; }
+  .spell p { margin: 0; font-size: 17px; }
+  .spell .src { display: block; margin-top: 8px; font-size: 14px; color: var(--muted); font-style: italic; }
+  .subjects { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 12px; }
+  .subj { border-left: 4px solid var(--teal); padding: 6px 0 6px 14px; }
+  .subj h3 { margin: 0; font-size: 20px; }
+  .subj p { margin: 2px 0 0; font-size: 17px; color: var(--muted); }
   .subj ul { margin: 6px 0 0; padding-left: 20px; font-size: 16px; }
+  ul.ticks { padding-left: 0; list-style: none; }
+  ul.ticks li { position: relative; padding-left: 30px; margin: 8px 0; }
+  ul.ticks li::before { content: "✦"; position: absolute; left: 4px; color: #b18a45; }
+  .faq details { border-bottom: 1px dashed #cdb98f; padding: 10px 0; }
+  .faq summary { cursor: pointer; font-weight: 600; }
+  .faq details p { margin: 8px 0 2px; }
+  .epilog { text-align: center; }
+  .epilog img { width: 150px; margin: 0 auto 6px; }
+  footer { text-align: center; font-size: 14px; color: #6f5d45; max-width: 760px; margin: 0 auto; padding: 0 18px 120px; }
 
-  /* split se screenshoty */
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; }
-  .split.rev .media { order: -1; }
-  @media (max-width: 820px) { .split { grid-template-columns: 1fr; } .split.rev .media { order: 0; } }
-  .media { display: flex; gap: 16px; justify-content: center; }
-  .media img { width: min(46%, 260px); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 6px 6px 0 var(--shadow); background: #fff; }
-  .media img:nth-child(2) { margin-top: 40px; }
-  .ticks { list-style: none; padding: 0; margin: 0; }
-  .ticks li { position: relative; padding-left: 32px; margin-bottom: 10px; }
-  .ticks li::before { content: "✓"; position: absolute; left: 0; top: -1px; width: 22px; height: 22px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  /* záložky (počítač) a ukazatel kapitoly (telefon) */
+  .ribbons { position: fixed; left: max(12px, calc(50% - 450px - 220px)); top: 120px; width: 200px; display: none; z-index: 5; opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .ribbons.show { opacity: 1; pointer-events: auto; }
+  .ribbons a { display: block; position: relative; margin: 0 0 6px; padding: 6px 10px 6px 14px; font-size: 15px; line-height: 1.25; text-decoration: none;
+    color: #f7e6c0; background: #7b2b26; border-radius: 3px 0 0 3px; opacity: .55; transition: opacity .2s, transform .2s; }
+  .ribbons a::after { content: ""; position: absolute; right: -12px; top: 0; bottom: 0; width: 12px; background: inherit; clip-path: polygon(0 0, 100% 0, 30% 50%, 100% 100%, 0 100%); }
+  .ribbons a.on { opacity: 1; transform: translateX(8px); background: var(--red); }
+  @media (min-width: 1320px) { .ribbons { display: block; } }
+  .progress { position: fixed; top: 0; left: 0; right: 0; z-index: 6; padding-top: env(safe-area-inset-top, 0px); background: rgba(251,246,234,.94);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 1px 0 #e0cfa9; transform: translateY(-110%); transition: transform .3s; }
+  .progress.show { transform: none; }
+  .progress .lbl { font-size: 14px; padding: 6px 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .progress .lbl b { color: var(--red); font-weight: 600; }
+  .progress .bar { height: 3px; background: linear-gradient(90deg, #b9873a, #f3d791); width: 0; }
+  @media (min-width: 1320px) { .progress { display: none; } }
+  .stickyCta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; gap: 10px; justify-content: center;
+    padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 10px); background: rgba(44,18,15,.94); transform: translateY(110%); transition: transform .3s; }
+  .stickyCta.show { transform: none; }
+  @media (min-width: 901px) { .stickyCta { display: none; } }
+  .stickyCta .btn { padding: .6em 1.1em; font-size: 17px; }
 
-  .band { background: #fbf6ea; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
-  .quote { font-size: clamp(22px, 3vw, 30px); font-style: italic; max-width: 820px; margin: 0 auto; text-align: center; }
-  .quote small { display: block; margin-top: 12px; font-size: 16px; font-style: normal; color: var(--muted); }
+  /* stránka se při posunu lehce zvedne z knihy */
+  .page.lift { opacity: 0; transform: translateY(28px) rotateX(4deg); transform-origin: 50% 0; transition: opacity .7s ease, transform .7s ease; }
+  .page.lift.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .page.lift { opacity: 1; transform: none; transition: none; } .openBook span { animation: none; } html { scroll-behavior: auto; } }
 
-  .faq details { background: var(--card); border: 2px solid var(--ink); border-radius: 10px; padding: 14px 18px; margin-bottom: 12px; box-shadow: 3px 3px 0 var(--shadow); }
-  .faq summary { cursor: pointer; font-weight: 700; font-size: 19px; }
-  .faq details p { margin: 10px 0 0; }
-
-  .final { text-align: center; background: var(--red-d); color: #fff8e8; border-top: 3px solid var(--ink); position: relative; overflow: hidden; }
-  .final h2 { color: #fff8e8; }
-  .final .ctaRow { justify-content: center; }
-  .final img { width: 110px; display: block; margin: 0 auto 10px; filter: drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
-  footer { padding: 26px 0 calc(26px + env(safe-area-inset-bottom)); font-size: 14px; color: var(--muted); text-align: center; }
-  @media (prefers-reduced-motion: reduce) { .heroOwl { animation: none; } html { scroll-behavior: auto; } }
+  @media (max-width: 760px) {
+    body { font-size: 18px; }
+    .plates { grid-template-columns: repeat(2, 1fr); }
+    .spells, .subjects { grid-template-columns: 1fr; }
+    .book { padding: 22px 10px 110px; }
+    .page { padding-bottom: 48px; }
+  }
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <div class="wrap">
-    <nav class="topnav">
-      <a class="brand" href="./">🏰 Bradavická škola</a>
-      <a class="btn" href="./#ukazka">Vyzkoušet</a>
-    </nav>
-    <h1>Deset minut denně v Bradavicích.<br>A násobilka jde sama.</h1>
-    <p class="lead">Vzdělávací hra pro děti, které milují Harryho Pottera. Matematika, čeština a angličtina ze 3. třídy jako kouzelná škola: s plamínkem, kolejí, sovou pošťačkou a profesory, kteří s dítětem mluví.</p>
-    <div class="ctaRow">
-      <a class="btn gold" href="./#ukazka">👀 Vyzkoušet bez registrace</a>
-      <a class="btn" href="#jak">Jak to funguje</a>
-    </div>
-    <p class="heroNote">Zdarma · bez reklam · bez účtu · funguje na tabletu, telefonu i počítači</p>
-    <img class="heroOwl" src="rodice/sova-dopis.webp" alt="Sova s dopisem z Bradavic">
+<!-- OBÁLKA -->
+<header class="cover" id="obalka">
+  <div class="frame"></div>
+  <nav class="coverTop"><a class="brand" href="./">🏰 Kouzelná škola</a><a class="btn" href="./#ukazka">Vyzkoušet</a></nav>
+  <div class="coverBody">
+    <div class="medal"><div style="background-image:url(rodice/velka-sin.webp)"></div></div>
+    <span class="kicker">Kniha pro rodiče</span>
+    <h1>Kouzelná škola</h1>
+    <p class="sub">Deset minut denně v Bradavicích. Matematika, čeština a angličtina ze 3. třídy pro děti, které milují Harryho Pottera.</p>
+    <div class="ctaRow"><a class="btn gold" href="./#ukazka">👀 Vyzkoušet ukázku</a><a class="btn" href="./">✨ Začít hrát</a></div>
+    <p class="note">Zdarma · bez reklam · účet jen pro rodiče a nepovinný</p>
+    <a class="openBook" href="#obsah">otevřít knihu<span>⌄</span></a>
   </div>
 </header>
 
-<main>
+<nav class="ribbons" aria-label="Kapitoly"></nav>
+<div class="progress" aria-hidden="true"><div class="lbl"></div><div class="bar"></div></div>
 
-<section>
-  <div class="wrap intro">
-    <div>
-      <span class="eyebrow">Proč vznikla</span>
-      <h2>Hra, o kterou si dítě samo řekne</h2>
-      <p>Bradavická škola vznikla v rodině, kde se každý večer čte Harry Potter a osmiletá čtenářka chtěla do Bradavic. Tak dostala dopis se sovou, Moudrý klobouk ji zařadil do koleje a místo pracovních listů teď chodí na vyučování.</p>
-      <p>Hra procvičuje přesně to, co se děti učí ve škole. Vychází ze zkušeností tvůrců předních vzdělávacích aplikací, třeba Duolinga, upravených pro osmileté dítě: bez tlaku, bez reklam a bez honby za časem u obrazovky.</p>
-    </div>
-    <div class="facts">
-      <div class="card fact"><b>10</b><span>otázek denně, asi 10 minut</span></div>
-      <div class="card fact"><b>4</b><span>předměty podle osnov 3. třídy</span></div>
-      <div class="card fact"><b>0</b><span>reklam a nákupů za peníze</span></div>
-    </div>
-  </div>
+<main class="book">
+
+<!-- OBSAH -->
+<section class="page toc" id="obsah">
+  <span class="chapNo">Obsah</span>
+  <h2>Co v knize najdete</h2>
+  <div class="orn">✦ ✦ ✦</div>
+  <ol></ol>
+  <p style="text-align:center;font-size:16px;color:var(--muted);margin-top:20px">Každá kapitola je krátká. Kdo chce vědět víc, otevře si u ní celou verzi.</p>
+  <div class="folio">— i —</div>
 </section>
 
-<section class="band" id="jak">
-  <div class="wrap">
-    <span class="eyebrow">Jak to funguje</span>
-    <h2>Jeden den v Bradavicích</h2>
-    <p class="muted" style="max-width:720px">Každý den jedno krátké vyučování. Za správné odpovědi dítě dostává galeony, plamínek ve Velké síni roste a na Příčné ulici si za ně koupí mazlíčka nebo věci do ložnice.</p>
-    <div class="loop">
-      <figure class="phone"><img src="rodice/sin.jpg" alt="Velká síň s plamínkem a svíčkami"><figcaption><b><span class="step">1</span>Velká síň</b>Plamínek ukazuje, kolik dní v řadě se učí. Sova v rohu poradí a pochválí.</figcaption></figure>
-      <figure class="phone"><img src="rodice/hagrid.jpg" alt="Otázka v angličtině od Hagrida"><figcaption><b><span class="step">2</span>Vyučování</b>Deset otázek ze všeho, co už umí. Každou přinese sova, anglicky se ptá i Hagrid.</figcaption></figure>
-      <figure class="phone"><img src="rodice/spravne.jpg" alt="Správná odpověď s galeony a pochvalou"><figcaption><b><span class="step">3</span>Galeony a body pro kolej</b>Za správnou odpověď galeony. Chyba nic nestojí, otázka se jen vrátí s vysvětlením.</figcaption></figure>
-      <figure class="phone"><img src="rodice/loznice.jpg" alt="Ložnice v hradní věži"><figcaption><b><span class="step">4</span>Příčná ulice a ložnice</b>Za galeony mazlíček, čepice nebo hvězdný strop. Ložnici si rozestaví, jak chce.</figcaption></figure>
-    </div>
-  </div>
+<!-- I -->
+<section class="page chapter" id="dopis" data-title="Dopis z Bradavic">
+  <span class="chapNo">Kapitola první</span>
+  <h2>Dopis z Bradavic</h2>
+  <div class="orn">❦</div>
+  <p class="lead">Kouzelná škola vznikla v rodině, kde se každý večer čte Harry Potter. Osmiletá čtenářka chtěla do Bradavic, a tak jí sova přinesla dopis. Moudrý klobouk ji zařadil do koleje a místo pracovních listů teď chodí na vyučování.</p>
+  <div class="facts"><div><b>10</b><span>otázek, asi 10 minut</span></div><div><b>4</b><span>předměty 3. třídy</span></div><div><b>0</b><span>reklam a nákupů</span></div></div>
+  <details class="more"><summary>Číst celou kapitolu</summary>
+    <p>Hra procvičuje přesně to, co se děti učí ve škole: matematiku, češtinu a angličtinu podle osnov 3. třídy, a k tomu čtení s porozuměním z knih o Harrym Potterovi.</p>
+    <p>Vychází ze zkušeností tvůrců předních vzdělávacích aplikací, třeba Duolinga, upravených pro osmileté dítě: bez tlaku, bez reklam a bez honby za časem u obrazovky. Hraje se v prohlížeči na tabletu, telefonu i počítači, bez instalace.</p>
+  </details>
+  <div class="folio">— 1 —</div>
 </section>
+<div class="between">❧</div>
 
-<section>
-  <div class="wrap">
-    <span class="eyebrow">Proč to funguje</span>
-    <h2>Kouzla, za kterými je věda</h2>
-    <p class="muted" style="max-width:760px">Každý z těchto principů jsme převzali od produktů, které učí miliony lidí, a ověřili, že dává smysl pro osmileté dítě.</p>
-    <div class="why">
-      <div class="card"><div class="ico">🧠</div><h3>Tipnout se nedá</h3><p>Slovíčko dítě „umí“, až ho bez nabídky napíše z hlavy, a to ve dva různé dny. Výběr ze čtyř možností je jen první krok. Slovníček ukazuje poctivě, co opravdu umí a co jen poznává.</p><span class="src">Vybavování z paměti a opakování v rozestupech, nejsilnější známé postupy pro zapamatování.</span></div>
-      <div class="card"><div class="ico">🕯️</div><h3>Plamínek, který se nevyplatí zlevňovat</h3><p>Plamínek roste jen za dokončenou celou hodinu: denní vyučování napříč předměty, nebo deset otázek v jedné učebně do hloubky. Dva ledové amulety ochrání vynechaný den a o ztracený plamínek se dá „zabojovat“ dvěma hodinami. Žádné další úlevy, aby měl cenu.</p><span class="src">Podle zkušeností Duolinga: nejvíc pomáhá prvních sedm dní a plamínek se nesmí zlevnit.</span></div>
-      <div class="card"><div class="ico">💛</div><h3>Chyby nic nestojí</h3><p>Žádné životy, žádná časomíra, žádné ztracené body. Špatná odpověď jen přinese jednu větu vysvětlení a otázka se později vrátí. Profesoři chválí a povzbuzují.</p><span class="src">Duolingo zkoušelo omezený počet pokusů a nepřineslo to žádný efekt. Pro dítě by byl tlak navíc škodlivý.</span></div>
-      <div class="card"><div class="ico">👂</div><h3>Nejdřív slyšet, pak odpovídat</h3><p>Anglická slova a věty hra vysloví britskou výslovností a možnosti ukáže až po poslechu. Hagrid se ptá „What is this?“ a dítě odpovídá celou větou. Procvičuje se pravopis, poslech i porozumění.</p><span class="src">Angličtina cílí na to, co dětem dělá největší potíže: jak se slova píšou.</span></div>
-      <div class="card"><div class="ico">📚</div><h3>Čtení s rodičem, bez spoilerů</h3><p>Otázky z knih jsou jen z kapitol, které už spolu dočtete. Rodič posune dočtenou kapitolu a hra otevře nové otázky. Ročník ve hře odpovídá dílu knihy.</p><span class="src">Hra navazuje na společné čtení, nenahrazuje ho.</span></div>
-      <div class="card"><div class="ico">🦉</div><h3>Postavy, které mluví</h3><p>Brumbál, profesorka McGonagallová a Hagrid uvádějí hodiny vlastními hlasy a chválí za sérii správných odpovědí. Sova provede hrou a nosí otázky. Učení má tvář a příběh.</p><span class="src">Hra je v kouzelném světě, který dítě miluje, ne „gamifikovaný“ test.</span></div>
-      <div class="card"><div class="ico">🎯</div><h3>Hvězdy a mapa hradu</h3><p>Každá učebna má hvězdy mistrovství. Na mapě hradu je vidět, co je hotové a co čeká. Zkouška ročníku na konci prověří vše, i opakovaně a bez stresu.</p><span class="src">Denní smyčka, dlouhodobé cíle a profil, na který je dítě pyšné.</span></div>
-      <div class="card"><div class="ico">⚖️</div><h3>Poctivé galeony</h3><p>Galeony se dají utratit jen za kosmetiku ve hře, nikdy za skutečné peníze. Hodina, která se nedokončí, se nepočítá. Za obchod se nevydělává čas u obrazovky.</p><span class="src">Odměna je symbol, motivace má zůstat v učení samotném.</span></div>
-    </div>
+<!-- II -->
+<section class="page chapter" id="den" data-title="Jeden den v Bradavicích">
+  <span class="chapNo">Kapitola druhá</span>
+  <h2>Jeden den v Bradavicích</h2>
+  <div class="orn">❦</div>
+  <p class="lead">Každý den jedna hodina o deseti otázkách. Za správné odpovědi galeony, plamínek ve Velké síni roste a na Příčné ulici čeká mazlíček.</p>
+  <div class="plates">
+    <figure class="plate"><img src="rodice/sin.jpg" alt="Velká síň s plamínkem a svíčkami" loading="lazy"><figcaption><b>Velká síň</b>Plamínek ukazuje, kolik dní v řadě se učí.</figcaption></figure>
+    <figure class="plate"><img src="rodice/hagrid.jpg" alt="Otázka v angličtině od Hagrida" loading="lazy"><figcaption><b>Vyučování</b>Otázky nosí sova, anglicky se ptá i Hagrid.</figcaption></figure>
+    <figure class="plate"><img src="rodice/spravne.jpg" alt="Správná odpověď s galeony a pochvalou" loading="lazy"><figcaption><b>Galeony</b>Za správnou odpověď. Chyba nic nestojí.</figcaption></figure>
+    <figure class="plate"><img src="rodice/loznice.jpg" alt="Ložnice v hradní věži" loading="lazy"><figcaption><b>Ložnice</b>Za galeony mazlíček nebo hvězdný strop.</figcaption></figure>
   </div>
+  <details class="more"><summary>Číst celou kapitolu</summary>
+    <p><b>Velká síň.</b> Svíčka uprostřed je plamínek: ukazuje, kolik dní v řadě se dítě učí. Sova v rohu poradí a pochválí, občas přiletí dopis od rodičů.</p>
+    <p><b>Vyučování.</b> Deset otázek. Buď denní vyučování napříč předměty, nebo hodina v jedné učebně do hloubky. Každou otázku přinese sova, profesoři hodinu uvedou vlastním hlasem a anglicky se ptá Hagrid.</p>
+    <p><b>Galeony a body pro kolej.</b> Za správnou odpověď galeony. Chyba nic nestojí: hra jednou větou vysvětlí, proč to bylo jinak, a otázka se později vrátí.</p>
+    <p><b>Příčná ulice a ložnice.</b> Galeony se utrácejí jen za kosmetiku ve hře: mazlíčka, čepici, hvězdný strop. Ložnici si dítě rozestaví prstem, jak chce.</p>
+  </details>
+  <div class="folio">— 2 —</div>
 </section>
+<div class="between">❧</div>
 
-<section class="band">
-  <div class="wrap">
-    <span class="eyebrow">Učivo</span>
-    <h2>Co se procvičuje</h2>
-    <p class="muted" style="max-width:760px">Podle osnov 3. třídy. Učebny se otevírají postupně, rodič je odemyká podle toho, co se zrovna probírá ve škole.</p>
+<!-- III -->
+<section class="page chapter" id="veda" data-title="Kouzla, za kterými je věda">
+  <span class="chapNo">Kapitola třetí</span>
+  <h2>Kouzla, za kterými je věda</h2>
+  <div class="orn">❦</div>
+  <p class="lead">Každý princip jsme převzali od produktů, které učí miliony lidí, a ověřili, že dává smysl pro osmileté dítě.</p>
+  <div class="spells short">
+    <div class="spell"><h3>🧠 Tipnout se nedá</h3><p>Slovíčko „umí“, až ho napíše z hlavy, a to ve dva různé dny.</p></div>
+    <div class="spell"><h3>💛 Chyby nic nestojí</h3><p>Žádné životy ani časomíra. Jen vysvětlení a otázka se vrátí.</p></div>
+    <div class="spell"><h3>🕯️ Plamínek se nezlevňuje</h3><p>Roste jednou denně, za dokončenou celou hodinu.</p></div>
+    <div class="spell"><h3>📚 Bez spoilerů</h3><p>Otázky z knih jen z kapitol, které už spolu dočtete.</p></div>
+  </div>
+  <details class="more"><summary>Číst celou kapitolu</summary>
+    <div class="spells">
+      <div class="spell"><h3>🧠 Tipnout se nedá</h3><p>Slovíčko dítě „umí“, až ho bez nabídky napíše z hlavy, a to ve dva různé dny. Výběr ze čtyř možností je jen první krok. Slovníček poctivě ukazuje, co opravdu umí a co jen poznává.</p><span class="src">Vybavování z paměti a opakování v rozestupech, nejsilnější známé postupy pro zapamatování.</span></div>
+      <div class="spell"><h3>🕯️ Plamínek, který se nevyplatí zlevňovat</h3><p>Plamínek roste jen za dokončenou celou hodinu: denní vyučování napříč předměty, nebo deset otázek v jedné učebně do hloubky. Dva ledové amulety ochrání vynechaný den a o ztracený plamínek se dá „zabojovat“ dvěma hodinami.</p><span class="src">Podle zkušeností Duolinga: nejvíc pomáhá prvních sedm dní a plamínek se nesmí zlevnit.</span></div>
+      <div class="spell"><h3>💛 Chyby nic nestojí</h3><p>Žádné životy, žádná časomíra, žádné ztracené body. Špatná odpověď jen přinese jednu větu vysvětlení a otázka se později vrátí. Profesoři chválí a povzbuzují.</p><span class="src">Duolingo zkoušelo omezený počet pokusů a nepřineslo to žádný efekt. Pro dítě by byl tlak navíc škodlivý.</span></div>
+      <div class="spell"><h3>👂 Nejdřív slyšet, pak odpovídat</h3><p>Anglická slova a věty hra vysloví britskou výslovností a možnosti ukáže až po poslechu. Hagrid se ptá „What is this?“ a dítě odpovídá celou větou.</p><span class="src">Angličtina cílí na to, co dětem dělá největší potíže: jak se slova píšou.</span></div>
+      <div class="spell"><h3>📚 Čtení s rodičem, bez spoilerů</h3><p>Otázky z knih jsou jen z kapitol, které už spolu dočtete. Rodič posune dočtenou kapitolu a hra otevře nové otázky. Ročník ve hře odpovídá dílu knihy.</p><span class="src">Hra navazuje na společné čtení, nenahrazuje ho.</span></div>
+      <div class="spell"><h3>🦉 Postavy, které mluví</h3><p>Brumbál, profesorka McGonagallová a Hagrid uvádějí hodiny vlastními hlasy a chválí za sérii správných odpovědí. Sova provede hrou a nosí otázky.</p><span class="src">Hra je v kouzelném světě, který dítě miluje, ne „gamifikovaný“ test.</span></div>
+      <div class="spell"><h3>🎯 Hvězdy a mapa hradu</h3><p>Každá učebna má hvězdy mistrovství. Na mapě hradu je vidět, co je hotové a co čeká. Zkouška ročníku na konci prověří vše, i opakovaně a bez stresu.</p><span class="src">Denní smyčka, dlouhodobé cíle a profil, na který je dítě pyšné.</span></div>
+      <div class="spell"><h3>⚖️ Poctivé galeony</h3><p>Galeony se dají utratit jen za kosmetiku ve hře, nikdy za skutečné peníze. Hodina, která se nedokončí, se nepočítá.</p><span class="src">Odměna je symbol, motivace má zůstat v učení samotném.</span></div>
+    </div>
+  </details>
+  <div class="folio">— 3 —</div>
+</section>
+<div class="between">❧</div>
+
+<!-- IV -->
+<section class="page chapter" id="ucivo" data-title="Co se procvičuje">
+  <span class="chapNo">Kapitola čtvrtá</span>
+  <h2>Co se procvičuje</h2>
+  <div class="orn">❦</div>
+  <p class="lead">Podle osnov 3. třídy. Učebny se otevírají postupně, rodič je odemyká podle toho, co se zrovna probírá ve škole.</p>
+  <div class="subjects short">
+    <div class="subj"><h3>🧪 Lektvary</h3><p>matematika: násobilka, dělení, počítání do 1000</p></div>
+    <div class="subj"><h3>🪶 Psaní brkem</h3><p>čeština: vyjmenovaná slova, slabiky, slovní druhy</p></div>
+    <div class="subj"><h3>✨ Kouzelné formule</h3><p>angličtina: slovíčka ze školy, pravopis, poslech</p></div>
+    <div class="subj"><h3>📜 Dějiny čar a kouzel</h3><p>čtení s porozuměním z dočtených kapitol</p></div>
+  </div>
+  <details class="more"><summary>Číst celou kapitolu</summary>
     <div class="subjects">
-      <div class="card subj m"><h3>🧪 Lektvary</h3><p class="muted">matematika</p><ul><li>sčítání a odčítání do 100 a do 1000</li><li>násobilka a dělení</li><li>zaokrouhlování, dělení se zbytkem</li><li>jednotky a slovní úlohy</li><li>počítání z hlavy za bonus</li></ul></div>
-      <div class="card subj"><h3>🪶 Psaní brkem</h3><p class="muted">čeština</p><ul><li>tvrdé a měkké slabiky</li><li>abeceda</li><li>párové souhlásky</li><li>vyjmenovaná slova</li><li>slovní druhy, věty a souvětí</li></ul></div>
-      <div class="card subj en"><h3>✨ Kouzelné formule</h3><p class="muted">angličtina</p><ul><li>slovíčka ze školy podle lekcí, zadává rodič</li><li>pravopis: skládání, doplňování, psaní</li><li>poslech a rozhovory</li><li>slovníček Nové → Poznávám → Umím</li></ul></div>
-      <div class="card subj hp"><h3>📜 Dějiny čar a kouzel</h3><p class="muted">čtení s porozuměním</p><ul><li>otázky z dočtených kapitol</li><li>vysvětlení po každé odpovědi</li><li>každý díl knihy má svou učebnu</li></ul></div>
+      <div class="subj"><h3>🧪 Lektvary</h3><ul><li>sčítání a odčítání do 100 a do 1000</li><li>násobilka a dělení, každý příklad zvlášť (Nový → Jde mi → Umím)</li><li>zaokrouhlování, dělení se zbytkem</li><li>jednotky a slovní úlohy</li><li>počítání z hlavy za bonus</li></ul></div>
+      <div class="subj"><h3>🪶 Psaní brkem</h3><ul><li>tvrdé a měkké slabiky</li><li>abeceda</li><li>párové souhlásky</li><li>vyjmenovaná slova po B, L, M, P, S, V, Z</li><li>slovní druhy, věty a souvětí</li></ul></div>
+      <div class="subj"><h3>✨ Kouzelné formule</h3><ul><li>slovíčka ze školy podle lekcí, zadává rodič</li><li>vestavěné okruhy: zvířata, věci kouzelníka, jídlo, barvy a čísla</li><li>pravopis: skládání, doplňování, psaní</li><li>poslech a rozhovory s Hagridem</li><li>slovníček Nové → Poznávám → Umím z hlavy</li></ul></div>
+      <div class="subj"><h3>📜 Dějiny čar a kouzel</h3><ul><li>otázky jen z dočtených kapitol</li><li>vysvětlení po každé odpovědi</li><li>každý díl knihy má svou učebnu a zkoušku ročníku</li></ul></div>
     </div>
-  </div>
+  </details>
+  <div class="folio">— 4 —</div>
 </section>
+<div class="between">❧</div>
 
-<section>
-  <div class="wrap split">
-    <div>
-      <span class="eyebrow">Pro rodiče</span>
-      <h2>Víte, co jde a co ne</h2>
-      <ul class="ticks">
-        <li><b>Přehled za 7 dní:</b> kdy se učilo, kolik otázek napoprvé a kde byly chyby.</li>
-        <li><b>Seznam chyb</b> s filtrem podle předmětu. Dá se zkopírovat a probrat spolu.</li>
-        <li><b>Slovíčka ze školy:</b> zadáte je řádek po řádku, třeba „pen - pero“, a hra je naučí.</li>
-        <li><b>Rodinná odměna:</b> domluvíte cíl (výlet, hračka) a dítě na něj šetří galeony.</li>
-        <li><b>Odemykání učeben</b> podle toho, co se právě probírá ve škole.</li>
-        <li><b>Panel je zamčený</b> dvouciferným násobením, které osmileté dítě zatím nevyřeší.</li>
-      </ul>
+<!-- V -->
+<section class="page chapter" id="rodice" data-title="Rodiče u toho">
+  <span class="chapNo">Kapitola pátá</span>
+  <h2>Rodiče u toho</h2>
+  <div class="orn">❦</div>
+  <p class="lead">Víte, co se právě učí, i když nejste vedle. A hru za dvě minuty nastavíte podle toho, co spolu čtete a co probírají ve škole: provede vás průvodce.</p>
+  <ul class="ticks short">
+    <li><b>Živý přehled v telefonu:</b> „Právě se učí násobilku, otázka 7 z 10“, dnešek, týden a kde chybuje.</li>
+    <li><b>Slovíčka ze školy</b> zadáte řádek po řádku, třeba „pen - pero“, a hra je naučí.</li>
+    <li><b>Soví pošta:</b> z telefonu pošlete pochvalu a pár galeonů, dítě odpoví.</li>
+  </ul>
+  <div class="plates two">
+    <figure class="plate"><img src="rodice/prehled.jpg" alt="Živý přehled pro rodiče" loading="lazy"><figcaption><b>Živý přehled</b>Obnovuje se sám.</figcaption></figure>
+    <figure class="plate"><img src="rodice/panel.jpg" alt="Rodičovský panel" loading="lazy"><figcaption><b>Rodičovský panel</b>Zamčený násobením.</figcaption></figure>
+  </div>
+  <details class="more"><summary>Číst celou kapitolu</summary>
+    <ul class="ticks">
+      <li><b>Právě teď:</b> co se dítě právě učí a kolikátá je otázka. Přehled se obnovuje sám každých pár sekund.</li>
+      <li><b>Dnes a týden:</b> kolik hodin a otázek zvládlo napoprvé, které dny se učilo a jak hoří plamínek.</li>
+      <li><b>Kde chybuje:</b> konkrétní příklady z posledního týdne, s filtrem podle předmětu. Dají se zkopírovat a probrat spolu.</li>
+      <li><b>Násobilka po příkladech:</b> mřížka ukáže, které příklady už umí, které „jdou“ a na které ještě nedošlo. Stejně tak vyjmenovaná slova a slovíčka.</li>
+      <li><b>Rodinná odměna:</b> domluvíte cíl (výlet, hračka) a dítě na něj šetří galeony.</li>
+      <li><b>Odemykání učeben</b> podle toho, co se právě probírá ve škole, a dočtená kapitola knihy.</li>
+      <li><b>Panel je zamčený</b> dvouciferným násobením, které osmileté dítě zatím nevyřeší.</li>
+      <li><b>Celá rodina:</b> rodič se přihlásí e-mailem (bez hesla, přijde mu kód), další rodiče a babičku pozve e-mailem a tablet dítěte připojí šesti číslicemi.</li>
+      <li><b>Tablet, telefon i počítač:</b> bez instalace, na ploše jako aplikace, aktualizuje se sama a funguje i bez internetu.</li>
+    </ul>
+    <div class="plates">
+      <figure class="plate"><img src="rodice/prehled2.jpg" alt="Mřížka násobilky v přehledu" loading="lazy"><figcaption><b>Násobilka</b>po příkladech</figcaption></figure>
+      <figure class="plate"><img src="rodice/slovnicek.jpg" alt="Slovníček se stupni" loading="lazy"><figcaption><b>Slovníček</b>co opravdu umí</figcaption></figure>
+      <figure class="plate"><img src="rodice/mapa.jpg" alt="Mapa hradu" loading="lazy"><figcaption><b>Mapa hradu</b>učebny a hvězdy</figcaption></figure>
+      <figure class="plate"><img src="rodice/prukaz.jpg" alt="Průkaz studenta" loading="lazy"><figcaption><b>Průkaz</b>na fotku</figcaption></figure>
     </div>
-    <div class="media"><img src="rodice/panel.jpg" alt="Rodičovský panel s přehledem 7 dní"><img src="rodice/slovnicek.jpg" alt="Slovníček se stupni"></div>
-  </div>
+  </details>
+  <div class="folio">— 5 —</div>
 </section>
+<div class="between">❧</div>
 
-<section class="band">
-  <div class="wrap split rev">
-    <div>
-      <span class="eyebrow">Živě v telefonu</span>
-      <h2>Víte, co se právě učí, i když nejste vedle</h2>
-      <ul class="ticks">
-        <li><b>Právě teď:</b> „Právě se učí: Násobilka 2–5, otázka 7 z 10“. Obnovuje se samo každých pár sekund.</li>
-        <li><b>Dnes a týden:</b> kolik hodin a otázek zvládlo napoprvé, které dny se učilo a jak hoří plamínek.</li>
-        <li><b>Kde chybuje:</b> konkrétní příklady z posledního týdne, ať víte, co spolu procvičit.</li>
-        <li><b>Násobilka po příkladech:</b> mřížka ukáže, které příklady už umí, které „jdou“ a na které ještě nedošlo. Stejně tak vyjmenovaná slova a slovíčka.</li>
-        <li><b>Soví pošta:</b> pošlete z telefonu pochvalu a pár galeonů. Dopis dítěti přistane ve Velké síni a ono odpoví.</li>
-        <li><b>Vlastní ikona na ploše</b> a přístup pro celou rodinu, třeba i pro babičku: pozvete ji jejím e-mailem, heslo není potřeba.</li>
-      </ul>
-    </div>
-    <div class="media"><img src="rodice/prehled.jpg" alt="Živý přehled pro rodiče: právě se učí, dnes a týden"><img src="rodice/prehled2.jpg" alt="Přehled: mřížka násobilky a co dítě rozzářilo"></div>
-  </div>
+<!-- VI -->
+<section class="page chapter faq" id="otazky" data-title="Otázky rodičů">
+  <span class="chapNo">Kapitola šestá</span>
+  <h2>Otázky rodičů</h2>
+  <div class="orn">❦</div>
+  <details><summary>Kolik to stojí?</summary><p>Nic. Hra je zdarma, bez reklam a bez nákupů za skutečné peníze. Galeony se získávají jen učením.</p></details>
+  <details><summary>Musím zakládat účet?</summary><p>Ne. Dítě může hrát hned a postup se ukládá přímo v zařízení. Kdo chce hrát na více zařízeních nebo sledovat živý přehled v telefonu, přihlásí se v rodičovském panelu svým e-mailem: přijde mu e-mail s tlačítkem a 6 číslicemi, heslo není potřeba. Ukládáme jen e-mail rodiče a postup ve hře, nic o dítěti mimo hru.</p></details>
+  <details><summary>Pro jaký věk je hra?</summary><p>Pro děti kolem 7 až 9 let, učivo odpovídá 3. třídě české školy. Rodič odemyká učebny postupně, takže se dá začít i dřív nebo pokračovat později.</p></details>
+  <details><summary>Musí dítě znát Harryho Pottera?</summary><p>Nemusí, ale nejvíc si to užijí děti, které knihy čtou nebo jim je někdo čte. Otázky z knih se otevírají jen ke kapitolám, které už máte přečtené, takže hra nic neprozradí dopředu.</p></details>
+  <details><summary>Kolik času u obrazovky to zabere?</summary><p>Jedna hodina má 10 otázek, obvykle 5 až 10 minut. Plamínek roste jednou denně, za první dokončenou hodinu, takže hra nevede k nekonečnému hraní.</p></details>
+  <details><summary>Co když dítě udělá chybu?</summary><p>Nic se nestane. Žádné body se neztrácejí, hra krátce vysvětlí správnou odpověď a otázka se později vrátí. Profesoři povzbuzují.</p></details>
+  <details><summary>Co musím nastavit?</summary><p>Skoro nic. Při prvním otevření rodičovského panelu vás provede krátký průvodce: jestli spolu čtete Harryho Pottera a kam jste dočetli, co už probrali ve škole a jaká slovíčka z angličtiny se učí. Trvá to asi dvě minuty a všechno jde později změnit.</p></details>
+  <details><summary>Jak si to vyzkoušet?</summary><p>Klepněte na „Vyzkoušet ukázku“ a napište jméno dítěte. Spustí se ukázka s hotovým postupem a sova vás hrou provede. Nic se neuloží. Vlastní profil založíte jedním klepnutím na úvodní obrazovce.</p></details>
+  <div class="folio">— 6 —</div>
 </section>
+<div class="between">❧</div>
 
-<section>
-  <div class="wrap split">
-    <div>
-      <span class="eyebrow">Všude stejně</span>
-      <h2>Tablet, telefon i počítač</h2>
-      <ul class="ticks">
-        <li><b>Bez instalace:</b> stačí otevřít v prohlížeči. Na tabletu se dá přidat na plochu jako aplikace a aktualizuje se sama.</li>
-        <li><b>Jeden postup na všech zařízeních:</b> rodič se přihlásí e-mailem (bez hesla, přijde mu kód) a tablet dítěte připojí šesti číslicemi z obrazovky.</li>
-        <li><b>Funguje i bez internetu:</b> postup se ukládá v zařízení a srovná se, až bude připojení.</li>
-        <li><b>Mapa hradu a ložnice</b> se dají natáčet a přiblížit přes celou obrazovku.</li>
-      </ul>
-    </div>
-    <div class="media"><img src="rodice/mapa.jpg" alt="Mapa hradu s předměty"><img src="rodice/prukaz.jpg" alt="Průkaz studenta"></div>
-  </div>
-</section>
-
-
-
-<section class="band">
-  <div class="wrap faq">
-    <span class="eyebrow">Otázky rodičů</span>
-    <h2>Časté otázky</h2>
-    <details><summary>Kolik to stojí?</summary><p>Nic. Hra je zdarma, bez reklam a bez nákupů za skutečné peníze. Galeony se získávají jen učením.</p></details>
-    <details><summary>Musím zakládat účet?</summary><p>Ne. Dítě může hrát hned a postup se ukládá přímo v zařízení. Kdo chce hrát na více zařízeních nebo sledovat živý přehled v telefonu, přihlásí se v rodičovském panelu svým e-mailem: přijde mu e-mail s tlačítkem a 6 číslicemi, heslo není potřeba. Ukládáme jen e-mail rodiče a postup ve hře, nic o dítěti mimo hru. Další rodiče pozvete e-mailem, tablet dítěte připojíte šesti číslicemi.</p></details>
-    <details><summary>Pro jaký věk je hra?</summary><p>Pro děti kolem 7 až 9 let, učivo odpovídá 3. třídě české školy. Rodič odemyká učebny postupně, takže se dá začít i dřív nebo pokračovat později.</p></details>
-    <details><summary>Musí dítě znát Harryho Pottera?</summary><p>Nemusí, ale nejvíc si to užijí děti, které knihy čtou nebo jim je někdo čte. Otázky z knih se otevírají jen ke kapitolám, které už máte přečtené, takže hra nic neprozradí dopředu.</p></details>
-    <details><summary>Kolik času u obrazovky to zabere?</summary><p>Jedna hodina má 10 otázek, obvykle 5 až 10 minut. Plamínek roste jednou denně, za první dokončenou hodinu, takže hra nevede k nekonečnému hraní.</p></details>
-    <details><summary>Co když dítě udělá chybu?</summary><p>Nic se nestane. Žádné body se neztrácejí, hra krátce vysvětlí správnou odpověď a otázka se později vrátí. Profesoři povzbuzují.</p></details>
-    <details><summary>Jak si to vyzkoušet?</summary><p>Klepněte na „Vyzkoušet bez registrace“. Spustí se ukázka se studentkou, která už má hotový postup, a sova vás hrou provede. Nic se neuloží. Vlastní profil založíte jedním klepnutím na úvodní obrazovce.</p></details>
-  </div>
-</section>
-
-<section class="final">
-  <div class="wrap">
-    <img src="rodice/sova-mava.webp" alt="Sova mává">
-    <h2>Dopis z Bradavic už je na cestě</h2>
-    <p>Vyzkoušejte si hru za dvě minuty, bez registrace.</p>
-    <div class="ctaRow">
-      <a class="btn gold" href="./#ukazka">👀 Vyzkoušet bez registrace</a>
-      <a class="btn" href="./">✨ Založit profil</a>
-    </div>
-  </div>
+<!-- VII -->
+<section class="page chapter epilog" id="doslov" data-title="Doslov">
+  <span class="chapNo">Doslov</span>
+  <img src="rodice/sova-mava.webp" alt="Sova mává">
+  <h2>Dopis z Bradavic už je na cestě</h2>
+  <div class="orn">❦</div>
+  <p>Vyzkoušejte si hru za dvě minuty, bez registrace.</p>
+  <div class="ctaRow"><a class="btn gold" href="./#ukazka">👀 Vyzkoušet ukázku</a><a class="btn ink" href="./">✨ Začít hrát</a></div>
+  <div class="folio">— 7 —</div>
 </section>
 
 </main>
 
 <footer>
-  <div class="wrap">
-    Bradavická škola je neoficiální rodinný projekt nadšenců, bez komerčního záměru.<br>
-    Není spojen s J. K. Rowlingovou, nakladatelstvím Albatros ani společností Warner Bros. Jména a místa z knih o Harrym Potterovi patří jejich vlastníkům.
-  </div>
+  Kouzelná škola je neoficiální rodinný projekt nadšenců, bez komerčního záměru.<br>
+  Není spojen s J. K. Rowlingovou, nakladatelstvím Albatros ani společností Warner Bros. Jména a místa z knih o Harrym Potterovi patří jejich vlastníkům.
 </footer>
 
+<div class="stickyCta"><a class="btn gold" href="./#ukazka">👀 Vyzkoušet ukázku</a></div>
+
+<script>
+(function () {
+  var chapters = Array.prototype.slice.call(document.querySelectorAll(".chapter"));
+  var roman = ["I", "II", "III", "IV", "V", "VI", "VII"];
+  /* obsah a záložky z kapitol */
+  var toc = document.querySelector(".toc ol"), rib = document.querySelector(".ribbons");
+  chapters.forEach(function (c, i) {
+    var t = c.getAttribute("data-title"), pg = (c.querySelector(".folio").textContent || "").replace(/[—\s]/g, "");
+    toc.insertAdjacentHTML("beforeend", '<li><span class="rn">' + (i < 6 ? roman[i] + "." : "") + '</span><a href="#' + c.id + '">' + t + '</a><span class="dots"></span><span class="pg">' + pg + '</span></li>');
+    rib.insertAdjacentHTML("beforeend", '<a href="#' + c.id + '" data-id="' + c.id + '">' + (i < 6 ? roman[i] + ". " : "") + t + '</a>');
+  });
+  /* „Číst celou kapitolu“: plná verze nahradí krátkou */
+  Array.prototype.forEach.call(document.querySelectorAll("details.more"), function (d) {
+    d.addEventListener("toggle", function () { d.closest(".page").classList.toggle("full", d.open); });
+  });
+  /* stránky se zvednou z knihy, jakmile se objeví */
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var pages = document.querySelectorAll(".page");
+  if (!reduce && "IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px" });
+    Array.prototype.forEach.call(pages, function (p) { p.classList.add("lift"); io.observe(p); });
+  }
+  /* aktuální kapitola: záložka, ukazatel nahoře, tlačítko dole */
+  var prog = document.querySelector(".progress"), lbl = prog.querySelector(".lbl"), bar = prog.querySelector(".bar"), cta = document.querySelector(".stickyCta");
+  var cover = document.getElementById("obalka"), doslov = document.getElementById("doslov");
+  function onScroll() {
+    var y = window.scrollY, h = window.innerHeight, past = y > cover.offsetHeight - 60;
+    var cur = -1; chapters.forEach(function (c, i) { if (c.getBoundingClientRect().top < h * 0.35) cur = i; });
+    prog.classList.toggle("show", past && cur >= 0);
+    rib.classList.toggle("show", past);
+    if (cur >= 0) { lbl.innerHTML = '<b>' + (cur < 6 ? "Kapitola " + roman[cur] : "Doslov") + '</b> · ' + chapters[cur].getAttribute("data-title"); }
+    var max = document.documentElement.scrollHeight - h; bar.style.width = (max > 0 ? Math.min(100, y / max * 100) : 0) + "%";
+    Array.prototype.forEach.call(rib.children, function (a, i) { a.classList.toggle("on", i === cur); });
+    var dTop = doslov.getBoundingClientRect().top;
+    cta.classList.toggle("show", past && dTop > h * 0.9);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll); onScroll();
+})();
+</script>
 </body>
 </html>
