@@ -458,6 +458,15 @@
   .lsDuo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; font-size: 20px; padding: 6px 0; border-bottom: 1px dashed #e0cfa9; } .lsDuo small { flex-basis: 100%; font-size: 14px; color: var(--muted2); }
   .lsY { color: var(--teal-d); font-weight: 700; } .lsI { color: var(--coral); font-weight: 700; } .vyjW .vy { color: var(--mustard-d); }
   .lsWords { display: grid; gap: 8px; } .lsWord { display: flex; align-items: center; gap: 10px; border: 2px solid var(--ink); border-radius: 12px; padding: 8px 12px; background: #fffaf0; } .lsEmoji { font-size: 30px; } .lsWord b { font-size: 22px; } .lsWord .muted { flex: 1; }
+  .stepsStrip { display: flex; gap: 3px; overflow-x: auto; padding: 4px 0; } .stCell { flex: none; min-width: 44px; text-align: center; border: 2px solid var(--ink); border-radius: 6px; padding: 4px 2px; font-size: 15px; background: #fffaf0; line-height: 1.25; }
+  .stCell.start { background: var(--mustard-pale); border-color: var(--mustard-d); } .stCell.end { background: var(--teal-pale); border-color: var(--teal-d); font-weight: 700; } .stepsCmd { text-align: center; font-size: 26px; letter-spacing: 2px; margin: 8px 0 0; } .stepsCmd .muted { font-size: 15px; letter-spacing: 0; }
+  .snake { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; font-size: 22px; } .snNode { width: 58px; height: 58px; border-radius: 50%; border: 2px solid var(--ink); display: flex; align-items: center; justify-content: center; background: #fff; font-weight: 700; } .snNode.q { background: var(--teal-pale); border-color: var(--teal-d); } .snArrow { color: var(--red); font-size: 20px; } .snArrow b { display: block; font-size: 16px; text-align: center; color: var(--mustard-d); line-height: 1; }
+  .busT { width: 100%; border-collapse: collapse; font-size: 18px; } .busT th, .busT td { border: 2px solid var(--ink); padding: 6px 8px; text-align: center; } .busT th:first-child { text-align: left; font-weight: 400; color: var(--muted2); font-size: 15px; } .busT td.q { background: var(--teal-pale); font-weight: 700; }
+  .mgrid { display: inline-flex; flex-direction: column; gap: 3px; margin: 0 auto; } .lsVis .mgrid { display: flex; align-items: center; } .gRow { display: flex; gap: 3px; } .gRow i { width: 22px; height: 22px; background: var(--teal-pale); border: 1.5px solid var(--teal-d); border-radius: 3px; } .gRow.alt i { background: var(--mustard-pale); border-color: var(--mustard-d); }
+  .msq { display: grid; grid-template-columns: repeat(3, 64px); gap: 6px; justify-content: center; } .msq span { height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 20px; font-weight: 700; } .msq .corner { background: #dbe6f6; border: 2px solid #2e4a8c; } .msq .side { background: var(--mustard-pale); border: 2px solid var(--mustard-d); } .msq .side.q { background: var(--teal-pale); border-color: var(--teal-d); } .msq .mid { border: 0; }
+  .figs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; } .figGroup { border: 2px dashed var(--ink); border-radius: 10px; padding: 6px 8px; font-size: 22px; letter-spacing: 1px; } .figGroup.rest { border-color: var(--coral); } .figGroup small { display: block; font-size: 13px; color: var(--coral); text-align: center; }
+  .lesonLegend { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; font-size: 14px; color: var(--muted2); margin-bottom: 8px; } .tug { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 26px; } .team { border: 2px solid var(--ink); border-radius: 12px; padding: 6px 10px; background: #fffaf0; } .team .q { color: var(--teal-d); font-weight: 700; } .team.pool { text-align: center; margin-bottom: 8px; letter-spacing: 2px; }
+  .axis { position: relative; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--ink); padding: 0 4px; margin: 12px 8px 30px; height: 40px; } .axis .tick { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 14px; } .axis .tick i { display: block; width: 2px; height: 10px; background: var(--ink); } .axis .tick.big i { height: 18px; } .axis .tick.me i { height: 32px; width: 3px; background: var(--red); } .axis .tick em { position: absolute; top: 100%; margin-top: 6px; font-style: normal; font-size: 15px; font-weight: 700; white-space: nowrap; } .axis .tick.me em { color: var(--red); }
   .lsQ { margin-top: 12px; border-top: 1px dashed #c9b48a; padding-top: 10px; }
   .vyjCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin: 8px 0; }
   .vyjCard { border: 2px solid var(--ink); border-radius: 14px; background: #fffaf0; padding: 10px 12px; }
@@ -892,7 +901,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-25a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-25c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2697,7 +2706,8 @@ function defaultState() {
     parentSetup: "",
     gender: "",
     examOpen: {},
-    lessonSeen: {},     /* učebna → datum, kdy dítě vidělo výklad v hájence */       /* ročník → true: rodič otevřel zkoušku ročníku dřív, než je díl dočtený */         /* "f" holka, "m" kluk; "" = nezvoleno (gt() odhadne podle jména) */    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
+    lessonSeen: {},     /* učebna → datum, kdy dítě vidělo výklad v hájence */
+    method: "klasika",  /* jak se počítá ve škole: klasika | hejny | zadna (výklad matematiky) */       /* ročník → true: rodič otevřel zkoušku ročníku dřív, než je díl dočtený */         /* "f" holka, "m" kluk; "" = nezvoleno (gt() odhadne podle jména) */    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
     wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
     dustEarned: 0,
@@ -2748,6 +2758,7 @@ function migrate(s) {
   /* hra uložená před 21. 10. 2026 = Karolinčina rodina: lekce ze sešitu dostává dál */
   if (!s.examOpen || typeof s.examOpen !== "object") s.examOpen = {};
   if (!s.lessonSeen || typeof s.lessonSeen !== "object") s.lessonSeen = {};
+  if (typeof s.method !== "string" || !s.method) s.method = "klasika";
   if (typeof s.gender !== "string") s.gender = s.name ? "f" : "";   /* hra uložená před 21. 10. 2026 = Karolinka */
   if (typeof s.parentSetup !== "string") s.parentSetup = s.name ? "dříve" : "";   /* hra uložená před průvodcem ho nedostane */
   if (typeof s.sesit !== "boolean") s.sesit = Array.isArray(s.words) || Array.isArray(s.unitsShipped);
@@ -4864,8 +4875,146 @@ function vocabLessonCards(t, st) {
   }
   return cards.length > 1 ? cards : null;
 }
+/* ---- METODA RODINY (25. 10. 2026, táta): výklad matematiky podle toho, jak se počítá ve škole dítěte.
+   S.method: "klasika" (LESSONS výše: rozklad přes desítku, stejné skupiny…), "hejny" (LESSONS_H níže: úlohy
+   v prostředích Hejného metody — krokování, hadi, autobus, mřížový obdélník, násobilkový čtverec, rozděl figurky,
+   zvířátka dědy Lesoně, číselná osa; učitel NEVYSVĚTLUJE, jen zadá a ptá se — Desatero pro rodiče H-mat),
+   "zadna" (výklad matematiky vypnutý, jen zkoušení). Čeština a angličtina jsou pro všechny stejné.
+   Zdroje: h-mat.cz/didakticka-prostredi, Příručka pro rodiče (H-mat, ZŠ Ždírec), učebnice Fraus 1–3. ---- */
+var METHODS = {
+  klasika: { n: "Klasicky (většina škol)", d: "rozklad přes desítku, násobilka jako stejné skupiny, dělení jako rozdělování" },
+  hejny:   { n: "Hejného metoda", d: "krokování, hadi, autobus, násobilkové čtverce, zvířátka dědy Lesoně; úlohy k objevování, bez vysvětlování" },
+  zadna:   { n: "Bez výkladu matematiky", d: "výklad matematiky vypnutý, hra jen zkouší; čeština a angličtina zůstávají" }
+};
+function kidMethod(st) { st = st || S; return METHODS[st && st.method] ? st.method : "klasika"; }
+var LESSONS_H = {
+  M1: [
+    { t: "Krokování dopředu", say: "Postav se na číslo třicet osm. Udělej pět kroků dopředu, začni teď! Na kterém čísle stojíš?",
+      vis: { k: "steps", start: 38, n: 5, dir: 1 }, try: { q: "Stojíš na 47. Uděláš 6 kroků dopředu. Na kterém čísle stojíš?", correct: 53, opts: [53, 52, 41, 54], why: "Odkrokuj: 48, 49, 50, 51, 52, 53." } },
+    { t: "Krokování dozadu", say: "Stojíš na padesáti dvou. Udělej sedm kroků dozadu, začni teď! Neotáčej se, couváš. Kde stojíš?",
+      vis: { k: "steps", start: 52, n: 7, dir: -1 }, try: { q: "Stojíš na 63. Uděláš 8 kroků dozadu. Na kterém čísle stojíš?", correct: 55, opts: [55, 56, 71, 54], why: "Couvej: 62, 61, 60, 59, 58, 57, 56, 55." } },
+    { t: "Had", say: "Čísla v kroužcích jsou stavy, čísla nad šipkami změny. Had má hlavu dvacet pět. Doplň prázdný kroužek.",
+      vis: { k: "snake", nodes: [25, "?", 40], ops: ["+8", "+7"] }, try: { q: "Had: 46 → (+9) → ? Jaké číslo je v kroužku?", correct: 55, opts: [55, 54, 37, 56], why: "46 a 9 je 55. Zkus to i krokováním." } },
+    { t: "Autobus", say: "Na první zastávce nastoupilo šest cestujících. Na druhé čtyři vystoupili a pět nastoupilo. Kolik jich jede dál?",
+      vis: { k: "bus", stops: ["A", "B"], in: [6, 5], out: [0, 4], ride: [6, "?"] }, try: { q: "Na zastávce A nastoupilo 8 cestujících. Na zastávce B 3 vystoupili a 6 nastoupilo. Kolik cestujících jede dál?", correct: 11, opts: [11, 17, 5, 10], why: "8 bez 3 je 5, a 6 nastoupilo: 11." } }
+  ],
+  M2: [
+    { t: "Mřížový obdélník", say: "Obdélník má tři řady a v každé čtyři čtverečky. Kolik čtverečků je celkem? Spočítej je, jak chceš.",
+      vis: { k: "grid", a: 3, b: 4 }, try: { a: 2, b: 5 } },
+    { t: "Otoč obdélník", say: "Otoč obdélník na bok. Teď má čtyři řady po třech. Co se změnilo a co zůstalo?",
+      vis: { k: "grid", a: 4, b: 3 }, try: { a: 5, b: 3 } },
+    { t: "Násobilkový čtverec", say: "V rozích jsou čísla. Na každé straně je součin dvou rohů vedle ní. Jedna strana chybí, doplň ji.",
+      vis: { k: "msq", a: 2, b: 3, c: 5, d: 4, hide: "H" }, try: { q: "V rozích vedle sebe jsou 3 a 4. Jaké číslo je na straně mezi nimi?", correct: 12, opts: [12, 7, 1, 34], why: "Strana je součin rohů: 3 × 4 = 12." } },
+    { t: "Zvířátka dědy Lesoně", say: "Kočka má sílu dvou myší. Kolik myší je stejně silných jako pět koček?",
+      vis: { k: "leson", left: ["🐱", "🐱", "🐱", "🐱", "🐱"], right: ["?"] }, try: { q: "Husa má sílu tří myší. Kolik myší je stejně silných jako čtyři husy?", correct: 12, opts: [12, 7, 3, 16], why: "4 husy = 4 × 3 myši = 12 myší." } }
+  ],
+  M3: [
+    { t: "Obdélník rozděl čarou", say: "Šest řad po sedmi. Rozděl si obdélník čarou na dva menší, které už znáš. Pomůže ti to?",
+      vis: { k: "grid", a: 6, b: 7, split: 5 }, try: { a: 7, b: 6 } },
+    { t: "Deset řad, devět řad", say: "Deset řad po čtyřech. Co vidíš? A co kdyby jedna řada chyběla?",
+      vis: { k: "grid", a: 10, b: 4, split: 9 }, try: { a: 9, b: 6 } },
+    { t: "Násobilkový čtverec", say: "Rohy jsou šest, sedm, osm a devět. Tři strany jsou doplněné. Doplň poslední.",
+      vis: { k: "msq", a: 6, b: 7, c: 8, d: 9, hide: "H" }, try: { q: "V rozích vedle sebe jsou 8 a 7. Jaké číslo je na straně mezi nimi?", correct: 56, opts: [56, 15, 54, 48], why: "8 × 7 = 56." } },
+    { t: "Zvířátka dědy Lesoně", say: "Koza má sílu pěti myší a kráva sílu dvou koz. Kolik myší má sílu jedné krávy?",
+      vis: { k: "leson", left: ["🐄"], right: ["?"] }, try: { q: "Beran má sílu šesti myší. Kolik myší je stejně silných jako sedm beranů?", correct: 42, opts: [42, 13, 36, 48], why: "7 beranů = 7 × 6 myší = 42 myší." } }
+  ],
+  M4: [
+    { t: "Rozděl figurky", say: "Dvanáct figurek rozděl spravedlivě do tří skupin. Kolik je v každé?",
+      vis: { k: "figs", n: 12, d: 3 }, try: { n: 15, d: 3 } },
+    { t: "Stejně silná družstva", say: "Děda Lesoň má osm myší. Rozděl je do dvou stejně silných družstev. Kolik myší má každé?",
+      vis: { k: "leson", pool: ["🐭", "🐭", "🐭", "🐭", "🐭", "🐭", "🐭", "🐭"], left: ["?"], right: ["?"] }, try: { q: "Děda Lesoň má 20 myší a rozdělí je do čtyř stejně silných družstev. Kolik myší je v jednom družstvu?", correct: 5, opts: [5, 4, 16, 24], why: "20 myší do 4 družstev: 5 v každém." } },
+    { t: "Násobilkový čtverec pozpátku", say: "Na straně je dvacet čtyři a v jednom rohu šest. Jaké číslo musí být ve druhém rohu?",
+      vis: { k: "msq", a: 6, b: "?", c: "", d: "", E: 24 }, try: { q: "Na straně je 36 a v jednom rohu 9. Jaké číslo je ve druhém rohu?", correct: 4, opts: [4, 27, 45, 6], why: "9 × ? = 36, tedy 4." } }
+  ],
+  M5: [
+    { t: "Had po stovkách", say: "Had začíná na třech stech. Šipka říká: plus čtyři sta. Kde had skončí?",
+      vis: { k: "snake", nodes: [300, "?"], ops: ["+400"] }, try: { q: "Had: 200 → (+500) → ?", correct: 700, opts: [700, 600, 800, 900], why: "2 stovky a 5 stovek je 7 stovek." } },
+    { t: "Schody po desítkách", say: "Každý schod je deset. Stojíš na schodu tři sta čtyřicet a jdeš o pět schodů nahoru. Kde stojíš?",
+      vis: { k: "steps", start: 340, n: 5, dir: 1, step: 10 }, try: { q: "Schody jdou po desítkách. Stojíš na 460 a jdeš o 3 schody nahoru. Kde stojíš?", correct: 490, opts: [490, 460, 430, 790], why: "470, 480, 490." } },
+    { t: "Had dozadu", say: "Hlava hada je osm set, šipka říká mínus tři sta. Doplň ocas.",
+      vis: { k: "snake", nodes: [800, "?"], ops: ["−300"] }, try: { q: "Had: 900 → (−400) → ?", correct: 500, opts: [500, 400, 600, 1300], why: "9 stovek bez 4 stovek je 5 stovek." } }
+  ],
+  M6: [
+    { t: "Sousedé na číselné ose", say: "Čtyřicet sedm stojí mezi čtyřiceti a padesáti. Ke kterému sousedovi má blíž? Změř to kroky.",
+      vis: { k: "axis", lo: 40, hi: 50, n: 47 }, try: { q: "Zaokrouhli číslo 73 na desítky.", correct: 70, opts: [70, 80, 73, 60], why: "K 70 jsou to 3 kroky, k 80 sedm." } },
+    { t: "Přesně uprostřed", say: "Šedesát pět stojí přesně uprostřed mezi šedesáti a sedmdesáti. Domluva zní: z prostředka jdeme nahoru.",
+      vis: { k: "axis", lo: 60, hi: 70, n: 65 }, try: { q: "Zaokrouhli číslo 65 na desítky.", correct: 70, opts: [70, 60, 65, 80], why: "Z prostředka nahoru: 70." } },
+    { t: "Sousední stovky", say: "Tři sta čtyřicet sedm má sousedy tři sta a čtyři sta. Který je blíž?",
+      vis: { k: "axis", lo: 300, hi: 400, n: 347, step: 10 }, try: { q: "Zaokrouhli číslo 281 na stovky.", correct: 300, opts: [300, 200, 280, 290], why: "281 má blíž k 300 než k 200." } }
+  ],
+  M7: [
+    { t: "Rozděl figurky se zbytkem", say: "Třináct figurek do čtyř skupin spravedlivě. Co s figurkou, která zbyla?",
+      vis: { k: "figs", n: 13, d: 4 }, try: { q: "14 ÷ 4 = ?", correct: "3, zbytek 2", opts: ["3, zbytek 2", "3, zbytek 0", "2, zbytek 2", "4, zbytek 2"], why: "Do každé ze 4 skupin 3 figurky, 2 zbudou." } },
+    { t: "Kolik může zbýt?", say: "Devatenáct figurek do pěti skupin. Kolik zbude? Může zbýt víc než čtyři?",
+      vis: { k: "figs", n: 19, d: 5 }, try: { q: "17 ÷ 5 = ?", correct: "3, zbytek 2", opts: ["3, zbytek 2", "3, zbytek 1", "2, zbytek 7", "4, zbytek 2"], why: "5 skupin po 3 je 15, zbývají 2." } },
+    { t: "Zkouška figurkami", say: "Tři skupiny po čtyřech a jedna figurka navíc. Kolik figurek je dohromady?",
+      vis: { k: "figs", n: 13, d: 3, show: true }, try: { q: "23 ÷ 4 = ?", correct: "5, zbytek 3", opts: ["5, zbytek 3", "5, zbytek 2", "6, zbytek 1", "4, zbytek 3"], why: "4 skupiny po 5 je 20, zbývají 3." } }
+  ],
+  M8: [
+    { t: "Ciferník", say: "Velká ručička oběhne celý ciferník za hodinu. Kolik minut je to? A kolik za půl kola?",
+      vis: { k: "text", h: "celé kolo = <b>60</b> minut<br>půl kola = <b>?</b> · čtvrt kola = <b>?</b>" }, try: { q: "Kolik minut je půl hodiny?", correct: 30, opts: [30, 50, 15, 60], why: "Půl kola ze 60 je 30." } },
+    { t: "Krokovací pás jako metr", say: "Metr je krokovací pás se sto dílky. Každý dílek je centimetr. Kolik dílků jsou tři metry?",
+      vis: { k: "steps", start: 0, n: 3, dir: 1, step: 100, unit: " cm" }, try: { q: "Kolik centimetrů jsou 4 m?", correct: 400, opts: [400, 40, 4000, 104], why: "Čtyři pásy po 100 dílcích." } },
+    { t: "Výměna jako u dědy Lesoně", say: "Jeden kilogram vyměníš za tisíc gramů. Za kolik gramů vyměníš dva kilogramy?",
+      vis: { k: "text", h: "1 kg ⇄ <b>1000</b> g · 1 l ⇄ <b>1000</b> ml<br>2 kg ⇄ <b>?</b> g" }, try: { q: "Kolik gramů jsou 3 kg?", correct: 3000, opts: [3000, 300, 30, 1003], why: "Tři výměny po 1000." } }
+  ],
+  M9: [
+    { t: "Slovní úloha jako autobus", say: "Do autobusu nastoupilo dvanáct dětí. Na další zastávce pět vystoupilo. Zapiš to do tabulky. Kolik dětí jede dál?",
+      vis: { k: "bus", stops: ["A", "B"], in: [12, 0], out: [0, 5], ride: [12, "?"] }, try: { q: "Na zastávce A nastoupilo 15 cestujících. Na zastávce B 6 vystoupilo. Kolik cestujících jede dál?", correct: 9, opts: [9, 21, 8, 11], why: "15 bez 6 je 9." } },
+    { t: "Krokovací pás", say: "Harry má osm čokoládových žabek. Postav se na osmičku. Pak dostane šest. Kolik kroků uděláš a kam?",
+      vis: { k: "steps", start: 8, n: 6, dir: 1 }, try: { q: "Hermiona má 8 knih a z knihovny si půjčila 6. Kolik knih má dohromady?", correct: 14, opts: [14, 2, 13, 15], why: "Z osmičky šest kroků dopředu: 14." } },
+    { t: "Krabičky jako obdélník", say: "Tři krabičky po šesti žabkách. Nakresli si to jako obdélník: tři řady po šesti. Kolik je žabek?",
+      vis: { k: "grid", a: 3, b: 6 }, try: { q: "V každé ze 4 krabiček je 5 čokoládových žabek. Kolik je žabek celkem?", correct: 20, opts: [20, 9, 15, 24], why: "4 řady po 5 je 20." } }
+  ]
+};
+var LESON_LEGEND = [["🐭", "myš", 1], ["🐱", "kočka", 2], ["🦢", "husa", 3], ["🐶", "pes", 4], ["🐐", "koza", 5], ["🐏", "beran", 6], ["🐄", "kráva", 10]];
+function lessonVisHejnyHTML(v) {
+  var rep = function (n, e) { return new Array(Math.max(0, n) + 1).join(e); };
+  if (v.k === "steps") {
+    var st = v.step || 1, u = v.unit || "", cells = [], from = Math.max(0, v.start - (v.dir < 0 ? (v.n + 1) * st : 2 * st)), to = v.start + (v.dir > 0 ? (v.n + 1) * st : 2 * st);
+    for (var x = from; x <= to; x += st) cells.push('<span class="stCell' + (x === v.start ? " start" : "") + '">' + (x === v.start ? '🧍<br>' : '') + x + u + '</span>');
+    return '<div class="lsVis stepsWrap"><div class="stepsStrip">' + cells.join("") + '</div><p class="stepsCmd">' + rep(v.n, v.dir > 0 ? "→" : "←") + ' <span class="muted">' + v.n + (v.dir > 0 ? " dopředu" : " dozadu") + (st !== 1 ? " po " + st : "") + ' · začni teď!</span></p></div>';
+  }
+  if (v.k === "snake") {
+    var h = "";
+    v.nodes.forEach(function (nd, i) { h += '<span class="snNode' + (nd === "?" ? " q" : "") + '">' + nd + '</span>'; if (i < v.ops.length) h += '<span class="snArrow"><b>' + esc(v.ops[i]) + '</b>→</span>'; });
+    return '<div class="lsVis snake">' + h + '</div>';
+  }
+  if (v.k === "bus") {
+    var row = function (lab, arr) { return '<tr><th>' + lab + '</th>' + arr.map(function (x) { return '<td' + (x === "?" ? ' class="q"' : '') + '>' + x + '</td>'; }).join("") + '</tr>'; };
+    return '<div class="lsVis"><table class="busT"><tr><th>🚌</th>' + v.stops.map(function (s) { return '<th>' + esc(s) + '</th>'; }).join("") + '</tr>' + row("nastoupili", v["in"]) + row("vystoupili", v.out) + row("jede dál", v.ride) + '</table></div>';
+  }
+  if (v.k === "grid") {
+    var g = ""; for (var r = 0; r < v.a; r++) { g += '<div class="gRow' + (v.split && r >= v.split ? " alt" : "") + '">' + rep(v.b, '<i></i>') + '</div>'; }
+    return '<div class="lsVis"><div class="mgrid">' + g + '</div><p class="muted center">' + v.a + ' řady po ' + v.b + (v.split ? ' · čára po ' + v.split + '. řadě' : '') + '</p></div>';
+  }
+  if (v.k === "msq") {
+    var num = function (x) { return typeof x === "number" ? x : (x || ""); };
+    var E = v.E != null ? v.E : (typeof v.a === "number" && typeof v.b === "number" ? v.a * v.b : ""), F = typeof v.b === "number" && typeof v.c === "number" ? v.b * v.c : "", G = typeof v.c === "number" && typeof v.d === "number" ? v.c * v.d : "", H = typeof v.d === "number" && typeof v.a === "number" ? v.d * v.a : "";
+    var cell = function (val, cls, hid) { return '<span class="' + cls + (hid || val === "?" ? " q" : "") + '">' + (hid ? "?" : val) + '</span>'; };
+    return '<div class="lsVis msq">' + cell(num(v.a), "corner") + cell(E, "side", v.hide === "E") + cell(num(v.b), "corner") +
+      cell(H, "side", v.hide === "H") + '<span class="mid"></span>' + cell(F, "side", v.hide === "F") +
+      cell(num(v.d), "corner") + cell(G, "side", v.hide === "G") + cell(num(v.c), "corner") + '</div><p class="muted center">modré rohy · žluté strany = součin rohů vedle</p>';
+  }
+  if (v.k === "figs") {
+    var q = Math.floor(v.n / v.d), r2 = v.n % v.d, gs = "";
+    for (var j = 0; j < v.d; j++) gs += '<div class="figGroup">' + rep(q, "🧍") + '</div>';
+    return '<div class="lsVis"><div class="figs">' + gs + (r2 ? '<div class="figGroup rest">' + rep(r2, "🧍") + '<small>zbylo</small></div>' : '') + '</div><p class="muted center">' + (v.show ? v.n + ' ÷ ' + v.d + ' = ' + q + (r2 ? ' (' + r2 + ')' : '') : v.d + ' skupiny · celkem ' + v.n + ' figurek') + '</p></div>';
+  }
+  if (v.k === "leson") {
+    var team = function (arr) { return '<div class="team">' + arr.map(function (a) { return '<span' + (a === "?" ? ' class="q"' : '') + '>' + a + '</span>'; }).join("") + '</div>'; };
+    return '<div class="lsVis"><div class="lesonLegend">' + LESON_LEGEND.map(function (l) { return '<span>' + l[0] + ' ' + l[1] + ' = ' + l[2] + '</span>'; }).join("") + '</div>' + (v.pool ? '<div class="team pool">' + v.pool.join("") + '</div>' : '') + '<div class="tug">' + team(v.left) + '<b>⟷</b>' + team(v.right) + '</div></div>';
+  }
+  if (v.k === "axis") {
+    var stp = v.step || 1, ticks = "", pct = Math.round(100 * (v.n - v.lo) / (v.hi - v.lo));
+    for (var t = v.lo; t <= v.hi; t += stp) ticks += '<span class="tick' + (t === v.lo || t === v.hi ? " big" : "") + '"><i></i><em>' + ((t === v.lo || t === v.hi) ? t : "") + '</em></span>';
+    return '<div class="lsVis axis">' + ticks + '<span class="tick me" style="position:absolute;left:' + pct + '%"><i></i><em>' + v.n + '</em></span></div>';
+  }
+  return "";
+}
 function lessonCards(t, st) {
   st = st || S;
+  if (TOPICS[t] && TOPICS[t].subj === "m") { var mth = kidMethod(st); if (mth === "zadna") return null; if (mth === "hejny") return LESSONS_H[t] || null; }
   if (LESSONS[t]) return LESSONS[t];
   var tp = TOPICS[t]; if (!tp) return null;
   if (VYJ_LESSON[t]) return vyjLessonCards(t);
@@ -4889,6 +5038,7 @@ function lessonTry(t, tr, st) {
 }
 function lessonVisHTML(t, v) {
   if (!v) return "";
+  if (/^(steps|snake|bus|grid|msq|figs|leson|axis)$/.test(v.k)) return lessonVisHejnyHTML(v);
   var row = function (n, e) { return new Array(n + 1).join(e); };
   if (v.k === "balls") return '<div class="lsVis">' + altExplainHTML({ topic: "M2", dbg: { a: v.a, b: v.b } }) + '</div>';
   if (v.k === "pots") return '<div class="lsVis">' + altExplainHTML({ topic: "M4", dbg: { n: v.n, d: v.d } }) + '</div>';
@@ -5612,6 +5762,7 @@ function mergeStates(a, b) {
   if (!m.gender && o.gender) m.gender = o.gender;
   if (!m.examOpen || typeof m.examOpen !== "object") m.examOpen = {};
   for (var exy in (o.examOpen || {})) if (o.examOpen[exy]) m.examOpen[exy] = true;
+  if (o.method && o.savedAt && m.savedAt && o.savedAt > m.savedAt) m.method = o.method;
   if (!m.lessonSeen || typeof m.lessonSeen !== "object") m.lessonSeen = {};
   for (var lst in (o.lessonSeen || {})) if (o.lessonSeen[lst] && (!m.lessonSeen[lst] || o.lessonSeen[lst] > m.lessonSeen[lst])) m.lessonSeen[lst] = o.lessonSeen[lst];
   if (!m.wordsCleared || !o.wordsCleared) {
@@ -7177,6 +7328,8 @@ function screenParentSetup(step) {
       '<div class="setupChoice col">' + Object.keys(SETUP_PRESETS).map(function (k) { var pr = SETUP_PRESETS[k];
         return '<button class="setupOpt' + (cur === k ? " on" : "") + '" data-preset="' + k + '"><b>' + pr.n + '</b><span>' + pr.d + '</span></button>'; }).join("") + '</div>' +
       '<p class="muted" style="font-size:15px">' + (cur ? "" : "Teď máte vlastní výběr učeben. ") + 'Přesně po učebnách to jde nastavit v panelu (Čtení a učebny). Angličtina má zvlášť další krok.</p>' +
+      '<h3 style="font-size:19px;margin-top:14px">Jak se u vás počítá?</h3><p class="muted">Podle toho profesoři vysvětlují matematiku stejným jazykem jako ve škole. Dítě dostane jen svou metodu.</p>' +
+      '<div class="setupChoice col">' + Object.keys(METHODS).map(function (k) { return '<button class="setupOpt' + (kidMethod() === k ? " on" : "") + '" data-method="' + k + '"><b>' + METHODS[k].n + '</b><span>' + METHODS[k].d + '</span></button>'; }).join("") + '</div>' +
       nav();
   } else if (step === 3) {
     html = head(3, "🪄 Slovíčka z angličtiny") +
@@ -7202,7 +7355,7 @@ function screenParentSetup(step) {
     html = '<div class="bigIcon">' + svgCheck(64, "#1f6363") + '</div><h2 class="center">Hotovo, hra je nastavená</h2>' +
       '<ul class="ticks">' +
       '<li><b>Harry Potter:</b> ' + (S.year === 1 && chaptersRead(S, 1) === 0 ? "zatím nic dočteného, otázky z knih počkají" : S.year + ". díl, " + (chaptersRead(S, S.year) ? "dočtená " + chaptersRead(S, S.year) + ". kapitola" : "teprve začínáte")) + '</li>' +
-      '<li><b>Škola:</b> ' + (pre ? SETUP_PRESETS[pre].n : "vlastní výběr učeben") + '</li>' +
+      '<li><b>Škola:</b> ' + (pre ? SETUP_PRESETS[pre].n : "vlastní výběr učeben") + ' · ' + METHODS[kidMethod()].n + '</li>' +
       '<li><b>Angličtina:</b> ' + (wc ? wc + " " + (wc === 1 ? "slovíčko" : wc < 5 ? "slovíčka" : "slovíček") + " ze školy" : "vestavěné okruhy, slovíčka ze školy můžete přidat kdykoli") + '</li>' +
       '<li><b>Zařízení:</b> ' + (ucetGet() ? "přihlášeno e-mailem" : "jen toto zařízení") + '</li></ul>' +
       '<h3>Kde co v panelu najdete</h3><ul class="ticks setupMap">' +
@@ -7236,6 +7389,7 @@ function screenParentSetup(step) {
   }
   if (step === 2) {
     Array.prototype.forEach.call(document.querySelectorAll("[data-preset]"), function (b) { b.onclick = function () { setupApplyPreset(b.getAttribute("data-preset")); saveState(); go(2); }; });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-method]"), function (b) { b.onclick = function () { S.method = b.getAttribute("data-method"); saveState(); go(2); }; });
     on("suNext", function () { go(3); });
   }
   if (step === 3) {
@@ -7373,6 +7527,9 @@ function screenParent(section) {
       '<div class="row"><div><label>Ročník (díl knihy)</label><select id="pYear">' + yearOpts + '</select></div>' +
       '<div><label>Dočtená kapitola ' + S.year + '. dílu</label><select id="pChapter">' + chOpts + '</select></div></div>' +
       '<p class="muted">Otázek k ' + S.year + '. dílu je připraveno ' + hpCount + ' z ' + hpTotal + ' napsaných' + (hpTotal === 0 ? ' — k tomuto dílu zatím žádné nejsou, požádejte o balíček.' : '.') + ' Učebna dílu se otevře, jakmile jsou dostupné aspoň 3 otázky.</p>' +
+      '<h3>🧮 Jak se u vás počítá?</h3>' +
+      '<p class="muted">Výklad matematiky v hájence používá stejný jazyk jako škola dítěte. Klasicky: rozklad přes desítku, stejné skupiny. Hejného metoda: krokování, hadi, autobus, násobilkové čtverce, zvířátka dědy Lesoně, úlohy k objevování bez vysvětlování. Nemíchat: výklad matematiky vypnutý, hra jen zkouší.</p>' +
+      '<div class="row"><div><label>Metoda</label><select id="pMethod">' + Object.keys(METHODS).map(function (k) { return '<option value="' + k + '"' + (kidMethod() === k ? " selected" : "") + '>' + METHODS[k].n + '</option>'; }).join("") + '</select></div></div>' +
       '<h3>🏆 Zkouška ročníku</h3>' +
       '<p class="muted">Zkouška se dítěti otevře sama na konci školního roku, až nastavíte, že je ' + S.year + '. díl dočtený. Do té doby ji vidí zamčenou s vysvětlením. Když chcete, otevřete ji dřív (třeba na konci školního roku, i když knihu ještě čtete).</p>' +
       '<div class="chkRow"><input type="checkbox" id="pExamOpen"' + (S.examOpen && S.examOpen[S.year] ? " checked" : "") + '><span><b>Zkouška ' + S.year + '. ročníku otevřená</b> <span class="muted">— ' + (examOpen(S) && !(S.examOpen && S.examOpen[S.year]) ? "už je otevřená (díl dočtený nebo složená)" : "i před dočtením dílu") + '</span></span></div>' +
@@ -7566,6 +7723,7 @@ function screenParent(section) {
     reopen("cteni");
     msg("parentMsg", "Ročník nastaven na " + ny + ". Dítě při návratu do Velké síně uvidí oslavu nového školního roku.");
   });
+  on("pMethod", "onchange", function () { S.method = el("pMethod").value; saveState(); msg("parentMsg", "Výklad matematiky: " + METHODS[kidMethod()].n + "."); });
   on("pExamOpen", "onchange", function () { if (!S.examOpen) S.examOpen = {}; if (el("pExamOpen").checked) S.examOpen[S.year] = true; else delete S.examOpen[S.year]; saveState(); msg("parentMsg", el("pExamOpen").checked ? "Zkouška " + S.year + ". ročníku je otevřená." : "Zkouška se otevře, až bude díl dočtený."); });
   on("pChapter", "onchange", function () {
     S.chapters[S.year] = parseInt(el("pChapter").value, 10);
@@ -7825,6 +7983,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
+  LESSONS_H: LESSONS_H, METHODS: METHODS, kidMethod: kidMethod,
   CHARS: CHARS, examOpen: examOpen, LESSONS: LESSONS, lessonCards: lessonCards, lessonTry: lessonTry, lessonHas: lessonHas, lessonVisHTML: lessonVisHTML, lessonWho: lessonWho, VYJ_LESSON: VYJ_LESSON,
   gt: gt, kidGender: kidGender, SORTING: SORTING, CHAR_LINES: CHAR_LINES, TUT_STEPS: TUT_STEPS, ttsWarmList: ttsWarmList,
   setupApplyPreset: setupApplyPreset, setupApplyHP: setupApplyHP, setupPresetNow: setupPresetNow, SETUP_PRESETS: SETUP_PRESETS,
