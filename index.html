@@ -310,6 +310,7 @@
   .zvChip { border: 2px solid var(--ink); border-radius: 20px; background: #fffaf0; padding: 6px 12px; font: inherit; font-size: 16px; color: var(--ink); cursor: pointer; }
   .zvChip.on { background: var(--teal); border-color: var(--teal-d); color: #fff; }
   textarea.zvText { min-height: 70px; margin-bottom: 10px; }
+  .gradePick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 8px 0; } .gradePick .setupOpt { text-align: center; padding: 10px 4px; } .gradePick .setupOpt b { font-size: 24px; }
   .genderPick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 4px; } .genderPick .setupOpt { text-align: center; } .genderPick.shake { animation: shake .4s; }
   .setupDots { display: flex; gap: 6px; justify-content: center; margin: 2px 0 6px; } .setupDots i { width: 26px; height: 5px; border-radius: 3px; background: #e2d6bd; } .setupDots i.on { background: var(--acc, var(--teal)); }
   .setupChoice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; } .setupChoice.col { grid-template-columns: 1fr; }
@@ -901,7 +902,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-25c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-25d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1574,29 +1575,40 @@ var TOPIC_ORDER = ["C1","C2","M1","M2","C3","M3","M4","C4","C5","M5","C6","M6","
                    "E0","E1","E2","E3","E4",
                    "H0","H1","H2","H3","H4","H5","H6","H7"];
 var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
+/* TŘÍDA DÍTĚTE (25. 10. 2026): učivo je zabalené po třídách, aby šly přidat další (4., 2., 1., 5.). Díl Harryho Pottera
+   (S.year, „ročník“ v liště) s tím nesouvisí. TOPICS[t].grade = pro kterou třídu učebna je (bez grade = pro všechny:
+   angličtina, Dějiny). CURRICULUM[g] = výchozí odemčení a předvolby; třída bez balíčku dostane učebny 3. třídy
+   s upozorněním (fallback) — a z S.grade ve zpětné vazbě poznáme, kterou třídu stavět příště. */
+var DEFAULT_GRADE = 3;
+var CURRICULUM = {
+  3: { n: "3. třída", defaultUnlocked: DEFAULT_UNLOCKED, note: "Výchozí odemčení odpovídá začátku 3. třídy (opakování 2. třídy): sčítání a odčítání do 100, násobilka 2–5, tvrdé/měkké slabiky, abeceda, dva okruhy slovíček. Vyjmenovaná slova a násobilku 6–10 školy probírají postupně během 3. třídy — odemykejte po jednom tématu. Slovní úlohy používají jen početní operace z právě odemčených témat." }
+};
+function kidGrade(st) { st = st || S; var g = st && st.grade; return g >= 1 && g <= 5 ? g : DEFAULT_GRADE; }
+function curriculumFor(st) { var g = kidGrade(st), c = CURRICULUM[g]; if (c) return c; var f = {}; for (var k in CURRICULUM[DEFAULT_GRADE]) f[k] = CURRICULUM[DEFAULT_GRADE][k]; f.fallback = true; f.wanted = g; return f; }
+function gradeTopics(g) { var cg = CURRICULUM[g] ? g : DEFAULT_GRADE; return TOPIC_ORDER.filter(function (t) { var tg = TOPICS[t].grade; return !tg || tg === cg; }); }
 
 var TOPICS = {
-  C1:  { subj:"cj", n:"Tvrdé a měkké slabiky",       e:"🪨" },
-  C2:  { subj:"cj", n:"Abeceda a řazení slov",       e:"🔤" },
-  C3:  { subj:"cj", n:"Párové souhlásky",            e:"🎭" },
-  C4:  { subj:"cj", n:"Vyjmenovaná slova po B",      e:"🐂" },
-  C5:  { subj:"cj", n:"Vyjmenovaná slova po L",      e:"🎿" },
-  C6:  { subj:"cj", n:"Vyjmenovaná slova po M",      e:"🐭" },
-  C7:  { subj:"cj", n:"Vyjmenovaná slova po P",      e:"🦇" },
-  C8:  { subj:"cj", n:"Vyjmenovaná slova po S",      e:"🧀" },
-  C9:  { subj:"cj", n:"Vyjmenovaná slova po V",      e:"🦦" },
-  C10: { subj:"cj", n:"Vyjmenovaná slova po Z",      e:"👅" },
-  C11: { subj:"cj", n:"Slovní druhy",                e:"🧩" },
-  C12: { subj:"cj", n:"Věty a souvětí",              e:"💬" },
-  M1:  { subj:"m",  n:"Sčítání a odčítání do 100",   e:"➕" },
-  M2:  { subj:"m",  n:"Násobilka 2–5",               e:"✖️" },
-  M3:  { subj:"m",  n:"Násobilka 6–10",              e:"✴️" },
-  M4:  { subj:"m",  n:"Dělení malou násobilkou",     e:"➗" },
-  M5:  { subj:"m",  n:"Do 1000 — desítky a stovky",  e:"💯" },
-  M6:  { subj:"m",  n:"Zaokrouhlování",              e:"🎯" },
-  M7:  { subj:"m",  n:"Dělení se zbytkem",           e:"🍪" },
-  M8:  { subj:"m",  n:"Jednotky a čas",              e:"⏰" },
-  M9:  { subj:"m",  n:"Slovní úlohy z Bradavic",     e:"📜" },
+  C1:  { subj:"cj", n:"Tvrdé a měkké slabiky",       e:"🪨", grade:3 },
+  C2:  { subj:"cj", n:"Abeceda a řazení slov",       e:"🔤", grade:3 },
+  C3:  { subj:"cj", n:"Párové souhlásky",            e:"🎭", grade:3 },
+  C4:  { subj:"cj", n:"Vyjmenovaná slova po B",      e:"🐂", grade:3 },
+  C5:  { subj:"cj", n:"Vyjmenovaná slova po L",      e:"🎿", grade:3 },
+  C6:  { subj:"cj", n:"Vyjmenovaná slova po M",      e:"🐭", grade:3 },
+  C7:  { subj:"cj", n:"Vyjmenovaná slova po P",      e:"🦇", grade:3 },
+  C8:  { subj:"cj", n:"Vyjmenovaná slova po S",      e:"🧀", grade:3 },
+  C9:  { subj:"cj", n:"Vyjmenovaná slova po V",      e:"🦦", grade:3 },
+  C10: { subj:"cj", n:"Vyjmenovaná slova po Z",      e:"👅", grade:3 },
+  C11: { subj:"cj", n:"Slovní druhy",                e:"🧩", grade:3 },
+  C12: { subj:"cj", n:"Věty a souvětí",              e:"💬", grade:3 },
+  M1:  { subj:"m",  n:"Sčítání a odčítání do 100",   e:"➕", grade:3 },
+  M2:  { subj:"m",  n:"Násobilka 2–5",               e:"✖️", grade:3 },
+  M3:  { subj:"m",  n:"Násobilka 6–10",              e:"✴️", grade:3 },
+  M4:  { subj:"m",  n:"Dělení malou násobilkou",     e:"➗", grade:3 },
+  M5:  { subj:"m",  n:"Do 1000 — desítky a stovky",  e:"💯", grade:3 },
+  M6:  { subj:"m",  n:"Zaokrouhlování",              e:"🎯", grade:3 },
+  M7:  { subj:"m",  n:"Dělení se zbytkem",           e:"🍪", grade:3 },
+  M8:  { subj:"m",  n:"Jednotky a čas",              e:"⏰", grade:3 },
+  M9:  { subj:"m",  n:"Slovní úlohy z Bradavic",     e:"📜", grade:3 },
   E0:  { subj:"en", n:"Slovíčka ze školy",           e:"🎒", custom:true },
   E1:  { subj:"en", n:"Zvířata v Bradavicích",       e:"🦉" },
   E2:  { subj:"en", n:"Věci kouzelníka",             e:"🪄" },
@@ -2470,7 +2482,7 @@ function isUnlocked(t, state) {
   return !!state.unlocked[t];
 }
 function unlockedTopics(state) {
-  return TOPIC_ORDER.filter(function (t) { return isUnlocked(t, state); });
+  return gradeTopics(kidGrade(state)).filter(function (t) { return isUnlocked(t, state); });
 }
 
 /* =====================================================================
@@ -2707,6 +2719,7 @@ function defaultState() {
     gender: "",
     examOpen: {},
     lessonSeen: {},     /* učebna → datum, kdy dítě vidělo výklad v hájence */
+    grade: DEFAULT_GRADE, /* školní třída 1–5 (učivo); nezávisle na dílu knihy S.year */
     method: "klasika",  /* jak se počítá ve škole: klasika | hejny | zadna (výklad matematiky) */       /* ročník → true: rodič otevřel zkoušku ročníku dřív, než je díl dočtený */         /* "f" holka, "m" kluk; "" = nezvoleno (gt() odhadne podle jména) */    /* průvodce nastavením pro rodiče: "" = neproběhl, jinak datum */       /* 21. 10. 2026: lekce Karolinčina sešitu jen pro její rodinu (staré uložené hry), ne pro každý nový profil */
     wordsRemoved: [],   /* slova ze sešitu, která táta v panelu smazal — migrace ani synchronizace je nevrátí */
     dust: 0,
@@ -2759,6 +2772,7 @@ function migrate(s) {
   if (!s.examOpen || typeof s.examOpen !== "object") s.examOpen = {};
   if (!s.lessonSeen || typeof s.lessonSeen !== "object") s.lessonSeen = {};
   if (typeof s.method !== "string" || !s.method) s.method = "klasika";
+  if (!(s.grade >= 1 && s.grade <= 5)) s.grade = DEFAULT_GRADE;
   if (typeof s.gender !== "string") s.gender = s.name ? "f" : "";   /* hra uložená před 21. 10. 2026 = Karolinka */
   if (typeof s.parentSetup !== "string") s.parentSetup = s.name ? "dříve" : "";   /* hra uložená před průvodcem ho nedostane */
   if (typeof s.sesit !== "boolean") s.sesit = Array.isArray(s.words) || Array.isArray(s.unitsShipped);
@@ -4226,8 +4240,9 @@ function mapOpenFull(anim) {
 }
 /* Učebny jednoho předmětu (z mapy hradu) — dřívější seznam Rozvrhu, beze změny pořadí, hvězd a zamykání. */
 function subjectRoomsHTML(subj) {
-  var open = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && isUnlocked(t, S); });
-  var locked = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && !isUnlocked(t, S); });
+  var gts = gradeTopics(kidGrade(S));
+  var open = gts.filter(function (t) { return TOPICS[t].subj === subj && isUnlocked(t, S); });
+  var locked = gts.filter(function (t) { return TOPICS[t].subj === subj && !isUnlocked(t, S); });
   var html = '<div class="path">';
   open.forEach(function (t, i) { html += nodeHTML(t, i); });
   html += '</div>';
@@ -5760,6 +5775,7 @@ function mergeStates(a, b) {
   m.sesit = !!(m.sesit || o.sesit);
   if (!m.parentSetup && o.parentSetup) m.parentSetup = o.parentSetup;
   if (!m.gender && o.gender) m.gender = o.gender;
+  if (o.grade && o.savedAt && m.savedAt && o.savedAt > m.savedAt) m.grade = o.grade;
   if (!m.examOpen || typeof m.examOpen !== "object") m.examOpen = {};
   for (var exy in (o.examOpen || {})) if (o.examOpen[exy]) m.examOpen[exy] = true;
   if (o.method && o.savedAt && m.savedAt && o.savedAt > m.savedAt) m.method = o.method;
@@ -7258,12 +7274,12 @@ var parentLock = null;
    (S.parentSetup prázdné) provede rodiče Harrym Potterem, školní látkou, slovíčky a účtem.
    Každý krok se hned uloží, „Dokončím později“ nic neztratí. Znovu ho spustí rozcestník panelu.
    ===================================================================== */
-var SETUP_PRESETS = {
+var SETUP_PRESETS = CURRICULUM[3].presets = {
   zacatek:  { n: "Začátek 3. třídy", d: "sčítání a odčítání do 100, násobilka 2–5, tvrdé a měkké slabiky, abeceda", t: ["M1", "M2", "C1", "C2"] },
   pololeti: { n: "Kolem pololetí", d: "navíc násobilka 6–10, dělení, párové souhlásky a vyjmenovaná slova po B, L a M", t: ["M1", "M2", "M3", "M4", "C1", "C2", "C3", "C4", "C5", "C6"] },
   konec:    { n: "Konec 3. třídy", d: "všechna matematika a čeština 3. třídy", t: ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"] }
 };
-function setupSchoolTopics() { return TOPIC_ORDER.filter(function (t) { var j = TOPICS[t].subj; return j === "m" || j === "cj"; }); }
+function setupSchoolTopics() { return gradeTopics(kidGrade()).filter(function (t) { var j = TOPICS[t].subj; return j === "m" || j === "cj"; }); }
 function setupApplyPreset(k, st) {
   st = st || S; var pr = SETUP_PRESETS[k]; if (!pr) return;
   setupSchoolTopics().forEach(function (t) { st.unlocked[t] = pr.t.indexOf(t) !== -1; });
@@ -7303,7 +7319,7 @@ function screenParentSetup(step) {
   if (step === 0) {
     html = '<div class="bigIcon">' + svgLetter(90) + '</div><h2 class="center">Vítejte v Kouzelné škole</h2>' +
       '<p class="qtext">Za dvě minuty hru nastavíte přesně pro vaše dítě: co spolu čtete, co se učí ve škole a jaká má slovíčka z angličtiny.</p>' +
-      '<p class="muted">Všechno jde později změnit tady v panelu. Panel je zamčený násobením, které dítě ve 3. třídě zpravidla ještě nevyřeší.</p>' +
+      '<p class="muted">Všechno jde později změnit tady v panelu. Panel je zamčený násobením, které dítě na prvním stupni zpravidla ještě nevyřeší.</p>' +
       '<label>Jméno dítěte</label><input type="text" id="suName" maxlength="20" value="' + esc(S.name || "") + '">' +
       '<div class="genderPick" id="suGender"><button class="setupOpt' + (kidGender() === "f" ? " on" : "") + '" data-g="f"><b>👧 Holka</b></button><button class="setupOpt' + (kidGender() === "m" ? " on" : "") + '" data-g="m"><b>👦 Kluk</b></button></div>' +
       '<p class="muted" style="font-size:14px;margin-top:4px">Podle toho hra a profesoři oslovují: „zvládla jsi“, nebo „zvládl jsi“.</p>' +
@@ -7323,9 +7339,13 @@ function screenParentSetup(step) {
       nav();
   } else if (step === 2) {
     var cur = setupPresetNow();
-    html = head(2, "🏫 Co už probrali ve škole?") +
-      '<p class="muted">Hra je pro 3. třídu. Vyberte, kde ve školním roce jste. Zamčené učebny dítě vidí jen jako zamčené, bez názvu, ať se těší.</p>' +
-      '<div class="setupChoice col">' + Object.keys(SETUP_PRESETS).map(function (k) { var pr = SETUP_PRESETS[k];
+    var cu = curriculumFor(S), prs = cu.presets || SETUP_PRESETS;
+    html = head(2, "🏫 Do které třídy chodí?") +
+      '<div class="gradePick">' + [1, 2, 3, 4, 5].map(function (g) { return '<button class="setupOpt' + (kidGrade() === g ? " on" : "") + '" data-grade="' + g + '"><b>' + g + '.</b></button>'; }).join("") + '</div>' +
+      (cu.fallback ? '<div class="stavBox ne">Učivo pro ' + cu.wanted + '. třídu teprve připravujeme. Zatím hra nabízí učebny ' + cu.n + ' — odemkněte jen ty, které dítě zvládne. Až bude balíček hotový, hra ho nabídne sama.</div>' : '') +
+      '<h3 style="font-size:19px;margin-top:14px">Co už probrali ve škole?</h3>' +
+      '<p class="muted">Učivo ' + cu.n + '. Vyberte, kde ve školním roce jste. Zamčené učebny dítě vidí jen jako zamčené, bez názvu, ať se těší.</p>' +
+      '<div class="setupChoice col">' + Object.keys(prs).map(function (k) { var pr = prs[k];
         return '<button class="setupOpt' + (cur === k ? " on" : "") + '" data-preset="' + k + '"><b>' + pr.n + '</b><span>' + pr.d + '</span></button>'; }).join("") + '</div>' +
       '<p class="muted" style="font-size:15px">' + (cur ? "" : "Teď máte vlastní výběr učeben. ") + 'Přesně po učebnách to jde nastavit v panelu (Čtení a učebny). Angličtina má zvlášť další krok.</p>' +
       '<h3 style="font-size:19px;margin-top:14px">Jak se u vás počítá?</h3><p class="muted">Podle toho profesoři vysvětlují matematiku stejným jazykem jako ve škole. Dítě dostane jen svou metodu.</p>' +
@@ -7355,7 +7375,7 @@ function screenParentSetup(step) {
     html = '<div class="bigIcon">' + svgCheck(64, "#1f6363") + '</div><h2 class="center">Hotovo, hra je nastavená</h2>' +
       '<ul class="ticks">' +
       '<li><b>Harry Potter:</b> ' + (S.year === 1 && chaptersRead(S, 1) === 0 ? "zatím nic dočteného, otázky z knih počkají" : S.year + ". díl, " + (chaptersRead(S, S.year) ? "dočtená " + chaptersRead(S, S.year) + ". kapitola" : "teprve začínáte")) + '</li>' +
-      '<li><b>Škola:</b> ' + (pre ? SETUP_PRESETS[pre].n : "vlastní výběr učeben") + ' · ' + METHODS[kidMethod()].n + '</li>' +
+      '<li><b>Škola:</b> ' + kidGrade() + '. třída · ' + (pre ? SETUP_PRESETS[pre].n : "vlastní výběr učeben") + ' · ' + METHODS[kidMethod()].n + '</li>' +
       '<li><b>Angličtina:</b> ' + (wc ? wc + " " + (wc === 1 ? "slovíčko" : wc < 5 ? "slovíčka" : "slovíček") + " ze školy" : "vestavěné okruhy, slovíčka ze školy můžete přidat kdykoli") + '</li>' +
       '<li><b>Zařízení:</b> ' + (ucetGet() ? "přihlášeno e-mailem" : "jen toto zařízení") + '</li></ul>' +
       '<h3>Kde co v panelu najdete</h3><ul class="ticks setupMap">' +
@@ -7390,6 +7410,7 @@ function screenParentSetup(step) {
   if (step === 2) {
     Array.prototype.forEach.call(document.querySelectorAll("[data-preset]"), function (b) { b.onclick = function () { setupApplyPreset(b.getAttribute("data-preset")); saveState(); go(2); }; });
     Array.prototype.forEach.call(document.querySelectorAll("[data-method]"), function (b) { b.onclick = function () { S.method = b.getAttribute("data-method"); saveState(); go(2); }; });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-grade]"), function (b) { b.onclick = function () { S.grade = parseInt(b.getAttribute("data-grade"), 10); saveState(); go(2); }; });
     on("suNext", function () { go(3); });
   }
   if (step === 3) {
@@ -7445,7 +7466,7 @@ function screenParent(section) {
   if (!section) {
     var subs = {
       prehled: doneWeek + " ze 7 dní hotovo · " + mistWeek + " " + (mistWeek === 1 ? "chyba" : mistWeek < 5 ? "chyby" : "chyb") + " za týden",
-      cteni: yearLabel(S.year) + " · po " + chaptersRead(S, S.year) + ". kapitolu · " + unlockedTopics(S).length + " učeben",
+      cteni: yearLabel(S.year) + " · po " + chaptersRead(S, S.year) + ". kapitolu · " + kidGrade() + ". třída · " + unlockedTopics(S).length + " učeben",
       slovicka: S.words.length + " slov ze školy · 🌟 " + dc[2] + " z hlavy",
       hlas: (ttsProxyOk() ? "hlas ze serveru ✓" : ttsCfg().key ? "přímý klíč ✓" : "vestavěný hlas") + " · hlášky " + (mluveniOn() ? "zap." : "vyp.") + " · zvuky " + (sfxOn() ? "zap." : "vyp."),
       zarizeni: (ucetOn() ? "přihlášeno ✓" : syncOn() ? "připojeno rodinným kódem ✓" : "⚠️ jen toto zařízení") + (syncOn() ? " · " + (syncSt.last ? "sync " + syncWhen(syncSt.last) : "zatím nesynchronizováno") : ""),
@@ -7527,6 +7548,9 @@ function screenParent(section) {
       '<div class="row"><div><label>Ročník (díl knihy)</label><select id="pYear">' + yearOpts + '</select></div>' +
       '<div><label>Dočtená kapitola ' + S.year + '. dílu</label><select id="pChapter">' + chOpts + '</select></div></div>' +
       '<p class="muted">Otázek k ' + S.year + '. dílu je připraveno ' + hpCount + ' z ' + hpTotal + ' napsaných' + (hpTotal === 0 ? ' — k tomuto dílu zatím žádné nejsou, požádejte o balíček.' : '.') + ' Učebna dílu se otevře, jakmile jsou dostupné aspoň 3 otázky.</p>' +
+      '<h3>🏫 Třída</h3>' +
+      '<p class="muted">Školní třída určuje učivo (učebny). Díl Harryho Pottera je zvlášť výše. ' + (curriculumFor(S).fallback ? '<b>Učivo pro ' + kidGrade() + '. třídu teprve připravujeme</b>, zatím jsou k dispozici učebny 3. třídy.' : '') + '</p>' +
+      '<div class="row"><div><label>Do které třídy chodí</label><select id="pGrade">' + [1, 2, 3, 4, 5].map(function (g) { return '<option value="' + g + '"' + (kidGrade() === g ? " selected" : "") + '>' + g + '. třída' + (CURRICULUM[g] ? "" : " (učivo připravujeme)") + '</option>'; }).join("") + '</select></div></div>' +
       '<h3>🧮 Jak se u vás počítá?</h3>' +
       '<p class="muted">Výklad matematiky v hájence používá stejný jazyk jako škola dítěte. Klasicky: rozklad přes desítku, stejné skupiny. Hejného metoda: krokování, hadi, autobus, násobilkové čtverce, zvířátka dědy Lesoně, úlohy k objevování bez vysvětlování. Nemíchat: výklad matematiky vypnutý, hra jen zkouší.</p>' +
       '<div class="row"><div><label>Metoda</label><select id="pMethod">' + Object.keys(METHODS).map(function (k) { return '<option value="' + k + '"' + (kidMethod() === k ? " selected" : "") + '>' + METHODS[k].n + '</option>'; }).join("") + '</select></div></div>' +
@@ -7541,7 +7565,7 @@ function screenParent(section) {
       '<p class="muted">U učeben Lektvarů, kde už má aspoň jednu hvězdu, dostane nejdřív pole pro výsledek a tiché přesýpací hodiny (15 s). Správně z hlavy = o galeon víc. Po uplynutí času se možnosti objeví samy, špatný tip nic nestojí.</p>' +
       '<div class="chkRow"><input type="checkbox" id="pMental"' + (S.mental ? " checked" : "") + '><span><b>Počítání z hlavy zapnuté</b></span></div>' +
       '<h3>Poznámky k obtížnosti</h3>' +
-      '<p class="muted">Výchozí odemčení odpovídá začátku 3. třídy (opakování 2. třídy): sčítání a odčítání do 100, násobilka 2–5, tvrdé/měkké slabiky, abeceda, dva okruhy slovíček. Vyjmenovaná slova a násobilku 6–10 školy probírají postupně během 3. třídy — odemykejte po jednom tématu. Slovní úlohy používají jen početní operace z právě odemčených témat.</p>';
+      '<p class="muted">' + esc(curriculumFor(S).note || "") + '</p>';
   }
 
   if (section === "slovicka") {
@@ -7723,6 +7747,7 @@ function screenParent(section) {
     reopen("cteni");
     msg("parentMsg", "Ročník nastaven na " + ny + ". Dítě při návratu do Velké síně uvidí oslavu nového školního roku.");
   });
+  on("pGrade", "onchange", function () { S.grade = parseInt(el("pGrade").value, 10); saveState(); reopen("cteni"); msg("parentMsg", "Třída: " + kidGrade() + ". " + (curriculumFor(S).fallback ? "Učivo pro ni teprve připravujeme, zatím učebny 3. třídy." : "")); });
   on("pMethod", "onchange", function () { S.method = el("pMethod").value; saveState(); msg("parentMsg", "Výklad matematiky: " + METHODS[kidMethod()].n + "."); });
   on("pExamOpen", "onchange", function () { if (!S.examOpen) S.examOpen = {}; if (el("pExamOpen").checked) S.examOpen[S.year] = true; else delete S.examOpen[S.year]; saveState(); msg("parentMsg", el("pExamOpen").checked ? "Zkouška " + S.year + ". ročníku je otevřená." : "Zkouška se otevře, až bude díl dočtený."); });
   on("pChapter", "onchange", function () {
@@ -7983,6 +8008,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
+  CURRICULUM: CURRICULUM, DEFAULT_GRADE: DEFAULT_GRADE, kidGrade: kidGrade, curriculumFor: curriculumFor, gradeTopics: gradeTopics,
   LESSONS_H: LESSONS_H, METHODS: METHODS, kidMethod: kidMethod,
   CHARS: CHARS, examOpen: examOpen, LESSONS: LESSONS, lessonCards: lessonCards, lessonTry: lessonTry, lessonHas: lessonHas, lessonVisHTML: lessonVisHTML, lessonWho: lessonWho, VYJ_LESSON: VYJ_LESSON,
   gt: gt, kidGender: kidGender, SORTING: SORTING, CHAR_LINES: CHAR_LINES, TUT_STEPS: TUT_STEPS, ttsWarmList: ttsWarmList,
@@ -8127,7 +8153,7 @@ function zvCollect() {
     nefunguje: val("zvBad"), tezke: val("zvHard"), dalsi: val("zvMore"), email: ucetEmailNorm(val("zvMail")),
     verze: GAME_VERSION, zarizeni: zvDevice(), ucet: ucetOn(), rodina: syncOn(),
     hra: { dniOd: S.since ? dateDiffDays(S.since, todayStr()) : null, hodin: S.questsDone || 0, plaminek: sk.current || 0, rekord: sk.best || 0,
-      rocnik: S.year, rod: kidGender(), ucebny: unlockedTopics(S).length, slovicekSkola: (S.words || []).length }
+      rocnik: S.year, trida: kidGrade(), metoda: kidMethod(), rod: kidGender(), ucebny: unlockedTopics(S).length, slovicekSkola: (S.words || []).length }
   };
 }
 function zvSend(d) { return authFetch("/rest/v1/rpc/poslat_zpetnou_vazbu", { p: d }); }
@@ -8579,7 +8605,7 @@ function screenDash() {
   var mistHTML = Object.keys(byT).sort(function (a, b) { return byT[b].length - byT[a].length; }).slice(0, 5).map(function (t) {
     var m = byT[t][0]; return '<div class="chkRow"><span style="flex:1">' + subjIcon((TOPICS[t] || {}).subj, 15) + ' <b>' + esc((TOPICS[t] || {}).n || t) + '</b> · ' + byT[t].length + '× <br><span class="muted">např. „' + esc(m.q) + '“ — napsal{a|} ' + esc(m.napsala) + ', správně ' + esc(m.spravne) + '</span></span></div>'; }).join("");
   var dc = dictCounts(S);
-  var html = '<div class="topbar dashTop"><span class="who">' + (S.house ? houseIcon(S.house, 30) : svgCastle(28)) + ' <span>' + esc(S.name || "Dítě") + '<br><span class="yr">přehled pro rodiče · ' + (S.house ? esc(HOUSES[S.house].n) : "") + '</span></span></span>' +
+  var html = '<div class="topbar dashTop"><span class="who">' + (S.house ? houseIcon(S.house, 30) : svgCastle(28)) + ' <span>' + esc(S.name || "Dítě") + '<br><span class="yr">přehled pro rodiče · ' + kidGrade() + '. třída' + (S.house ? ' · ' + esc(HOUSES[S.house].n) : "") + '</span></span></span>' +
     '<span class="chips"><span class="chip flame">' + flameIcon(16) + ' ' + (sk.current || 0) + '</span><span class="chip dust">' + svgCoin(18) + ' ' + (S.dust || 0) + '</span></span></div>' +
     '<div class="dashHero" id="dashHero" data-img="prehled-zahlavi"></div>' +
     '<div class="card">' + dashLiveHTML() +
