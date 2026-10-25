@@ -905,7 +905,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-26b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-26d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1576,6 +1576,7 @@ var SUBJECTS = {
 
 var TOPIC_ORDER = ["C1","C2","M1","M2","C3","M3","M4","C4","C5","M5","C6","M6","C7","M7","C8","M8","C9","M9","C10","C11","C12",
                    "M41","M42","M43","M44","M45","M46","M47","M48","M49",
+                   "C41","C42","C43","C44","C45","C46","C47","C48","C49",
                    "E0","E1","E2","E3","E4",
                    "H0","H1","H2","H3","H4","H5","H6","H7"];
 var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
@@ -1585,8 +1586,8 @@ var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
    s upozorněním (fallback) — a z S.grade ve zpětné vazbě poznáme, kterou třídu stavět příště. */
 var DEFAULT_GRADE = 3;
 var CURRICULUM = {
-  4: { n: "4. třída", defaultUnlocked: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C11", "E1", "E2"], partial: "Čeština 4. třídy se doplňuje (vzory, stavba slova, slovesa); zatím jsou k dispozici vyjmenovaná slova a slovní druhy.",
-       note: "Výchozí odemčení odpovídá začátku 4. třídy: opakování násobilky a dělení, čísla do 10 000, vyjmenovaná slova po B, L, M a slovní druhy. Písemné počítání, zaokrouhlování, zlomky a jednotky odemykejte, až je ve škole proberou." },
+  4: { n: "4. třída", defaultUnlocked: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C11", "C41", "E1", "E2"],
+       note: "Výchozí odemčení odpovídá začátku 4. třídy: opakování násobilky a dělení, čísla do 10 000, vyjmenovaná slova po B, L, M, slovní druhy a stavba slova. Zbylá vyjmenovaná slova odemkněte jako opakování; písemné počítání, vzory podstatných jmen, slovesa a shodu odemykejte, až je ve škole proberou." },
   3: { n: "3. třída", defaultUnlocked: DEFAULT_UNLOCKED, note: "Výchozí odemčení odpovídá začátku 3. třídy (opakování 2. třídy): sčítání a odčítání do 100, násobilka 2–5, tvrdé/měkké slabiky, abeceda, dva okruhy slovíček. Vyjmenovaná slova a násobilku 6–10 školy probírají postupně během 3. třídy — odemykejte po jednom tématu. Slovní úlohy používají jen početní operace z právě odemčených témat." }
 };
 function kidGrade(st) { st = st || S; var g = st && st.grade; return g >= 1 && g <= 5 ? g : DEFAULT_GRADE; }
@@ -1606,6 +1607,15 @@ var TOPICS = {
   C10: { subj:"cj", n:"Vyjmenovaná slova po Z",      e:"👅", grade:[3,4] },
   C11: { subj:"cj", n:"Slovní druhy",                e:"🧩", grade:[3,4] },
   C12: { subj:"cj", n:"Věty a souvětí",              e:"💬", grade:3 },
+  C41: { subj:"cj", n:"Stavba slova",                e:"🧱", grade:4 },
+  C42: { subj:"cj", n:"Předpony a předložky",        e:"🔗", grade:4 },
+  C43: { subj:"cj", n:"Bě, pě, vě, mě",              e:"✍️", grade:4 },
+  C44: { subj:"cj", n:"Rod, číslo a pád",            e:"🏷️", grade:4 },
+  C45: { subj:"cj", n:"Vzory rodu středního",        e:"🏙️", grade:4 },
+  C46: { subj:"cj", n:"Vzory rodu ženského",         e:"🌹", grade:4 },
+  C47: { subj:"cj", n:"Vzory rodu mužského",         e:"🏰", grade:4 },
+  C48: { subj:"cj", n:"Slovesa",                     e:"🏃", grade:4 },
+  C49: { subj:"cj", n:"Shoda přísudku s podmětem",   e:"🤝", grade:4 },
   M1:  { subj:"m",  n:"Sčítání a odčítání do 100",   e:"➕", grade:3 },
   M2:  { subj:"m",  n:"Násobilka 2–5",               e:"✖️", grade:[3,4] },
   M3:  { subj:"m",  n:"Násobilka 6–10",              e:"✴️", grade:[3,4] },
@@ -1639,8 +1649,165 @@ var TOPICS = {
   H7:  { subj:"hp", n:"7. díl — Relikvie smrti",     e:"📒", book:7 }
 };
 
+/* ---- ČEŠTINA 4. TŘÍDY (C41–C49, 26. 10. 2026): stavba slova, předpony a předložky, bě/pě/vě/mě, podstatná jména
+   (rod, číslo, pád), vzory rodu středního, ženského a mužského (stupně po otázkách jako vyjmenovaná slova),
+   slovesa (osoba, číslo, čas), shoda přísudku s podmětem. Správná odpověď vždy první v o, why jednou větou. ---- */
+var BANK_C41 = [
+  { id:"c41_01", q:"Jaký je kořen slova LESNÍK?", o:["les","lesn","ník","lesník"], why:"Kořen je společná část slov les, lesník, lesní, zalesnit." },
+  { id:"c41_02", q:"Která část slova PŘEDMĚSTÍ je předpona?", o:["před-","měst","-í","předměst"], why:"Předpona stojí před kořenem: před-městí." },
+  { id:"c41_03", q:"Které slovo je příbuzné se slovem VODA?", o:["vodník","voják","vdova","vozík"], why:"Vodník má stejný kořen vod- jako voda." },
+  { id:"c41_04", q:"Jaký je kořen slova ZAHRÁDKA?", o:["hrad","zahrad","hrádk","ka"], why:"Zahrádka, hrad, ohrada, zahradník: společný kořen hrad." },
+  { id:"c41_05", q:"Která část slova UČITELKA je přípona?", o:["-ka","uč-","učitel","čit"], why:"Přípona -ka je za kořenem a tvoří ženský tvar (učitel → učitelka)." },
+  { id:"c41_06", q:"Které slovo NENÍ příbuzné se slovem LÉTAT?", o:["léto","letadlo","letec","výlet"], why:"Léto (roční období) má jiný význam, jen podobně zní." },
+  { id:"c41_07", q:"Ve slově PODZEMNÍ je předpona:", o:["pod-","-ní","zem","podzem"], why:"Pod-zem-ní: předpona pod-, kořen zem, přípona -ní." },
+  { id:"c41_08", q:"Kolik předpon má slovo NEVYSPALÝ?", o:["dvě","jednu","žádnou","tři"], why:"Ne- a vy- jsou dvě předpony před kořenem sp- (spát)." },
+  { id:"c41_09", q:"Které slovo má stejný kořen jako PSÁT?", o:["zápis","pásek","pes","past"], why:"Zápis má kořen pis-/pís- jako psát, písmeno, nápis." },
+  { id:"c41_10", q:"Jaký je kořen slova KNIHOVNA?", o:["knih","kniho","ovna","knihov"], why:"Kniha, knihovna, knížka, knihkupec: kořen knih." },
+  { id:"c41_11", q:"Která část slova VODNÍK je přípona?", o:["-ník","vod-","vodní","vo-"], why:"Vod-ník: za kořenem vod je přípona -ník." },
+  { id:"c41_12", q:"Které slovo vzniklo předponou od slova NÉST?", o:["přinést","nosič","nosítka","nos"], why:"Při-nést: předpona při- a kořen nés-." },
+  { id:"c41_13", q:"Které slovo je příbuzné se slovem HRÁT?", o:["hračka","hrách","hrad","hrana"], why:"Hračka má kořen hr- jako hrát, hra, hráč." },
+  { id:"c41_14", q:"Ve slově SNĚHULÁK je kořen:", o:["sněh","sně","hulák","sněhul"], why:"Sníh, sněhulák, sněžit, zasněžený: kořen sněh/sníh." },
+  { id:"c41_15", q:"Které slovo má předponu i příponu?", o:["zahradník","nápis","hrad","hradní"], why:"Za-hrad-ník: předpona za-, kořen hrad, přípona -ník." }
+];
+var BANK_C42 = [
+  { id:"c42_01", q:"Doplň předponu: _jet z kopce dolů.", o:["s","z","vz","ze"], why:"Směr dolů → předpona s-: sjet." },
+  { id:"c42_02", q:"Doplň předponu: _hubnout po nemoci.", o:["z","s","vz","se"], why:"Změna stavu → předpona z-: zhubnout." },
+  { id:"c42_03", q:"Doplň předponu: _létnout vzhůru.", o:["vz","s","z","v"], why:"Směr vzhůru → předpona vz-: vzlétnout." },
+  { id:"c42_04", q:"Doplň předponu: _běhnout se na jedno místo.", o:["s","z","vz","ze"], why:"Dohromady, na jedno místo → s-: sběhnout se." },
+  { id:"c42_05", q:"Doplň předponu: _červenat se studem.", o:["z","s","vz","ze"], why:"Změna stavu (stát se červeným) → z-: zčervenat." },
+  { id:"c42_06", q:"Doplň předponu: _mést prach ze stolu.", o:["s","z","vz","se"], why:"Z povrchu pryč → s-: smést." },
+  { id:"c42_07", q:"Které spojení je napsané správně?", o:["pod stolem","podstolem","pod-stolem","po dstolem"], why:"Pod je tu předložka, píše se zvlášť: pod stolem." },
+  { id:"c42_08", q:"Které slovo je napsané správně?", o:["podtrhnout","pod trhnout","pod-trhnout","potrhnout"], why:"Pod- je tu předpona, píše se dohromady: podtrhnout." },
+  { id:"c42_09", q:"Doplň: Vyšli jsme _ domu. (ven)", o:["z","s","vz","ze"], why:"Z vnitřku ven → předložka z: z domu." },
+  { id:"c42_10", q:"Doplň: Šel _ Hagridem na hodinu.", o:["s","z","vz","ze"], why:"S kým, s čím? S Hagridem: předložka s (7. pád)." },
+  { id:"c42_11", q:"Ve větě „Vyběhl nad hrad“ je NAD:", o:["předložka","předpona","kořen","přípona"], why:"Stojí před podstatným jménem zvlášť, je to předložka." },
+  { id:"c42_12", q:"Ve slově NADSKOČIT je NAD:", o:["předpona","předložka","kořen","přípona"], why:"Je součástí slova před kořenem skoč, je to předpona." },
+  { id:"c42_13", q:"Doplň předponu: _pracovat úkol do konce.", o:["z","s","vz","ze"], why:"Dokončení děje → z-: zpracovat." },
+  { id:"c42_14", q:"Doplň předponu: _balit kufr.", o:["s","z","vz","ze"], why:"Dát dohromady → s-: sbalit." },
+  { id:"c42_15", q:"Doplň předponu: _pomenout si, že máš úkol.", o:["vz","s","z","v"], why:"Vzpomenout si, vzpomínka: předpona vz-." }
+];
+var BANK_C43 = [
+  { id:"c43_01", q:"Doplň: ob_d", o:["ě","je","e","ie"], why:"Oběd: bě uprostřed slova, žádná předpona ob- před je." },
+  { id:"c43_02", q:"Doplň: ob_dnat", o:["je","ě","e","ie"], why:"Ob-jednat: předpona ob- a kořen jedn-, proto bje." },
+  { id:"c43_03", q:"Doplň: v_zd do garáže", o:["je","ě","e","ie"], why:"V-jezd: předpona v- a kořen jezd, proto vje." },
+  { id:"c43_04", q:"Doplň: p_kný den", o:["ě","je","e","ie"], why:"Pěkný: pě, žádná předpona." },
+  { id:"c43_05", q:"Doplň: m_síc na obloze", o:["ě","je","e","ie"], why:"Měsíc: mě." },
+  { id:"c43_06", q:"Doplň: v_da", o:["ě","je","e","ie"], why:"Věda, vědět: vě." },
+  { id:"c43_07", q:"Doplň: ob_m krabice", o:["je","ě","e","ie"], why:"Ob-jem: předpona ob- a kořen jem (jmout), proto bje." },
+  { id:"c43_08", q:"Doplň: b_žet závod", o:["ě","je","e","ie"], why:"Běžet, běh: bě." },
+  { id:"c43_09", q:"Doplň: v_tev stromu", o:["ě","je","e","ie"], why:"Větev: vě." },
+  { id:"c43_10", q:"Doplň: ob_t kolem domu", o:["je","ě","e","ie"], why:"Ob-jet: předpona ob- a kořen jet, proto bje." },
+  { id:"c43_11", q:"Doplň: m_sto Praha", o:["ě","je","e","ie"], why:"Město: mě." },
+  { id:"c43_12", q:"Doplň: v_t do dvora", o:["je","ě","e","ie"], why:"V-jet: předpona v- a kořen jet, proto vje." },
+  { id:"c43_13", q:"Doplň: sm_ch", o:["í","ě","je","e"], why:"Smích: po m je í (smát se, smích), ne mě." },
+  { id:"c43_14", q:"Doplň: p_na v koupeli", o:["ě","je","e","ie"], why:"Pěna: pě." },
+  { id:"c43_15", q:"Doplň: ob_v nové planety", o:["je","ě","e","ie"], why:"Ob-jev: předpona ob- a kořen jev (jevit se), proto bje." }
+];
+var BANK_C44 = [
+  { id:"c44_01", q:"Jaký rod má podstatné jméno OKNO?", o:["střední","mužský","ženský","žádný"], why:"To okno: rod střední." },
+  { id:"c44_02", q:"Jaký rod má podstatné jméno SOVA?", o:["ženský","mužský","střední","žádný"], why:"Ta sova: rod ženský." },
+  { id:"c44_03", q:"Jaký rod má podstatné jméno HRAD?", o:["mužský","ženský","střední","žádný"], why:"Ten hrad: rod mužský." },
+  { id:"c44_04", q:"V jakém čísle je slovo KNIHY ve větě „Harry čte knihy“?", o:["množném","jednotném","dvojném","žádném"], why:"Knihy = víc než jedna: číslo množné." },
+  { id:"c44_05", q:"V jakém čísle je slovo SOVA ve větě „Přiletěla sova“?", o:["jednotném","množném","dvojném","žádném"], why:"Jedna sova: číslo jednotné." },
+  { id:"c44_06", q:"Pádová otázka KOMU? ČEMU? patří k pádu:", o:["3.","2.","4.","6."], why:"3. pád se ptá komu, čemu." },
+  { id:"c44_07", q:"Pádová otázka BEZ KOHO? BEZ ČEHO? patří k pádu:", o:["2.","1.","4.","7."], why:"2. pád se ptá koho, čeho (bez koho, bez čeho)." },
+  { id:"c44_08", q:"V jakém pádě je slovo KOČKY ve spojení „bez kočky“?", o:["2.","1.","4.","5."], why:"Bez koho, čeho? Bez kočky: 2. pád." },
+  { id:"c44_09", q:"V jakém pádě je slovo HŮLKU ve větě „Vidím hůlku“?", o:["4.","1.","2.","3."], why:"Vidím koho, co? Hůlku: 4. pád." },
+  { id:"c44_10", q:"V jakém pádě je slovo HAGRIDE ve větě „Hagride, pojď sem!“?", o:["5.","1.","3.","4."], why:"Oslovení: 5. pád." },
+  { id:"c44_11", q:"V jakém pádě je slovo STOLE ve větě „Kniha leží na stole“?", o:["6.","3.","4.","7."], why:"O kom, o čem? Na stole: 6. pád." },
+  { id:"c44_12", q:"V jakém pádě je slovo HŮLKOU ve větě „Mávla hůlkou“?", o:["7.","4.","6.","3."], why:"S kým, s čím? Hůlkou: 7. pád." },
+  { id:"c44_13", q:"Jaký rod má podstatné jméno KUŘE?", o:["střední","mužský","ženský","žádný"], why:"To kuře: rod střední." },
+  { id:"c44_14", q:"V jakém pádě je slovo PROFESORCE ve větě „Dám to profesorce“?", o:["3.","2.","6.","4."], why:"Dám komu, čemu? Profesorce: 3. pád." },
+  { id:"c44_15", q:"Pádová otázka S KÝM? S ČÍM? patří k pádu:", o:["7.","6.","3.","4."], why:"7. pád se ptá s kým, s čím." }
+];
+var BANK_C45 = [
+  { id:"c45_01", q:"Podle kterého vzoru se skloňuje slovo JABLKO?", o:["město","moře","kuře","stavení"], why:"Jablko — to jablko, bez jablka: jako město, bez města." },
+  { id:"c45_02", q:"Podle kterého vzoru se skloňuje slovo POLE?", o:["moře","město","kuře","stavení"], why:"Pole, bez pole: jako moře, bez moře." },
+  { id:"c45_03", q:"Podle kterého vzoru se skloňuje slovo KOTĚ?", o:["kuře","moře","město","stavení"], why:"Kotě, bez kotěte: jako kuře, bez kuřete." },
+  { id:"c45_04", q:"Podle kterého vzoru se skloňuje slovo NÁDRAŽÍ?", o:["stavení","moře","město","kuře"], why:"Nádraží, bez nádraží: jako stavení, bez stavení." },
+  { id:"c45_05", q:"Doplň: Prošli jsme kolem pol_.", o:["í","i","y","é"], why:"Kolem čeho? Kolem polí (pole → moře: bez moří)." },
+  { id:"c45_06", q:"Doplň: Stáli před okn_.", o:["y","i","a","ě"], why:"Před čím? Před okny (okno → město: před městy)." },
+  { id:"c45_07", q:"Doplň: Hagrid krmil kuřat_.", o:["a","y","i","e"], why:"Koho, co? Kuřata (vzor kuře: 4. pád množného čísla kuřata)." },
+  { id:"c45_08", q:"Doplň: Loď plula po moř_.", o:["i","y","e","ě"], why:"Po čem? Po moři (vzor moře, 6. pád)." },
+  { id:"c45_09", q:"Doplň: Hráli si s kuřat_.", o:["y","i","a","ech"], why:"S kým, s čím? S kuřaty (vzor kuře, 7. pád množného čísla)." },
+  { id:"c45_10", q:"Podle kterého vzoru se skloňuje slovo SRDCE?", o:["moře","město","kuře","stavení"], why:"Srdce, bez srdce: jako moře." },
+  { id:"c45_11", q:"Doplň: Jablka ležela na pol_ch.", o:["í","i","y","e"], why:"Na čem? Na polích (vzor moře: na mořích)." },
+  { id:"c45_12", q:"Doplň: Vlak projel mezi měst_.", o:["y","i","a","ech"], why:"Mezi čím? Mezi městy (vzor město, 7. pád množného čísla)." },
+  { id:"c45_13", q:"Podle kterého vzoru se skloňuje slovo ŠTĚNĚ?", o:["kuře","moře","město","stavení"], why:"Štěně, bez štěněte: jako kuře, bez kuřete." },
+  { id:"c45_14", q:"Doplň: Děti si hrály na hřišt_.", o:["i","ě","y","e"], why:"Na čem? Na hřišti (hřiště → moře: na moři)." },
+  { id:"c45_15", q:"Podle kterého vzoru se skloňuje slovo PSANÍ?", o:["stavení","moře","město","kuře"], why:"Psaní, bez psaní: jako stavení." }
+];
+var BANK_C46 = [
+  { id:"c46_01", q:"Podle kterého vzoru se skloňuje slovo SOVA?", o:["žena","růže","píseň","kost"], why:"Sova, bez sovy: jako žena, bez ženy." },
+  { id:"c46_02", q:"Podle kterého vzoru se skloňuje slovo ULICE?", o:["růže","žena","píseň","kost"], why:"Ulice, bez ulice: jako růže." },
+  { id:"c46_03", q:"Podle kterého vzoru se skloňuje slovo MYŠ?", o:["kost","píseň","růže","žena"], why:"Myš, bez myši: jako kost, bez kosti." },
+  { id:"c46_04", q:"Podle kterého vzoru se skloňuje slovo SKŘÍŇ?", o:["píseň","kost","růže","žena"], why:"Skříň, bez skříně: jako píseň, bez písně." },
+  { id:"c46_05", q:"Doplň: Přiletěly dvě sov_.", o:["y","i","e","ě"], why:"Sova → žena: dvě ženy, dvě sovy." },
+  { id:"c46_06", q:"Doplň: Šli jsme podél ulic_.", o:["e","i","y","í"], why:"Ulice → růže: podél růže, podél ulice." },
+  { id:"c46_07", q:"Doplň: V koutě seděly myš_.", o:["i","y","e","ě"], why:"Myš → kost: kosti, myši." },
+  { id:"c46_08", q:"Doplň: Hermiona má hodně ___ (kniha).", o:["knih","knihy","knihů","knihách"], why:"Hodně koho, čeho? Hodně knih (žena: hodně žen)." },
+  { id:"c46_09", q:"Doplň: Ron snědl misku kaš_.", o:["e","i","y","í"], why:"Kaše → růže: misku růže, misku kaše." },
+  { id:"c46_10", q:"Doplň: Hagrid mluvil o zahrad_.", o:["ě","e","i","y"], why:"Zahrada → žena: o ženě, o zahradě." },
+  { id:"c46_11", q:"Doplň: Zpívali jsme písn_.", o:["ě","e","i","y"], why:"Koho, co? Píseň: 4. pád množného čísla písně." },
+  { id:"c46_12", q:"Doplň: Harry se bál tm_.", o:["y","i","e","ě"], why:"Tma → žena: bál se ženy, tmy." },
+  { id:"c46_13", q:"Doplň: Stáli u lavic_.", o:["e","i","y","í"], why:"Lavice → růže: u růže, u lavice." },
+  { id:"c46_14", q:"Doplň: Nemocný ležel v postel_.", o:["i","y","e","ě"], why:"Postel → píseň: v písni, v posteli." },
+  { id:"c46_15", q:"Podle kterého vzoru se skloňuje slovo VĚC?", o:["kost","píseň","růže","žena"], why:"Věc, bez věci: jako kost, bez kosti." }
+];
+var BANK_C47 = [
+  { id:"c47_01", q:"Podle kterého vzoru se skloňuje slovo HOLUB?", o:["pán","hrad","muž","stroj"], why:"Holub je životný: bez holuba jako bez pána." },
+  { id:"c47_02", q:"Podle kterého vzoru se skloňuje slovo STŮL?", o:["hrad","pán","muž","stroj"], why:"Stůl, bez stolu: koncovka -u jako hrad, bez hradu." },
+  { id:"c47_03", q:"Podle kterého vzoru se skloňuje slovo UČITEL?", o:["muž","pán","stroj","soudce"], why:"Učitel, bez učitele: koncovka -e jako muž, bez muže." },
+  { id:"c47_04", q:"Podle kterého vzoru se skloňuje slovo KLÍČ?", o:["stroj","hrad","muž","pán"], why:"Klíč, bez klíče: koncovka -e jako stroj, bez stroje." },
+  { id:"c47_05", q:"Podle kterého vzoru se skloňuje slovo TÁTA?", o:["předseda","pán","soudce","muž"], why:"Táta končí na -a: jako předseda." },
+  { id:"c47_06", q:"Podle kterého vzoru se skloňuje slovo SPRÁVCE?", o:["soudce","předseda","muž","stroj"], why:"Správce končí na -ce: jako soudce." },
+  { id:"c47_07", q:"Doplň: Na střeše seděli holub_.", o:["i","y","e","é"], why:"Holub → pán: páni, holubi (životný, 1. pád množného čísla)." },
+  { id:"c47_08", q:"Doplň: Na kopci stály hrad_.", o:["y","i","e","é"], why:"Hrad → hrad: hrady (neživotný)." },
+  { id:"c47_09", q:"Doplň: Rytíři hlídali most_.", o:["y","i","e","é"], why:"Most → hrad: hrady, mosty." },
+  { id:"c47_10", q:"Doplň: Vrabc_ štěbetali na dvoře.", o:["i","y","e","ové"], why:"Vrabec → pán: páni, vrabci (životný)." },
+  { id:"c47_11", q:"Doplň: Kniha vypráví o rytíř_ch.", o:["í","i","y","e"], why:"Rytíř → muž: o mužích, o rytířích." },
+  { id:"c47_12", q:"Doplň: Na stole ležely nož_.", o:["e","i","y","í"], why:"Nůž → stroj: stroje, nože." },
+  { id:"c47_13", q:"Doplň: Potkali jsme dva soudc_.", o:["e","i","y","ové"], why:"Soudce → soudce: 4. pád množného čísla soudce." },
+  { id:"c47_14", q:"Doplň: Psal dopis dědov_.", o:["i","y","e","ě"], why:"Děda → předseda: předsedovi, dědovi." },
+  { id:"c47_15", q:"Podle kterého vzoru se skloňuje slovo KŮŇ?", o:["muž","pán","stroj","hrad"], why:"Kůň je životný, bez koně: jako muž, bez muže." }
+];
+var BANK_C48 = [
+  { id:"c48_01", q:"Urči osobu a číslo: (my) ČTEME", o:["1. osoba, množné číslo","1. osoba, jednotné číslo","2. osoba, množné číslo","3. osoba, množné číslo"], why:"My čteme: 1. osoba množného čísla." },
+  { id:"c48_02", q:"Urči osobu a číslo: (ty) PÍŠEŠ", o:["2. osoba, jednotné číslo","1. osoba, jednotné číslo","2. osoba, množné číslo","3. osoba, jednotné číslo"], why:"Ty píšeš: 2. osoba jednotného čísla." },
+  { id:"c48_03", q:"Urči osobu a číslo: (oni) LÉTAJÍ", o:["3. osoba, množné číslo","3. osoba, jednotné číslo","1. osoba, množné číslo","2. osoba, množné číslo"], why:"Oni létají: 3. osoba množného čísla." },
+  { id:"c48_04", q:"V jakém čase je sloveso PŘIJDU?", o:["budoucím","přítomném","minulém","žádném"], why:"Přijdu = až potom: čas budoucí." },
+  { id:"c48_05", q:"V jakém čase je sloveso ČETL{A|} JSEM?", o:["minulém","přítomném","budoucím","žádném"], why:"Četl{a|} jsem = už se stalo: čas minulý." },
+  { id:"c48_06", q:"V jakém čase je sloveso VAŘÍ?", o:["přítomném","minulém","budoucím","žádném"], why:"Vaří = právě teď: čas přítomný." },
+  { id:"c48_07", q:"Které slovo je infinitiv (neurčitý tvar)?", o:["psát","píšu","psal","napiš"], why:"Infinitiv končí na -t (psát) a neříká kdo ani kdy." },
+  { id:"c48_08", q:"Které sloveso je zvratné?", o:["smát se","smát","smích","smál"], why:"Zvratné sloveso má u sebe se nebo si: smát se." },
+  { id:"c48_09", q:"Jaký je infinitiv slovesa BĚŽÍME?", o:["běžet","běžíme","běžel","běž"], why:"Běžíme → infinitiv běžet." },
+  { id:"c48_10", q:"Které sloveso je v čase budoucím?", o:["budeme číst","čteme","četli jsme","čtěte"], why:"Budeme číst = teprve bude: čas budoucí." },
+  { id:"c48_11", q:"Urči osobu a číslo: (vy) SPÍTE", o:["2. osoba, množné číslo","2. osoba, jednotné číslo","3. osoba, množné číslo","1. osoba, množné číslo"], why:"Vy spíte: 2. osoba množného čísla." },
+  { id:"c48_12", q:"Urči osobu a číslo: (já) KRESLÍM", o:["1. osoba, jednotné číslo","1. osoba, množné číslo","2. osoba, jednotné číslo","3. osoba, jednotné číslo"], why:"Já kreslím: 1. osoba jednotného čísla." },
+  { id:"c48_13", q:"Který tvar je složený (ze dvou slov)?", o:["budu spát","spím","spal","spi"], why:"Budu spát se skládá ze dvou slov: tvar složený." },
+  { id:"c48_14", q:"V jakém čase je sloveso POLETÍME?", o:["budoucím","přítomném","minulém","žádném"], why:"Poletíme = až potom: čas budoucí." },
+  { id:"c48_15", q:"Které sloveso je zvratné?", o:["učit se","učit","učitel","učil"], why:"Učit se má zvratné se." }
+];
+var BANK_C49 = [
+  { id:"c49_01", q:"Doplň: Psi štěkal_ na dvoře.", o:["i","y","a","e"], why:"Psi = rod mužský životný → štěkali." },
+  { id:"c49_02", q:"Doplň: Ženy zpíval_ písničku.", o:["y","i","a","e"], why:"Ženy = rod ženský → zpívaly." },
+  { id:"c49_03", q:"Doplň: Města zářil_ světly.", o:["a","y","i","e"], why:"Města = rod střední → zářila." },
+  { id:"c49_04", q:"Doplň: Hrady stál_ na kopcích.", o:["y","i","a","e"], why:"Hrady = rod mužský neživotný → stály." },
+  { id:"c49_05", q:"Doplň: Sovy přiletěl_ v noci.", o:["y","i","a","e"], why:"Sovy = rod ženský → přiletěly." },
+  { id:"c49_06", q:"Doplň: Kluci hrál_ famfrpál.", o:["i","y","a","e"], why:"Kluci = rod mužský životný → hráli." },
+  { id:"c49_07", q:"Doplň: Kuřata pípal_.", o:["a","y","i","e"], why:"Kuřata = rod střední → pípala." },
+  { id:"c49_08", q:"Doplň: Děti si hrál_ na hřišti.", o:["y","i","a","e"], why:"Děti se v množném čísle chovají jako rod ženský → hrály." },
+  { id:"c49_09", q:"Doplň: Vlaky jel_ pomalu.", o:["y","i","a","e"], why:"Vlaky = rod mužský neživotný → jely." },
+  { id:"c49_10", q:"Doplň: Učitelé čekal_ ve sborovně.", o:["i","y","a","e"], why:"Učitelé = rod mužský životný → čekali." },
+  { id:"c49_11", q:"Doplň: Koťata spal_ v košíku.", o:["a","y","i","e"], why:"Koťata = rod střední → spala." },
+  { id:"c49_12", q:"Doplň: Knihy ležel_ na stole.", o:["y","i","a","e"], why:"Knihy = rod ženský → ležely." },
+  { id:"c49_13", q:"Doplň: Holubi vzlétl_ ze střechy.", o:["i","y","a","e"], why:"Holubi = rod mužský životný → vzlétli." },
+  { id:"c49_14", q:"Doplň: Okna se rozsvítil_.", o:["a","y","i","e"], why:"Okna = rod střední → rozsvítila." },
+  { id:"c49_15", q:"Doplň: Rodiče přišl_ na besídku.", o:["i","y","a","e"], why:"Rodiče = rod mužský životný → přišli." }
+];
 var BANKS = { C1:BANK_C1, C2:BANK_C2, C3:BANK_C3, C4:BANK_C4, C5:BANK_C5, C6:BANK_C6,
-              C7:BANK_C7, C8:BANK_C8, C9:BANK_C9, C10:BANK_C10, C11:BANK_C11, C12:BANK_C12 };
+              C7:BANK_C7, C8:BANK_C8, C9:BANK_C9, C10:BANK_C10, C11:BANK_C11, C12:BANK_C12,
+              C41:BANK_C41, C42:BANK_C42, C43:BANK_C43, C44:BANK_C44, C45:BANK_C45, C46:BANK_C46, C47:BANK_C47, C48:BANK_C48, C49:BANK_C49 };
 
 /* ---------------- Pomocné funkce ---------------- */
 function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -1720,10 +1887,21 @@ function factRecord(state, k, ok, day) {
 }
 /* Vyjmenovaná slova (C4–C10) mají stupně po jednotlivých otázkách stejně jako násobilka (klíč "v:<id>" v S.factLv). */
 var VYJ_TOPICS = ["C4", "C5", "C6", "C7", "C8", "C9", "C10"];
+var VZOR_TOPICS = ["C45", "C46", "C47"];   /* vzory podstatných jmen: stupně po otázkách jako u vyjmenovaných slov */
 function vyjWord(q) {
   var s = String(q.why || "").split(" — ")[0];
   s = s.split(/ (?:je|patří|píšeme|není|se píše)(?= |$)| \(| =|\. /)[0];   /* \b v JS nezná českou diakritiku */
   return s.replace(/[.!?,]+$/, "").trim() || q.id;
+}
+/* Vzory 4. třídy: ukazatel po učebnách (stupně v S.factLv „v:<id>“) */
+function vzorListHTML(state) {
+  var rows = VZOR_TOPICS.filter(function (t) { return isUnlocked(t, state); }).map(function (t) {
+    var c = [0, 0, 0], n = BANKS[t].length; BANKS[t].forEach(function (q) { var x = state.factLv && state.factLv["v:" + q.id], l = x ? x.l : 0; c[l]++; });
+    var pc = function (k) { return n ? Math.round(100 * c[k] / n) : 0; };
+    return '<div class="vyjCard"><div class="vyjHead"><span class="vyjL" style="font-size:16px">' + ({ C45: "stř.", C46: "žen.", C47: "muž." })[t] + '</span><div class="vyjBar"><i class="b2" style="width:' + pc(2) + '%"></i><i class="b1" style="width:' + pc(1) + '%"></i></div></div>' +
+      '<div class="vyjSub"><b>' + esc(TOPICS[t].n) + '</b> · umím ' + c[2] + ' z ' + n + (c[1] ? ' · jde mi ' + c[1] : '') + '</div></div>';
+  }).join("");
+  return rows ? '<div class="vyjCards">' + rows + '</div>' : "";
 }
 function pickByLevel(list, keyOf, state) {
   var today = todayStr(), w = list.map(function (q) {
@@ -3061,7 +3239,7 @@ function makeQuestion(t, state, usedIds) {
   if (BANKS[t]) {
     var pool = BANKS[t].filter(function (q) { return !usedIds[q.id]; });
     if (!pool.length) pool = BANKS[t];
-    var vyj = VYJ_TOPICS.indexOf(t) !== -1;
+    var vyj = VYJ_TOPICS.indexOf(t) !== -1 || VZOR_TOPICS.indexOf(t) !== -1;
     var it = vyj ? pickByLevel(pool, function (q) { return "v:" + q.id; }, state) : pick(pool);
     usedIds[it.id] = true;
     return { topic: t, kind:"choice", id: it.id, q: it.q, opts: shuffle(it.o), correct: it.o[0], why: it.why,
@@ -4716,6 +4894,7 @@ function screenMapSubject(subj) {
   var html = topbarHTML() + '<div class="card"><button class="btn secondary small backMap" onclick="screenMap()">← Mapa hradu</button>' +
     '<h2 class="center subjTitle">' + subjIcon(subj, 30) + ' ' + esc(SUBJECTS[subj].n) + '</h2><p class="muted center">' + esc(SUBJECTS[subj].sub) + '</p>' +
     subjectRoomsHTML(subj) + (subj === "m" && (isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3 class="center" style="margin-top:18px">🧪 Moje násobilka</h3><p class="muted center">Příklad umíš, když ho spočítáš správně ve dva různé dny.</p>' + factGridHTML(S) : '') +
+    (subj === "cj" && vzorListHTML(S) ? '<h3 class="center" style="margin-top:18px">🏷️ Moje vzory</h3><p class="muted center">Otázku umíš, když ji zvládneš správně ve dva různé dny.</p>' + vzorListHTML(S) : '') +
     (subj === "cj" && vyjListHTML(S) ? '<h3 class="center" style="margin-top:18px">🪶 Moje vyjmenovaná slova</h3><p class="muted center">Klepni na 🔊 a poslechni si celou řadu. Cvičení umíš, když ho doplníš správně ve dva různé dny.</p>' + vyjListHTML(S) : '') +
     '</div>' + navHTML("rozvrh");
   render(html);
@@ -5100,6 +5279,79 @@ LESSONS.M49 = [
     vis: { k: "text", h: "6 žabek, <b>o 3 víc</b> → 6 + 3 = 9<br>6 žabek, <b>3krát víc</b> → 6 × 3 = 18" }, try: { q: "Hagrid má 7 dýní a Ron 4krát víc. Kolik dýní má Ron?", correct: 28, opts: [28, 11, 3, 21], why: "4krát víc = 7 × 4 = 28." } },
   { t: "Odhad a kontrola", say: "Než počítáš přesně, odhadni výsledek. Šest krabic po sto dvaceti fazolkách je asi sedm set. Pak spočítej a porovnej.",
     vis: { k: "text", h: "6 × 120 ≈ 6 × 100 = 600, tedy <b>něco přes 600</b><br>přesně: 6 × 120 = <b>720</b> ✓" }, try: { q: "V 5 krabicích je po 140 fazolkách. Kolik fazolek je celkem?", correct: 700, opts: [700, 600, 145, 7000], why: "5 × 140 = 700." } }
+];
+/* karty výkladu 4. třídy — čeština (McGonagallová) */
+LESSONS.C41 = [
+  { t: "Kořen slova", say: "Kořen je část, kterou mají příbuzná slova společnou. Les, lesník, lesní, zalesnit: všude je les.",
+    vis: { k: "text", h: "<b>les</b> · <b>les</b>ník · <b>les</b>ní · za<b>les</b>nit" }, try: { id: "c41_01" } },
+  { t: "Předpona a přípona", say: "Před kořenem bývá předpona, za kořenem přípona. Za-hrad-ník: předpona za, kořen hrad, přípona ník.",
+    vis: { k: "text", h: "<span class=\"lsY\">za</span>-<b>hrad</b>-<span class=\"lsI\">ník</span><br>předpona · kořen · přípona" }, try: { id: "c41_15" } },
+  { t: "Příbuzná slova", say: "Příbuzná slova mají stejný kořen i podobný význam. Pozor na slova, která jen podobně znějí: léto a létat příbuzná nejsou.",
+    vis: { k: "text", h: "létat · letadlo · letec · výlet ✓<br>léto ✗ (jiný význam)" }, try: { id: "c41_06" } }
+];
+LESSONS.C42 = [
+  { t: "Předpona s-", say: "Předponu s píšeme, když jde něco dolů, z povrchu pryč, nebo dohromady. Sjet z kopce, smést prach, sbalit kufr.",
+    vis: { k: "text", h: "dolů: <b>s</b>jet, <b>s</b>eskočit<br>z povrchu: <b>s</b>mést, <b>s</b>undat<br>dohromady: <b>s</b>balit, <b>s</b>ejít se" }, try: { id: "c42_01" } },
+  { t: "Předpona z- a vz-", say: "Předponu z píšeme, když se něco mění nebo dokončí: zhubnout, zčervenat, zpracovat. Vz znamená vzhůru: vzlétnout.",
+    vis: { k: "text", h: "změna: <b>z</b>hubnout, <b>z</b>červenat<br>dokončení: <b>z</b>pracovat<br>vzhůru: <b>vz</b>létnout, <b>vz</b>hlédnout" }, try: { id: "c42_02" } },
+  { t: "Předložka, nebo předpona?", say: "Předložka stojí před jménem zvlášť: pod stolem. Předpona je součást slova a píše se dohromady: podtrhnout.",
+    vis: { k: "text", h: "<b>pod</b> stolem → předložka, zvlášť<br><b>pod</b>trhnout → předpona, dohromady" }, try: { id: "c42_07" } }
+];
+LESSONS.C43 = [
+  { t: "Bě, pě, vě, mě", say: "Uprostřed slova obvykle píšeme bě, pě, vě, mě s háčkem: oběd, pěkný, věda, město.",
+    vis: { k: "text", h: "o<b>bě</b>d · <b>pě</b>kný · <b>vě</b>da · <b>mě</b>sto" }, try: { id: "c43_01" } },
+  { t: "Kdy bje a vje", say: "Bje a vje píšeme jen tehdy, když je před kořenem předpona ob nebo v a kořen začíná na je. Ob-jednat, v-jezd.",
+    vis: { k: "text", h: "ob + jednat → ob<b>je</b>dnat<br>v + jezd → v<b>je</b>zd<br>ale: oběd (žádná předpona) → o<b>bě</b>d" }, try: { id: "c43_02" } },
+  { t: "Zkouška kořenem", say: "Zkus odtrhnout předponu. Zůstane slovo začínající na je? Objet: jet. Pak píšeš bje. Oběd: běd? Ne, píšeš bě.",
+    vis: { k: "text", h: "ob<b>jet</b> → jet ✓ → bje<br>o<b>běd</b> → běd ✗ → bě" }, try: { id: "c43_10" } }
+];
+LESSONS.C44 = [
+  { t: "Rod", say: "Podstatné jméno má rod. Ten hrad je rod mužský, ta sova rod ženský, to okno rod střední. Pomůže ukazovací slovo.",
+    vis: { k: "text", h: "<b>ten</b> hrad → mužský<br><b>ta</b> sova → ženský<br><b>to</b> okno → střední" }, try: { id: "c44_01" } },
+  { t: "Číslo", say: "Jedna sova je číslo jednotné. Dvě a více sov je číslo množné.",
+    vis: { k: "text", h: "sova → jednotné<br>sovy → množné" }, try: { id: "c44_04" } },
+  { t: "Pád", say: "Pád poznáš pádovou otázkou. Kdo, co? První. Bez koho, čeho? Druhý. Komu, čemu? Třetí. Vidím koho, co? Čtvrtý. Oslovení pátý. O kom, o čem? Šestý. S kým, s čím? Sedmý.",
+    vis: { k: "text", h: "1. kdo? co? · 2. bez koho? čeho?<br>3. komu? čemu? · 4. vidím koho? co?<br>5. oslovení · 6. o kom? o čem?<br>7. s kým? s čím?" }, try: { id: "c44_08" } }
+];
+LESSONS.C45 = [
+  { t: "Čtyři vzory středního rodu", say: "Slova rodu středního se skloňují podle vzorů město, moře, kuře a stavení. Vzor poznáš podle druhého pádu.",
+    vis: { k: "text", h: "<b>město</b> – bez města · <b>moře</b> – bez moře<br><b>kuře</b> – bez kuřete · <b>stavení</b> – bez stavení" }, try: { id: "c45_01" } },
+  { t: "Najdi vzor", say: "Jablko, bez jablka: jako město. Pole, bez pole: jako moře. Kotě, bez kotěte: jako kuře. Nádraží, bez nádraží: jako stavení.",
+    vis: { k: "text", h: "jablk<b>o</b> – jablk<b>a</b> → město<br>pol<b>e</b> – pol<b>e</b> → moře<br>kot<b>ě</b> – kotět<b>e</b> → kuře<br>nádraž<b>í</b> – nádraž<b>í</b> → stavení" }, try: { id: "c45_03" } },
+  { t: "Koncovka podle vzoru", say: "Nevíš, co napsat? Dosaď vzor. Před okny: jako před městy, tvrdé y. Po poli: jako po moři, měkké i.",
+    vis: { k: "text", h: "před okn_ → před měst<b>y</b> → okn<b>y</b><br>po pol_ → po moř<b>i</b> → pol<b>i</b>" }, try: { id: "c45_06" } }
+];
+LESSONS.C46 = [
+  { t: "Čtyři vzory ženského rodu", say: "Slova rodu ženského mají vzory žena, růže, píseň a kost. Rozhoduje, jak slovo končí a jak zní ve druhém pádě: bez koho, bez čeho.",
+    vis: { k: "text", h: "<b>žena</b> – bez ženy · <b>růže</b> – bez růže<br><b>píseň</b> – bez písně · <b>kost</b> – bez kosti" }, try: { id: "c46_01" } },
+  { t: "Najdi vzor", say: "Sova, bez sovy: jako žena. Ulice, bez ulice: jako růže. Skříň, bez skříně: jako píseň. Myš, bez myši: jako kost.",
+    vis: { k: "text", h: "sov<b>a</b> – sov<b>y</b> → žena<br>ulic<b>e</b> – ulic<b>e</b> → růže<br>skříň – skřín<b>ě</b> → píseň<br>myš – myš<b>i</b> → kost" }, try: { id: "c46_03" } },
+  { t: "Koncovka podle vzoru", say: "Dvě sovy: jako dvě ženy, tvrdé y. V posteli: jako v písni, měkké i. Vzor ti vždy napoví.",
+    vis: { k: "text", h: "dvě sov_ → dvě žen<b>y</b> → sov<b>y</b><br>v postel_ → v písn<b>i</b> → postel<b>i</b>" }, try: { id: "c46_05" } }
+];
+LESSONS.C47 = [
+  { t: "Životný, nebo neživotný?", say: "U rodu mužského se nejdřív ptej: je to živé? Pán, muž, předseda a soudce jsou životné vzory, hrad a stroj neživotné.",
+    vis: { k: "text", h: "životný: <b>pán</b>, <b>muž</b>, předseda, soudce<br>neživotný: <b>hrad</b>, <b>stroj</b>" }, try: { id: "c47_01" } },
+  { t: "Podívej se na druhý pád", say: "Pak řekni slovo ve druhém pádě: bez koho, bez čeho. Bez holuba jako bez pána. Bez stolu jako bez hradu. Bez učitele jako bez muže. Bez klíče jako bez stroje.",
+    vis: { k: "text", h: "bez holub<b>a</b> → bez pán<b>a</b> → pán<br>bez stol<b>u</b> → bez hrad<b>u</b> → hrad<br>bez učitel<b>e</b> → bez muž<b>e</b> → muž<br>bez klíč<b>e</b> → bez stroj<b>e</b> → stroj" }, try: { id: "c47_03" } },
+  { t: "Koncovka podle vzoru", say: "Holubi seděli: jako páni, měkké i. Hrady stály: jako hrady, tvrdé y. Životný vzor má v prvním pádě množného čísla i.",
+    vis: { k: "text", h: "holub_ seděli → pán<b>i</b> → holub<b>i</b><br>most_ stály → hrad<b>y</b> → most<b>y</b>" }, try: { id: "c47_07" } }
+];
+LESSONS.C48 = [
+  { t: "Osoba a číslo", say: "Sloveso říká, kdo něco dělá. Já, ty, on je číslo jednotné. My, vy, oni je číslo množné. My čteme: první osoba množného čísla.",
+    vis: { k: "text", h: "1. já čtu · my čteme<br>2. ty čteš · vy čtete<br>3. on čte · oni čtou" }, try: { id: "c48_01" } },
+  { t: "Čas", say: "Sloveso říká i kdy. Četla jsem: minulý. Čtu: přítomný. Budu číst: budoucí.",
+    vis: { k: "text", h: "četl{a|} jsem → <b>minulý</b><br>čtu → <b>přítomný</b><br>budu číst · přečtu → <b>budoucí</b>" }, try: { id: "c48_04" } },
+  { t: "Infinitiv a zvratná slovesa", say: "Infinitiv je tvar bez osoby a času, končí na t: psát, běžet. Zvratné sloveso má u sebe se nebo si: smát se, hrát si.",
+    vis: { k: "text", h: "infinitiv: psá<b>t</b>, běže<b>t</b><br>zvratné: smát <b>se</b>, hrát <b>si</b>" }, try: { id: "c48_07" } }
+];
+LESSONS.C49 = [
+  { t: "Přísudek se řídí podmětem", say: "Když je ve větě víc lidí nebo věcí, koncovka slovesa se řídí rodem podmětu. Nejdřív zjisti, kdo něco dělá.",
+    vis: { k: "text", h: "<b>Psi</b> štěkali · <b>Ženy</b> zpívaly · <b>Města</b> zářila" }, try: { id: "c49_01" } },
+  { t: "Tři koncovky", say: "Mužský životný rod má měkké i: psi štěkali. Mužský neživotný a ženský rod má tvrdé y: hrady stály, sovy přiletěly. Střední rod má a: kuřata pípala.",
+    vis: { k: "text", h: "mužský životný → <b>i</b>: kluci hrál<b>i</b><br>mužský neživotný → <b>y</b>: vlaky jel<b>y</b><br>ženský → <b>y</b>: knihy ležel<b>y</b><br>střední → <b>a</b>: okna svítil<b>a</b>" }, try: { id: "c49_04" } },
+  { t: "Pozor na děti", say: "Slovo děti se v množném čísle chová jako rod ženský. Děti si hrály, s tvrdým y. Stejně oči a uši.",
+    vis: { k: "text", h: "děti si hrál<b>y</b> · oči zářil<b>y</b> · uši slyšel<b>y</b>" }, try: { id: "c49_08" } }
 ];
 /* vyjmenovaná slova: jedna šablona pro všechna písmena (řada → pravidlo → dvojice, které se pletou) */
 var VYJ_LESSON = {
@@ -7523,9 +7775,9 @@ var parentLock = null;
    Každý krok se hned uloží, „Dokončím později“ nic neztratí. Znovu ho spustí rozcestník panelu.
    ===================================================================== */
 CURRICULUM[4].presets = {
-  zacatek:  { n: "Začátek 4. třídy", d: "opakování násobilky a dělení, čísla do 10 000, vyjmenovaná slova, slovní druhy", t: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11"] },
-  pololeti: { n: "Kolem pololetí", d: "navíc písemné sčítání a odčítání, násobení zpaměti, zaokrouhlování, písemné násobení", t: ["M2", "M3", "M4", "M41", "M42", "M43", "M44", "M46", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11"] },
-  konec:    { n: "Konec 4. třídy", d: "všechna matematika 4. třídy včetně písemného dělení, zlomků a jednotek", t: ["M2", "M3", "M4", "M41", "M42", "M43", "M44", "M45", "M46", "M47", "M48", "M49", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11"] }
+  zacatek:  { n: "Začátek 4. třídy", d: "opakování násobilky a vyjmenovaných slov, čísla do 10 000, stavba slova, předpony", t: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C41", "C42", "C43"] },
+  pololeti: { n: "Kolem pololetí", d: "navíc písemné sčítání a odčítání, násobení zpaměti, zaokrouhlování, písemné násobení; rod, číslo, pád a vzory rodu středního a ženského", t: ["M2", "M3", "M4", "M41", "M42", "M43", "M44", "M46", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C41", "C42", "C43", "C44", "C45", "C46"] },
+  konec:    { n: "Konec 4. třídy", d: "všechna matematika i čeština 4. třídy včetně písemného dělení, zlomků, vzorů rodu mužského, sloves a shody", t: ["M2", "M3", "M4", "M41", "M42", "M43", "M44", "M45", "M46", "M47", "M48", "M49", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C41", "C42", "C43", "C44", "C45", "C46", "C47", "C48", "C49"] }
 };
 var SETUP_PRESETS = CURRICULUM[3].presets = {
   zacatek:  { n: "Začátek 3. třídy", d: "sčítání a odčítání do 100, násobilka 2–5, tvrdé a měkké slabiky, abeceda", t: ["M1", "M2", "C1", "C2"] },
@@ -7779,6 +8031,7 @@ function screenParent(section) {
       joyHTML() +
       '<h3>Jak jí to jde</h3>' + (statRows || '<p class="muted">Zatím nehráno.</p>') +
       (vyjListHTML(S) ? '<h3>🪶 Vyjmenovaná slova po slovech</h3>' + vyjListHTML(S) : '') +
+      (vzorListHTML(S) ? '<h3>🏷️ Vzory podstatných jmen</h3>' + vzorListHTML(S) : '') +
       ((isUnlocked("M2", S) || isUnlocked("M3", S)) ? '<h3>🧪 Násobilka po příkladech</h3><p class="muted">Tyrkysová = umí (správně ve dva různé dny), žlutá = jde jí (2× za sebou správně), bílá = ještě ne. Hra přednostně procvičuje žluté a nové.</p>' + factGridHTML(S) : '') +
       (examRows ? '<p class="muted" style="margin-top:8px">Zkoušky ročníku:</p><ul style="margin-left:20px;font-size:15px">' + examRows + '</ul>' : '') +
       '<h3>Chyby</h3>' +
@@ -8261,6 +8514,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
+  VZOR_TOPICS: VZOR_TOPICS, vzorListHTML: vzorListHTML,
   czNum: czNum, fmtN: fmtN, checkAnswer: checkAnswer, makeQuestion: makeQuestion,
   CURRICULUM: CURRICULUM, DEFAULT_GRADE: DEFAULT_GRADE, kidGrade: kidGrade, curriculumFor: curriculumFor, gradeTopics: gradeTopics,
   LESSONS_H: LESSONS_H, METHODS: METHODS, kidMethod: kidMethod,
