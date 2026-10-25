@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="cs_CZ">
 <meta property="og:title" content="Bradavická škola">
-<meta property="og:description" content="Kouzelná škola na deset minut denně: matematika, čeština a angličtina 3. třídy. Vyzkoušejte bez přihlášení.">
+<meta property="og:description" content="Kouzelná škola na deset minut denně: matematika, čeština a angličtina 2.–4. třídy. Vyzkoušejte bez přihlášení.">
 <meta property="og:url" content="https://kouzelnaskola.github.io/">
 <meta property="og:image" content="https://kouzelnaskola.github.io/rodice/nahled.jpg">
 <meta property="og:image:width" content="1200">
@@ -905,7 +905,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-26g";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-27a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1577,6 +1577,7 @@ var SUBJECTS = {
 var TOPIC_ORDER = ["C1","C2","M1","M2","C3","M3","M4","C4","C5","M5","C6","M6","C7","M7","C8","M8","C9","M9","C10","C11","C12",
                    "M41","M42","M43","M44","M45","M46","M47","M48","M49",
                    "C41","C42","C43","C44","C45","C46","C47","C48","C49",
+                   "M21","M22","M23","M24","M25","M26","C21","C22","C23","C24","C25","C26",
                    "E0","E1","E2","E3","E4","E5","E6",
                    "H0","H1","H2","H3","H4","H5","H6","H7"];
 var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
@@ -1586,6 +1587,8 @@ var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
    s upozorněním (fallback) — a z S.grade ve zpětné vazbě poznáme, kterou třídu stavět příště. */
 var DEFAULT_GRADE = 3;
 var CURRICULUM = {
+  2: { n: "2. třída", defaultUnlocked: ["M21", "C2", "C21", "C24", "E1"],
+       note: "Výchozí odemčení odpovídá začátku 2. třídy: sčítání a odčítání do 20 s přechodem přes desítku, abeceda, ú/ů, slova a jejich význam a anglická zvířata. Čísla do 100, násobilku, dělení, hodiny a peníze, tvrdé a měkké slabiky, dě/tě/ně a další odemykejte, až je ve škole proberou. Angličtina je ve 2. třídě dobrovolná." },
   4: { n: "4. třída", defaultUnlocked: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C11", "C41", "E1", "E2"],
        note: "Výchozí odemčení odpovídá začátku 4. třídy: opakování násobilky a dělení, čísla do 10 000, vyjmenovaná slova po B, L, M, slovní druhy a stavba slova. Zbylá vyjmenovaná slova odemkněte jako opakování; písemné počítání, vzory podstatných jmen, slovesa a shodu odemykejte, až je ve škole proberou." },
   3: { n: "3. třída", defaultUnlocked: DEFAULT_UNLOCKED, note: "Výchozí odemčení odpovídá začátku 3. třídy (opakování 2. třídy): sčítání a odčítání do 100, násobilka 2–5, tvrdé/měkké slabiky, abeceda, dva okruhy slovíček. Vyjmenovaná slova a násobilku 6–10 školy probírají postupně během 3. třídy — odemykejte po jednom tématu. Slovní úlohy používají jen početní operace z právě odemčených témat." }
@@ -1595,9 +1598,9 @@ function curriculumFor(st) { var g = kidGrade(st), c = CURRICULUM[g]; if (c) ret
 function gradeTopics(g) { var cg = CURRICULUM[g] ? g : DEFAULT_GRADE; return TOPIC_ORDER.filter(function (t) { var tg = TOPICS[t].grade; return !tg || tg === cg || (tg.indexOf && tg.indexOf(cg) !== -1); }); }
 
 var TOPICS = {
-  C1:  { subj:"cj", n:"Tvrdé a měkké slabiky",       e:"🪨", grade:3 },
-  C2:  { subj:"cj", n:"Abeceda a řazení slov",       e:"🔤", grade:3 },
-  C3:  { subj:"cj", n:"Párové souhlásky",            e:"🎭", grade:3 },
+  C1:  { subj:"cj", n:"Tvrdé a měkké slabiky",       e:"🪨", grade:[2,3] },
+  C2:  { subj:"cj", n:"Abeceda a řazení slov",       e:"🔤", grade:[2,3] },
+  C3:  { subj:"cj", n:"Párové souhlásky",            e:"🎭", grade:[2,3] },
   C4:  { subj:"cj", n:"Vyjmenovaná slova po B",      e:"🐂", grade:[3,4] },
   C5:  { subj:"cj", n:"Vyjmenovaná slova po L",      e:"🎿", grade:[3,4] },
   C6:  { subj:"cj", n:"Vyjmenovaná slova po M",      e:"🐭", grade:[3,4] },
@@ -1606,7 +1609,7 @@ var TOPICS = {
   C9:  { subj:"cj", n:"Vyjmenovaná slova po V",      e:"🦦", grade:[3,4] },
   C10: { subj:"cj", n:"Vyjmenovaná slova po Z",      e:"👅", grade:[3,4] },
   C11: { subj:"cj", n:"Slovní druhy",                e:"🧩", grade:[3,4] },
-  C12: { subj:"cj", n:"Věty a souvětí",              e:"💬", grade:3 },
+  C12: { subj:"cj", n:"Věty a souvětí",              e:"💬", grade:[2,3] },
   C41: { subj:"cj", n:"Stavba slova",                e:"🧱", grade:4 },
   C42: { subj:"cj", n:"Předpony a předložky",        e:"🔗", grade:4 },
   C43: { subj:"cj", n:"Bě, pě, vě, mě",              e:"✍️", grade:4 },
@@ -1616,8 +1619,20 @@ var TOPICS = {
   C47: { subj:"cj", n:"Vzory rodu mužského",         e:"🏰", grade:4 },
   C48: { subj:"cj", n:"Slovesa",                     e:"🏃", grade:4 },
   C49: { subj:"cj", n:"Shoda přísudku s podmětem",   e:"🤝", grade:4 },
-  M1:  { subj:"m",  n:"Sčítání a odčítání do 100",   e:"➕", grade:3 },
-  M2:  { subj:"m",  n:"Násobilka 2–5",               e:"✖️", grade:[3,4] },
+  M21: { subj:"m",  n:"Do 20 přes desítku",          e:"🔟", grade:2 },
+  M22: { subj:"m",  n:"Do 100 bez přechodu",         e:"💯", grade:2 },
+  M23: { subj:"m",  n:"Řada čísel do 100",           e:"📊", grade:2 },
+  M24: { subj:"m",  n:"Dělení 2–5",                  e:"➗", grade:2 },
+  M25: { subj:"m",  n:"Hodiny a peníze",             e:"🕒", grade:2 },
+  M26: { subj:"m",  n:"Slovní úlohy pro druháky",    e:"📜", grade:2 },
+  C21: { subj:"cj", n:"Ú, u, ů",                     e:"🅤", grade:2 },
+  C22: { subj:"cj", n:"Dě, tě, ně, bě, pě, vě, mě",  e:"✏️", grade:2 },
+  C23: { subj:"cj", n:"Slabiky a hlásky",            e:"👏", grade:2 },
+  C24: { subj:"cj", n:"Slova a jejich význam",       e:"🔤", grade:2 },
+  C25: { subj:"cj", n:"Slovní druhy úvod",           e:"🧩", grade:2 },
+  C26: { subj:"cj", n:"Velká písmena",               e:"🅰️", grade:2 },
+  M1:  { subj:"m",  n:"Sčítání a odčítání do 100",   e:"➕", grade:[2,3] },
+  M2:  { subj:"m",  n:"Násobilka 2–5",               e:"✖️", grade:[2,3,4] },
   M3:  { subj:"m",  n:"Násobilka 6–10",              e:"✴️", grade:[3,4] },
   M4:  { subj:"m",  n:"Dělení malou násobilkou",     e:"➗", grade:[3,4] },
   M5:  { subj:"m",  n:"Do 1000 — desítky a stovky",  e:"💯", grade:3 },
@@ -1807,9 +1822,112 @@ var BANK_C49 = [
   { id:"c49_14", q:"Doplň: Okna se rozsvítil_.", o:["a","y","i","e"], why:"Okna = rod střední → rozsvítila." },
   { id:"c49_15", q:"Doplň: Rodiče přišl_ na besídku.", o:["i","y","a","e"], why:"Rodiče = rod mužský životný → přišli." }
 ];
+var BANK_C21 = [
+  { id:"c21_01", q:"Doplň: _kol do školy", o:["ú","ů","u","ou"], why:"Na začátku slova píšeme ú: úkol." },
+  { id:"c21_02", q:"Doplň: d_m", o:["ů","ú","u","ou"], why:"Uprostřed slova píšeme ů: dům." },
+  { id:"c21_03", q:"Doplň: Jdeme dom_.", o:["ů","ú","u","ou"], why:"Na konci slova píšeme ů: domů." },
+  { id:"c21_04", q:"Doplň: _terý", o:["ú","ů","u","ou"], why:"Na začátku slova píšeme ú: úterý." },
+  { id:"c21_05", q:"Doplň: st_l", o:["ů","ú","u","ou"], why:"Uprostřed slova píšeme ů: stůl." },
+  { id:"c21_06", q:"Doplň: k_ň", o:["ů","ú","u","ou"], why:"Uprostřed slova píšeme ů: kůň." },
+  { id:"c21_07", q:"Doplň: b_bny (hudební nástroj)", o:["u","ú","ů","ou"], why:"Slyšíš krátké u: bubny." },
+  { id:"c21_08", q:"Doplň: s_l do polévky", o:["ů","ú","u","ou"], why:"Uprostřed slova píšeme ů: sůl." },
+  { id:"c21_09", q:"Doplň: ne_plný (není celý)", o:["ú","ů","u","ou"], why:"Po předponě ne- je slovo úplný, proto ú: neúplný." },
+  { id:"c21_10", q:"Doplň: v_z plný sena", o:["ů","ú","u","ou"], why:"Uprostřed slova píšeme ů: vůz." },
+  { id:"c21_11", q:"Doplň: _zký most", o:["ú","ů","u","ou"], why:"Na začátku slova píšeme ú: úzký." },
+  { id:"c21_12", q:"Doplň: k_ra stromu", o:["ů","ú","u","ou"], why:"Uprostřed slova píšeme ů: kůra." },
+  { id:"c21_13", q:"Doplň: r_ka", o:["u","ú","ů","ou"], why:"Slyšíš krátké u: ruka." },
+  { id:"c21_14", q:"Doplň: Sova letí dol_.", o:["ů","ú","u","ou"], why:"Na konci slova píšeme ů: dolů." },
+  { id:"c21_15", q:"Doplň: oc_n (květina)", o:["ú","ů","u","ou"], why:"Ocún je výjimka: ú uprostřed slova." }
+];
+var BANK_C22 = [
+  { id:"c22_01", q:"Doplň: d_ti si hrají", o:["ě","i","e","y"], why:"Děti: dě s háčkem." },
+  { id:"c22_02", q:"Doplň: t_sto na koláč", o:["ě","i","e","y"], why:"Těsto: tě." },
+  { id:"c22_03", q:"Doplň: n_co dobrého", o:["ě","i","e","y"], why:"Něco: ně." },
+  { id:"c22_04", q:"Doplň: ob_d", o:["ě","i","e","y"], why:"Oběd: bě." },
+  { id:"c22_05", q:"Doplň: p_na v koupeli", o:["ě","i","e","y"], why:"Pěna: pě." },
+  { id:"c22_06", q:"Doplň: v_ž hradu", o:["ě","i","e","y"], why:"Věž: vě." },
+  { id:"c22_07", q:"Doplň: m_sto Praha", o:["ě","i","e","y"], why:"Město: mě." },
+  { id:"c22_08", q:"Doplň: d_vadlo", o:["i","ě","e","y"], why:"Divadlo: slyšíš ďi, píšeš di." },
+  { id:"c22_09", q:"Doplň: t_cho v lese", o:["i","ě","e","y"], why:"Ticho: slyšíš ťi, píšeš ti." },
+  { id:"c22_10", q:"Doplň: n_c nevidím", o:["i","ě","e","y"], why:"Nic: slyšíš ňi, píšeš ni." },
+  { id:"c22_11", q:"Doplň: m_síc svítí", o:["ě","i","e","y"], why:"Měsíc: mě." },
+  { id:"c22_12", q:"Doplň: b_žet do školy", o:["ě","i","e","y"], why:"Běžet: bě." },
+  { id:"c22_13", q:"Doplň: p_t prstů", o:["ě","i","e","y"], why:"Pět: pě." },
+  { id:"c22_14", q:"Doplň: d_kuji", o:["ě","i","e","y"], why:"Děkuji: dě." },
+  { id:"c22_15", q:"Doplň: v_tr fouká", o:["í","ě","e","y"], why:"Vítr píšeme s í." }
+];
+var BANK_C23 = [
+  { id:"c23_01", q:"Kolik slabik má slovo MAMINKA?", o:["3","2","4","1"], why:"Ma-min-ka: tři slabiky." },
+  { id:"c23_02", q:"Které slovo má jen jednu slabiku?", o:["pes","kočka","sova","kuře"], why:"Pes se nedá rozdělit, má jednu slabiku." },
+  { id:"c23_03", q:"Jak rozdělíš slovo LETADLO na slabiky?", o:["le-ta-dlo","let-ad-lo","let-a-dlo","leta-dlo"], why:"Le-ta-dlo: tři slabiky, každá s jednou samohláskou." },
+  { id:"c23_04", q:"Kolik slabik má slovo SOVA?", o:["2","1","3","4"], why:"So-va: dvě slabiky." },
+  { id:"c23_05", q:"Která dvojice slov se liší jen délkou samohlásky?", o:["pas – pás","pes – pás","pas – pes","pás – pát"], why:"Pas a pás: krátké a, dlouhé á." },
+  { id:"c23_06", q:"Kolik hlásek má slovo SOVA?", o:["4","2","3","5"], why:"S-o-v-a: čtyři hlásky." },
+  { id:"c23_07", q:"Které slovo má dlouhou samohlásku?", o:["váza","vana","vata","vada"], why:"Váza má dlouhé á." },
+  { id:"c23_08", q:"Kolik slabik má slovo ČOKOLÁDA?", o:["4","3","5","2"], why:"Čo-ko-lá-da: čtyři slabiky." },
+  { id:"c23_09", q:"Jak rozdělíš slovo KOTLÍK na slabiky?", o:["kot-lík","kotlí-k","kotl-ík","k-otlík"], why:"Kot-lík: dvě slabiky." },
+  { id:"c23_10", q:"Které slovo má tři slabiky?", o:["sovička","Ron","Harry","sova"], why:"So-vič-ka: tři slabiky. Ron má jednu, Harry a sova dvě." },
+  { id:"c23_11", q:"Které slovo začíná samohláskou?", o:["okno","dům","kočka","pes"], why:"Okno začíná samohláskou o." },
+  { id:"c23_12", q:"Kolik hlásek má slovo KŮŇ?", o:["3","4","2","5"], why:"K-ů-ň: tři hlásky." },
+  { id:"c23_13", q:"Doplň správné slovo: Na cestu do ciziny potřebuješ cestovní ___.", o:["pas","pás","pes","pos"], why:"Cestovní pas (doklad) má krátké a. Pás je opasek." },
+  { id:"c23_14", q:"Které slovo má dvě slabiky?", o:["hůlka","brk","čokoláda","sovička"], why:"Hůl-ka: dvě slabiky. Brk má jednu, čokoláda čtyři, sovička tři." },
+  { id:"c23_15", q:"Jak rozdělíš slovo KOUZELNÍK na slabiky?", o:["kou-zel-ník","ko-uzel-ník","kouz-el-ník","kou-ze-lník"], why:"Kou-zel-ník: tři slabiky (ou je jedna dvojhláska)." }
+];
+var BANK_C24 = [
+  { id:"c24_01", q:"Které slovo je nadřazené slovům jablko, hruška, švestka?", o:["ovoce","zelenina","strom","zvířata"], why:"Jablko, hruška i švestka jsou ovoce." },
+  { id:"c24_02", q:"Které slovo patří mezi NÁBYTEK?", o:["židle","talíř","kočka","škola"], why:"Židle je nábytek." },
+  { id:"c24_03", q:"Slovo opačného významu ke slovu VELKÝ je:", o:["malý","vysoký","obrovský","široký"], why:"Velký × malý." },
+  { id:"c24_04", q:"Slovo stejného významu jako HEZKÝ je:", o:["pěkný","ošklivý","velký","nový"], why:"Hezký = pěkný." },
+  { id:"c24_05", q:"Které slovo je nadřazené slovům pes, kočka, kůň?", o:["zvířata","psi","domov","kočky"], why:"Pes, kočka i kůň jsou zvířata." },
+  { id:"c24_06", q:"Slovo opačného významu ke slovu DEN je:", o:["noc","ráno","týden","světlo"], why:"Den × noc." },
+  { id:"c24_07", q:"Které slovo patří mezi OBLEČENÍ?", o:["bunda","kolo","polévka","hůlka"], why:"Bunda je oblečení." },
+  { id:"c24_08", q:"Slovo stejného významu jako RYCHLE je:", o:["svižně","pomalu","tiše","hlasitě"], why:"Rychle = svižně." },
+  { id:"c24_09", q:"Slovo opačného významu ke slovu TEPLÝ je:", o:["studený","horký","mokrý","měkký"], why:"Teplý × studený." },
+  { id:"c24_10", q:"Které slovo je nadřazené slovům tulipán, růže, sedmikráska?", o:["květiny","stromy","zahrada","listy"], why:"Jsou to květiny." },
+  { id:"c24_11", q:"Které slovo mezi ostatní NEPATŘÍ?", o:["kladivo","jablko","hruška","banán"], why:"Kladivo není ovoce." },
+  { id:"c24_12", q:"Slovo opačného významu ke slovu NAHORU je:", o:["dolů","vzhůru","vpravo","dopředu"], why:"Nahoru × dolů." },
+  { id:"c24_13", q:"Slovo stejného významu jako SMUTNÝ je:", o:["nešťastný","veselý","hodný","rychlý"], why:"Smutný = nešťastný." },
+  { id:"c24_14", q:"Které slovo mezi ostatní NEPATŘÍ?", o:["sova","stůl","židle","skříň"], why:"Sova není nábytek." },
+  { id:"c24_15", q:"Které slovo je nadřazené slovům brk, pergamen, inkoust?", o:["psací potřeby","hračky","jídlo","zvířata"], why:"Brk, pergamen i inkoust jsou psací potřeby." }
+];
+var BANK_C25 = [
+  { id:"c25_01", q:"Které slovo je podstatné jméno?", o:["kočka","běhá","na","hezky"], why:"Kdo, co? Kočka: podstatné jméno." },
+  { id:"c25_02", q:"Které slovo je sloveso?", o:["skáče","míč","pod","modrý"], why:"Co dělá? Skáče: sloveso." },
+  { id:"c25_03", q:"Které slovo je předložka?", o:["pod","stůl","sedí","my"], why:"Pod stojí před jménem: předložka." },
+  { id:"c25_04", q:"Ve větě „Pes leží pod stolem“ je předložka:", o:["pod","pes","leží","stolem"], why:"Pod stolem: pod je předložka." },
+  { id:"c25_05", q:"Ve větě „Sova letí nad hradem“ je sloveso:", o:["letí","sova","nad","hradem"], why:"Co dělá sova? Letí." },
+  { id:"c25_06", q:"Které slovo je podstatné jméno?", o:["hůlka","mává","s","rychle"], why:"Kdo, co? Hůlka." },
+  { id:"c25_07", q:"Kolik podstatných jmen je ve větě „Harry krmí sovu“?", o:["2","1","3","0"], why:"Harry a sova: dvě podstatná jména." },
+  { id:"c25_08", q:"Které slovo je sloveso?", o:["čte","kniha","v","velká"], why:"Co dělá? Čte." },
+  { id:"c25_09", q:"Ve větě „Ron sedí v lavici“ je předložka:", o:["v","Ron","sedí","lavici"], why:"V lavici: v je předložka." },
+  { id:"c25_10", q:"Které slovo je předložka?", o:["na","strom","roste","zelený"], why:"Na je předložka." },
+  { id:"c25_11", q:"Ve větě „Hagrid krmí draka a zpívá“ je podstatné jméno:", o:["draka","krmí","a","zpívá"], why:"Koho, co? Draka. (Hagrid je také podstatné jméno.)" },
+  { id:"c25_12", q:"Které slovo je sloveso?", o:["spí","postel","pod","měkká"], why:"Co dělá? Spí." },
+  { id:"c25_13", q:"Která dvojice jsou obě podstatná jména?", o:["sova, dopis","letí, sova","na, dopis","letí, na"], why:"Sova i dopis odpovídají na kdo, co." },
+  { id:"c25_14", q:"Ve větě „Kočka spí na polštáři“ je předložka:", o:["na","kočka","spí","polštáři"], why:"Na polštáři: na je předložka." },
+  { id:"c25_15", q:"Kolik sloves je ve větě „Harry běží a volá“?", o:["2","1","3","0"], why:"Běží a volá: dvě slovesa." }
+];
+var BANK_C26 = [
+  { id:"c26_01", q:"Které slovo se píše s velkým písmenem?", o:["Praha","pes","město","řeka"], why:"Praha je jméno města." },
+  { id:"c26_02", q:"Která věta je napsaná správně?", o:["Můj pes se jmenuje Alík.","Můj Pes se jmenuje alík.","můj pes se jmenuje Alík.","Můj pes se jmenuje alík."], why:"Věta začíná velkým písmenem a Alík je jméno." },
+  { id:"c26_03", q:"Které slovo se píše s velkým písmenem?", o:["Vltava","voda","most","loď"], why:"Vltava je jméno řeky." },
+  { id:"c26_04", q:"Jak se správně napíše jméno kočky?", o:["Micka","micka","MIcka","miCka"], why:"Jména zvířat píšeme s velkým písmenem." },
+  { id:"c26_05", q:"Která věta je napsaná správně?", o:["Hagrid vzal Harryho do Londýna.","hagrid vzal Harryho do Londýna.","Hagrid vzal Harryho do londýna.","hagrid vzal harryho do londýna."], why:"Jméno osoby i města začíná velkým písmenem." },
+  { id:"c26_06", q:"Které slovo se píše s malým písmenem?", o:["město","Brno","Hermiona","Dunaj"], why:"Město je obecné slovo, ne jméno." },
+  { id:"c26_07", q:"Které slovo se píše s velkým písmenem?", o:["Hagrid","hajný","les","chýše"], why:"Hagrid je jméno osoby." },
+  { id:"c26_08", q:"Která věta je napsaná správně?", o:["Sova Hedvika přinesla dopis.","Sova hedvika přinesla dopis.","sova Hedvika přinesla dopis.","Sova Hedvika Přinesla dopis."], why:"Hedvika je jméno sovy, dopis a přinesla jsou obecná slova." },
+  { id:"c26_09", q:"Které slovo se píše s malým písmenem?", o:["kočka","Alík","Ron","Praha"], why:"Kočka je obecné slovo." },
+  { id:"c26_10", q:"Jak se správně napíše jméno kamaráda?", o:["Petr","petr","PEtr","peTr"], why:"Jména osob píšeme s velkým písmenem." },
+  { id:"c26_11", q:"Která věta je napsaná správně?", o:["Pojedeme do Brna.","pojedeme do Brna.","Pojedeme do brna.","pojedeme do brna."], why:"Začátek věty a jméno města: velké písmeno." },
+  { id:"c26_12", q:"Které slovo se píše s velkým písmenem?", o:["Morava","řeka","potok","rybník"], why:"Morava je jméno řeky." },
+  { id:"c26_13", q:"Jak se správně napíše začátek věty?", o:["Dnes je hezky.","dnes je hezky.","dnes Je hezky.","DNes je hezky."], why:"Věta začíná velkým písmenem." },
+  { id:"c26_14", q:"Které slovo se píše s malým písmenem?", o:["sova","Hedvika","Harry","Praha"], why:"Sova je obecné slovo, Hedvika je jméno." },
+  { id:"c26_15", q:"Která věta je napsaná správně?", o:["Ron a Hermiona jdou do školy.","ron a hermiona jdou do školy.","Ron a Hermiona jdou do Školy.","Ron a hermiona jdou do školy."], why:"Jména osob velkým písmenem, škola je obecné slovo." }
+];
 var BANKS = { C1:BANK_C1, C2:BANK_C2, C3:BANK_C3, C4:BANK_C4, C5:BANK_C5, C6:BANK_C6,
               C7:BANK_C7, C8:BANK_C8, C9:BANK_C9, C10:BANK_C10, C11:BANK_C11, C12:BANK_C12,
-              C41:BANK_C41, C42:BANK_C42, C43:BANK_C43, C44:BANK_C44, C45:BANK_C45, C46:BANK_C46, C47:BANK_C47, C48:BANK_C48, C49:BANK_C49 };
+              C41:BANK_C41, C42:BANK_C42, C43:BANK_C43, C44:BANK_C44, C45:BANK_C45, C46:BANK_C46, C47:BANK_C47, C48:BANK_C48, C49:BANK_C49,
+              C21:BANK_C21, C22:BANK_C22, C23:BANK_C23, C24:BANK_C24, C25:BANK_C25, C26:BANK_C26 };
 
 /* ---------------- Pomocné funkce ---------------- */
 function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -2200,6 +2318,7 @@ function mathHint(g) {
     case "M1": return d.op === "+" ? decAdd(d.a, d.b) : decSub(d.a, d.b);
     case "M2": case "M3": return decMul(d.a, d.b);
     case "M4": return decDiv(d.n, d.d);
+    case "M24": return d.n + " ÷ " + d.d + " = ? — zeptej se: " + d.d + " × ? = " + d.n + " → " + d.d + " × " + d.ans + " = " + d.n + ", takže " + d.ans;
     case "M5":
       if (d.v === 1) return hund(d.a) + " + " + hund(d.b) + " = " + hund(d.ans) + " = " + d.ans;
       if (d.v === 2) return hund(d.a) + " − " + hund(d.b) + " = " + hund(d.ans) + " = " + d.ans;
@@ -2376,8 +2495,65 @@ function genM49(state) {
   a = rnd(4, 9); b = rnd(2, 9); var d = rnd(2, 6); ans = a * b * d; text = "Do kotlíku " + (a <= 4 ? "patří " : "patří ") + czCount(a, "kapka", "kapky", "kapek") + " lektvaru. " + (b <= 4 ? "Kotlíky jsou " + b : "Kotlíků je " + b) + " a lekce se opakuje " + d + "krát. Kolik kapek se spotřebuje?"; why = a + " × " + b + " = " + (a * b) + " kapek na jednu lekci, × " + d + " = " + ans + ".";
   return { q: text, opts: numOptions(ans, [a, -a, b * d, -(b * d), 10]), correct: ans, why: why, dbg: { t: "M49", v: v, a: a, b: b, d: d } };
 }
+/* =====================================================================
+   2. TŘÍDA (M21–M26, C21–C26, 27. 10. 2026): do 20 s přechodem přes desítku, do 100 bez přechodu, řada čísel,
+   dělení 2–5 (stupně po příkladech „d:n/d“), hodiny a peníze, jednoduché slovní úlohy; ú/ů, dě/tě/ně/bě/pě/vě/mě,
+   slabiky a hlásky, slova nadřazená a protikladná, slovní druhy úvod, velká písmena. Věty krátké (7–8 let).
+   ===================================================================== */
+function genM21() {
+  var add = Math.random() < 0.5, a, b, ans;
+  if (add) { a = rnd(2, 9); b = rnd(11 - a, 9); ans = a + b; return { q: a + " + " + b + " = ?", opts: numOptions(ans, [1, -1, 2, -2, 10]), correct: ans, why: a + " + " + b + " = " + ans, dbg: { t: "M1", op: "+", a: a, b: b, ans: ans } }; }
+  a = rnd(11, 18); b = rnd(a - 9, 9); ans = a - b;
+  return { q: a + " − " + b + " = ?", opts: numOptions(ans, [1, -1, 2, -2, 10]), correct: ans, why: a + " − " + b + " = " + ans, dbg: { t: "M1", op: "-", a: a, b: b, ans: ans } };
+}
+function genM22() {
+  var v = rnd(1, 5), a, b, ans, op = "+";
+  if (v === 1) { a = rnd(1, 7) * 10; b = rnd(1, 9 - a / 10) * 10; ans = a + b; }
+  else if (v === 2) { a = rnd(3, 9) * 10; b = rnd(1, a / 10 - 1) * 10; ans = a - b; op = "-"; }
+  else if (v === 3) { a = rnd(2, 9) * 10 + rnd(1, 4); b = rnd(1, 9 - a % 10); ans = a + b; }
+  else if (v === 4) { a = rnd(2, 9) * 10 + rnd(5, 9); b = rnd(1, a % 10); ans = a - b; op = "-"; }
+  else { a = rnd(2, 9) * 10; b = rnd(1, 9); ans = a + b; }
+  var sym = op === "+" ? " + " : " − ";
+  return { q: a + sym + b + " = ?", opts: numOptions(ans, [1, -1, 10, -10, 2, -2]), correct: ans, why: a + sym + b + " = " + ans, dbg: { t: "M1", op: op, a: a, b: b, ans: ans } };
+}
+function genM23() {
+  var v = rnd(1, 6), n, ans, q, why, opts;
+  if (v === 1) { var arr = [], set = {}; while (arr.length < 4) { var x = rnd(10, 99); if (!set[Math.floor(x / 10)]) { set[Math.floor(x / 10)] = 1; arr.push(x); } } ans = Math.max.apply(null, arr); return { q: "Které číslo je největší?", opts: shuffle(arr), correct: ans, why: "Nejvíc desítek má " + ans + ".", dbg: { t: "M23", v: v, a: arr.slice().sort().join("_") } }; }
+  if (v === 2) { n = rnd(11, 98); ans = n - 1; q = "Které číslo je hned před číslem " + n + "?"; why = "Před " + n + " je " + ans + "."; opts = numOptions(ans, [2, -2, 10, -10, 1]).filter(function (x) { return x !== n; }); while (opts.length < 4) { var z = rnd(1, 99); if (opts.indexOf(z) === -1 && z !== n) opts.push(z); } return { q: q, opts: opts, correct: ans, why: why, dbg: { t: "M23", v: v, n: n } }; }
+  if (v === 3) { n = rnd(11, 98); ans = n + 1; q = "Které číslo je hned za číslem " + n + "?"; why = "Za " + n + " je " + ans + "."; opts = numOptions(ans, [2, -2, 10, -10, 1]).filter(function (x) { return x !== n; }); while (opts.length < 4) { var z2 = rnd(1, 99); if (opts.indexOf(z2) === -1 && z2 !== n) opts.push(z2); } return { q: q, opts: opts, correct: ans, why: why, dbg: { t: "M23", v: v, n: n } }; }
+  if (v === 4) { var d = rnd(2, 9), j = rnd(1, 9); n = d * 10 + j; var mk = function (dd, jj) { return czCount(dd, "desítka", "desítky", "desítek") + " a " + czCount(jj, "jednotka", "jednotky", "jednotek"); }; ans = mk(d, j); var o4 = [ans, mk(d, j + 1 > 9 ? 1 : j + 1), mk(d + 1 > 9 ? 1 : d + 1, j), mk(j, d)]; if (j === d) o4[3] = mk(d, j - 1 < 1 ? 9 : j - 1); return { q: "Kolik desítek a jednotek má číslo " + n + "?", opts: shuffle(o4), correct: ans, why: n + " = " + mk(d, j) + ".", dbg: { t: "M23", v: v, n: n } }; }
+  if (v === 5) { var s0 = rnd(1, 6) * 10; ans = s0 + 30; q = "Počítej po desítkách: " + s0 + ", " + (s0 + 10) + ", " + (s0 + 20) + ", ?"; why = "Každé číslo je o 10 větší: " + ans + "."; return { q: q, opts: numOptions(ans, [1, -1, 10, -10, 5]), correct: ans, why: why, dbg: { t: "M23", v: v, n: s0 } }; }
+  var p = rnd(3, 9) * 10, r = rnd(1, p / 10 - 1) * 10; ans = p - r;
+  return { q: "O kolik je " + p + " větší než " + r + "?", opts: numOptions(ans, [10, -10, 1, -1, 5]), correct: ans, why: p + " − " + r + " = " + ans + ".", dbg: { t: "M23", v: v, a: p, b: r } };
+}
+function genM24(state) {
+  var d = rnd(2, 5), q = rnd(1, 10), n = d * q;
+  return { q: n + " ÷ " + d + " = ?", opts: numOptions(q, [1, -1, 2, -2, d]), correct: q, why: d + " × " + q + " = " + n + ", proto " + n + " ÷ " + d + " = " + q + ".",
+    fact: "d:" + n + "/" + d, factLabel: n + " ÷ " + d, dbg: { t: "M24", n: n, d: d, ans: q } };
+}
+function genM25() {
+  var v = rnd(1, 5), h, ans, q, why, opts;
+  var hod = function (x) { return x + " " + (x === 1 ? "hodina" : x <= 4 ? "hodiny" : "hodin"); };
+  if (v === 1) { h = rnd(1, 12); ans = hod(h); var alt = [h + 1 > 12 ? 1 : h + 1, h - 1 < 1 ? 12 : h - 1, h + 3 > 12 ? h - 9 : h + 3]; return { q: "Velká ručička ukazuje na 12, malá na " + h + ". Kolik je hodin?", opts: shuffle([ans].concat(alt.map(hod))), correct: ans, why: "Velká na dvanáctce = celá hodina, malá ukazuje " + h + ".", dbg: { t: "M25", v: v, h: h } }; }
+  if (v === 2) { h = rnd(1, 11); var pul = ["půl jedné", "půl druhé", "půl třetí", "půl čtvrté", "půl páté", "půl šesté", "půl sedmé", "půl osmé", "půl deváté", "půl desáté", "půl jedenácté", "půl dvanácté"]; ans = pul[h]; var o2 = [pul[h - 1], pul[h + 1 > 11 ? 0 : h + 1], hod(h)]; return { q: "Velká ručička ukazuje na 6, malá je mezi " + h + " a " + (h + 1) + ". Kolik je hodin?", opts: shuffle([ans].concat(o2)), correct: ans, why: "Velká na šestce = půl. Po " + h + ". hodině je " + ans + ".", dbg: { t: "M25", v: v, h: h } }; }
+  if (v === 3) { var coins = shuffle([1, 2, 5, 10, 20, 50]).slice(0, 3); ans = coins[0] + coins[1] + coins[2]; q = "Máš mince " + coins.join(", ") + " Kč. Kolik korun to je dohromady?"; why = coins.join(" + ") + " = " + ans + " Kč."; return { q: q, opts: numOptions(ans, [1, -1, 5, -5, 10]), correct: ans, why: why, dbg: { t: "M25", v: v, c: coins.slice().sort().join("_") } }; }
+  if (v === 4) { var cena = rnd(3, 9), zap = 10; ans = zap - cena; q = "Čokoládová žabka stojí " + cena + " Kč. Zaplatíš mincí 10 Kč. Kolik korun ti prodavač vrátí?"; why = "10 − " + cena + " = " + ans + " Kč."; return { q: q, opts: numOptions(ans, [1, -1, 2, -2, 5]), correct: ans, why: why, dbg: { t: "M25", v: v, c: cena } }; }
+  var c1 = rnd(2, 9), c2 = rnd(2, 9); ans = c1 + c2; q = "Brk stojí " + c1 + " Kč a inkoust " + c2 + " Kč. Kolik korun zaplatíš za obojí?"; why = c1 + " + " + c2 + " = " + ans + " Kč.";
+  return { q: q, opts: numOptions(ans, [1, -1, 2, -2, 10]), correct: ans, why: why, dbg: { t: "M25", v: v, a: c1, b: c2 } };
+}
+function genM26(state) {
+  var un = (state && state.unlocked) || {}, big = !!un.M1, ops = ["add", "sub", "more", "less"]; if (un.M2) ops.push("mul");
+  var op = pick(ops), a, b, ans, text, why, je = function (n) { return n >= 2 && n <= 4 ? "jsou " : "je "; };
+  if (op === "add") { a = big ? rnd(3, 40) : rnd(3, 9); b = big ? rnd(2, 30) : rnd(2, 9); ans = a + b; text = pick(["V sovinci sedí " + czCount(a, "sova", "sovy", "sov") + " a " + czCount(b, "další přiletí", "další přiletí", "dalších přiletí") + ". Kolik sov tam bude?", "Harry má " + czCount(a, "čokoládovou žabku", "čokoládové žabky", "čokoládových žabek") + " a Ron mu dá " + czCount(b, "další", "další", "dalších") + ". Kolik žabek má Harry?", "Hagrid má " + czCount(a, "dýni", "dýně", "dýní") + " a vypěstuje ještě " + b + ". Kolik dýní bude mít?"]); why = a + " + " + b + " = " + ans + "."; }
+  else if (op === "sub") { a = big ? rnd(10, 60) : rnd(6, 18); b = rnd(2, Math.min(a - 1, big ? 60 : 9)); ans = a - b; text = pick(["V krabici " + je(a) + czCount(a, "fazolka", "fazolky", "fazolek") + ". Ron sní " + czCount(b, "fazolku", "fazolky", "fazolek") + ". Kolik fazolek zbude?", "Ve Velké síni svítí " + czCount(a, "svíčka", "svíčky", "svíček") + " a " + b + (b >= 2 && b <= 4 ? " zhasnou" : " zhasne") + ". Kolik svíček svítí?", "Hermiona má " + czCount(a, "knihu", "knihy", "knih") + " a " + b + " vrátí do knihovny. Kolik knih jí zůstane?"]); why = a + " − " + b + " = " + ans + "."; }
+  else if (op === "more") { a = big ? rnd(5, 40) : rnd(3, 9); b = big ? rnd(2, 20) : rnd(2, 9); ans = a + b; text = pick(["Harry má " + czCount(a, "galeon", "galeony", "galeonů") + ". Ron má o " + b + " víc. Kolik galeonů má Ron?", "Nebelvír má " + czCount(a, "bod", "body", "bodů") + ", Mrzimor o " + b + " víc. Kolik bodů má Mrzimor?"]); why = "O " + b + " víc = " + a + " + " + b + " = " + ans + "."; }
+  else if (op === "less") { a = big ? rnd(10, 60) : rnd(6, 18); b = rnd(2, Math.min(a - 1, big ? 20 : 9)); ans = a - b; text = pick(["Hagrid má " + czCount(a, "dýni", "dýně", "dýní") + ". Ron má o " + b + " méně. Kolik dýní má Ron?", "Hermiona má " + czCount(a, "brk", "brky", "brků") + ", Harry o " + b + " méně. Kolik brků má Harry?"]); why = "O " + b + " méně = " + a + " − " + b + " = " + ans + "."; }
+  else { a = rnd(2, 5); b = rnd(2, 9); ans = a * b; text = pick(["Na stole " + je(b) + czCount(b, "krabička", "krabičky", "krabiček") + ". V každé " + je(a) + czCount(a, "žabka", "žabky", "žabek") + ". Kolik je žabek?", "Na stole " + je(b) + czCount(b, "kotlík", "kotlíky", "kotlíků") + " a v každém " + je(a) + czCount(a, "žába", "žáby", "žab") + ". Kolik je žab?"]); why = a + " × " + b + " = " + ans + "."; }
+  return { q: text, opts: numOptions(ans, [1, -1, 2, -2, 10, -10]), correct: ans, why: why, dbg: { t: "M26", op: op, a: a, b: b, ans: ans } };
+}
 var GENS = { M1:genM1, M2:genM2, M3:genM3, M4:genM4, M5:genM5, M6:genM6, M7:genM7, M8:genM8, M9:genM9,
-  M41:genM41, M42:genM42, M43:genM43, M44:genM44, M45:genM45, M46:genM46, M47:genM47, M48:genM48, M49:genM49 };
+  M41:genM41, M42:genM42, M43:genM43, M44:genM44, M45:genM45, M46:genM46, M47:genM47, M48:genM48, M49:genM49,
+  M21:genM21, M22:genM22, M23:genM23, M24:genM24, M25:genM25, M26:genM26 };
 
 /* =====================================================================
    KOUZELNÉ FORMULE — anglická slovíčka.
@@ -3321,9 +3497,9 @@ function makeQuestion(t, state, usedIds) {
   rq.push(key); if (rq.length > 20) rq.splice(0, rq.length - 20);
   state.recentQ[t] = rq;
   var hint = mathHint(g);
-  var fk = (t === "M2" || t === "M3") && g.dbg ? factKey(g.dbg.a, g.dbg.b) : null;
+  var fk = g.fact || ((t === "M2" || t === "M3") && g.dbg ? factKey(g.dbg.a, g.dbg.b) : null);
   if (g.kind === "type") return { topic: t, kind: "type", numeric: true, q: g.q, opts: [], correct: g.correct, accept: [String(g.correct)], why: g.why, dbg: g.dbg };
-  return { topic: t, kind:"choice", q: g.q, opts: shuffle(g.opts), correct: g.correct, why: hint || g.why, hint: hint ? hintOpen(hint) : "", fact: fk, dbg: g.dbg };
+  return { topic: t, kind:"choice", q: g.q, opts: shuffle(g.opts), correct: g.correct, why: hint || g.why, hint: hint ? hintOpen(hint) : "", fact: fk, factLabel: g.factLabel || null, dbg: g.dbg };
 }
 /* Klíč příkladu z ladicích údajů generátoru (bez výsledku); 3×7 a 7×3 je týž příklad. */
 function genKey(t, g) {
@@ -5404,6 +5580,103 @@ LESSONS.C49 = [
   { t: "Pozor na děti", say: "Slovo děti se v množném čísle chová jako rod ženský. Děti si hrály, s tvrdým y. Stejně oči a uši.",
     vis: { k: "text", h: "děti si hrál<b>y</b> · oči zářil<b>y</b> · uši slyšel<b>y</b>" }, try: { id: "c49_08" } }
 ];
+/* karty výkladu 2. třídy (McGonagallová, krátké věty) */
+LESSONS.M21 = [
+  { t: "Nejdřív do desítky", say: "Osm a pět. Skoč nejdřív na deset: osm a dvě je deset. Pak přidej zbytek: tři. Třináct.",
+    vis: { k: "jumps", op: "+", a: 8, b: 5 }, try: { op: "+", a: 7, b: 6 } },
+  { t: "Dolů přes desítku", say: "Čtrnáct bez šesti. Nejdřív dolů na deset: čtrnáct bez čtyř. Pak ještě bez dvou. Osm.",
+    vis: { k: "jumps", op: "-", a: 14, b: 6 }, try: { op: "-", a: 13, b: 5 } },
+  { t: "Desítka je kamarádka", say: "Když víš, kolik chybí do desítky, zvládneš každý příklad. Sedm a tři je deset, osm a dvě je deset, devět a jedna je deset.",
+    vis: { k: "text", h: "7 + <b>3</b> · 8 + <b>2</b> · 9 + <b>1</b> · 6 + <b>4</b> · 5 + <b>5</b> → vždy 10" }, try: { q: "Kolik chybí do desítky: 6 + ? = 10", correct: 4, opts: [4, 3, 5, 6], why: "6 + 4 = 10." } }
+];
+LESSONS.M22 = [
+  { t: "Desítky jako jednotky", say: "Čtyřicet a třicet. Čtyři desítky a tři desítky je sedm desítek. Sedmdesát.",
+    vis: { k: "text", h: "40 + 30 → 4 + 3 = 7 → <b>70</b><br>80 − 50 → 8 − 5 = 3 → <b>30</b>" }, try: { q: "50 + 20 = ?", correct: 70, opts: [70, 30, 52, 60], why: "5 desítek + 2 desítky = 7 desítek." } },
+  { t: "Jednotky k jednotkám", say: "Čtyřicet tři a pět. Desítky nech být, přičti jen jednotky: tři a pět je osm. Čtyřicet osm.",
+    vis: { k: "text", h: "4<b>3</b> + 5 → 3 + 5 = 8 → 4<b>8</b><br>6<b>8</b> − 6 → 8 − 6 = 2 → 6<b>2</b>" }, try: { q: "52 + 4 = ?", correct: 56, opts: [56, 92, 48, 55], why: "2 + 4 = 6, desítky zůstávají: 56." } },
+  { t: "Desítky a jednotky dohromady", say: "Čtyřicet a sedm. Čtyři desítky a sedm jednotek. Čtyřicet sedm.",
+    vis: { k: "text", h: "40 + 7 = <b>47</b><br>47 − 7 = <b>40</b>" }, try: { q: "60 + 3 = ?", correct: 63, opts: [63, 90, 36, 603], why: "6 desítek a 3 jednotky." } }
+];
+LESSONS.M23 = [
+  { t: "Desítky a jednotky", say: "Každé číslo do sta má desítky a jednotky. Čtyřicet sedm: čtyři desítky a sedm jednotek.",
+    vis: { k: "text", h: "47 = <b>4</b> desítky + <b>7</b> jednotek<br>10 + 10 + 10 + 10 + 7" }, try: { q: "Kolik desítek má číslo 83?", correct: 8, opts: [8, 3, 80, 38], why: "83 = 8 desítek a 3 jednotky." } },
+  { t: "Které je větší?", say: "Při porovnávání se nejdřív podívej na desítky. Více desítek znamená větší číslo. Když jsou stejné, rozhodnou jednotky.",
+    vis: { k: "text", h: "<b>5</b>2 · <b>3</b>9 → 5 > 3 → 52 je větší<br>4<b>7</b> · 4<b>3</b> → 7 > 3 → 47 je větší" }, try: { q: "Které číslo je největší?", correct: 64, opts: [64, 46, 59, 36], why: "Nejvíc desítek má 64." } },
+  { t: "Sousedé čísla", say: "Každé číslo má dva sousedy. Před čtyřiceti je třicet devět, za čtyřiceti je čtyřicet jedna.",
+    vis: { k: "text", h: "38 · 39 · <b>40</b> · 41 · 42<br>před 40 je <b>39</b>, za 40 je <b>41</b>" }, try: { q: "Které číslo je hned před číslem 70?", correct: 69, opts: [69, 71, 60, 79], why: "Před 70 je 69." } }
+];
+LESSONS.M24 = [
+  { t: "Dělení je rozdávání", say: "Dvanáct kamínků rozděl do tří kotlíků, do každého stejně. V každém jsou čtyři. Dvanáct děleno třemi je čtyři.",
+    vis: { k: "pots", n: 12, d: 3 }, try: { n: 15, d: 3 } },
+  { t: "Dělení z násobilky", say: "Deset děleno dvěma? Zeptej se: dva krát kolik je deset? Dva krát pět. Výsledek je pět.",
+    vis: { k: "text", h: "10 ÷ 2 = ?<br>2 × <b>?</b> = 10 → 2 × <b>5</b> = 10<br>10 ÷ 2 = <b>5</b>" }, try: { n: 20, d: 4 } },
+  { t: "Zkouška", say: "Výsledek ověř násobením. Šestnáct děleno čtyřmi je čtyři, protože čtyři krát čtyři je šestnáct.",
+    vis: { k: "pots", n: 16, d: 4 }, try: { n: 25, d: 5 } }
+];
+LESSONS.M25 = [
+  { t: "Celá hodina", say: "Velká ručička ukazuje na dvanáctku, malá na číslo. Malá na trojce: jsou tři hodiny.",
+    vis: { k: "text", h: "velká na <b>12</b> · malá na <b>3</b> → <b>3 hodiny</b><br>velká na 12 · malá na 8 → 8 hodin" }, try: { q: "Velká ručička je na 12, malá na 5. Kolik je hodin?", correct: "5 hodin", opts: ["5 hodin", "12 hodin", "půl šesté", "6 hodin"], why: "Velká na dvanáctce = celá hodina, malá ukazuje 5." } },
+  { t: "Půl hodiny", say: "Velká ručička na šestce znamená půl. Malá je mezi trojkou a čtyřkou: je půl čtvrté.",
+    vis: { k: "text", h: "velká na <b>6</b> · malá mezi 3 a 4 → <b>půl čtvrté</b>" }, try: { q: "Velká ručička je na 6, malá mezi 7 a 8. Kolik je hodin?", correct: "půl osmé", opts: ["půl osmé", "půl sedmé", "7 hodin", "8 hodin"], why: "Velká na šestce = půl. Po sedmé hodině je půl osmé." } },
+  { t: "Mince", say: "Koruny sčítáš jako jiná čísla. Deset, pět a dvě koruny je dohromady sedmnáct korun.",
+    vis: { k: "text", h: "🪙 10 + 🪙 5 + 🪙 2 = <b>17 Kč</b><br>zaplatím 10 Kč za 7 Kč → vrátí <b>3 Kč</b>" }, try: { q: "Máš mince 20, 5 a 1 Kč. Kolik korun to je dohromady?", correct: 26, opts: [26, 25, 21, 36], why: "20 + 5 + 1 = 26 Kč." } }
+];
+LESSONS.M26 = [
+  { t: "Dohromady, nebo zbylo?", say: "Dohromady, přiletí, dostane: to je sčítání. Zbylo, sní, zhasne: to je odčítání.",
+    vis: { k: "text", h: "dohromady · přiletí · dostane → <b>+</b><br>zbude · sní · zhasne → <b>−</b>" }, try: { q: "V sovinci je 12 sov a 5 jich přiletí. Kolik sov tam bude?", correct: 17, opts: [17, 7, 16, 18], why: "Přiletí = sčítání: 12 + 5 = 17." } },
+  { t: "O kolik víc", say: "O tři víc znamená přičíst tři. Harry má osm žabek, Ron o tři víc. Osm a tři je jedenáct.",
+    vis: { k: "text", h: "8 žabek, <b>o 3 víc</b> → 8 + 3 = <b>11</b><br>8 žabek, <b>o 3 méně</b> → 8 − 3 = <b>5</b>" }, try: { q: "Hagrid má 9 dýní a Ron o 4 méně. Kolik dýní má Ron?", correct: 5, opts: [5, 13, 4, 6], why: "O 4 méně = 9 − 4 = 5." } },
+  { t: "Nejdřív otázka", say: "Přečti si, na co se úloha ptá. Teprve pak hledej čísla a vyber, jestli sčítáš, nebo odčítáš.",
+    vis: { k: "text", h: "„Svítí 15 svíček, 6 zhasne. <b>Kolik svíček svítí?</b>“<br>zhasne → odčítání: 15 − 6 = <b>9</b>" }, try: { q: "Hermiona má 14 knih a 6 vrátí do knihovny. Kolik knih jí zůstane?", correct: 8, opts: [8, 20, 9, 7], why: "Vrátí = odčítání: 14 − 6 = 8." } }
+];
+LESSONS.C21 = [
+  { t: "Ú na začátku", say: "Na začátku slova píšeme ú s čárkou. Úkol, úterý, ústa, únor.",
+    vis: { k: "text", h: "<b>ú</b>kol · <b>ú</b>terý · <b>ú</b>sta · <b>ú</b>nor" }, try: { id: "c21_11" } },
+  { t: "Ů uprostřed a na konci", say: "Uprostřed a na konci slova píšeme ů s kroužkem. Dům, stůl, kůň, domů, dolů.",
+    vis: { k: "text", h: "d<b>ů</b>m · st<b>ů</b>l · k<b>ů</b>ň · dom<b>ů</b> · dol<b>ů</b>" }, try: { id: "c21_10" } },
+  { t: "Výjimky", say: "Pár slov má ú uprostřed. Ocún je květina. A neúplný je ne a úplný dohromady. Zapamatuj si je.",
+    vis: { k: "text", h: "oc<b>ú</b>n · ne<b>ú</b>plný" }, try: { id: "c21_15" } }
+];
+LESSONS.C22 = [
+  { t: "Háček dělá dě, tě, ně", say: "Ve slovech děti, těsto, něco píšeme dě, tě, ně s háčkem na e. Slyšíš ďe, ťe, ňe.",
+    vis: { k: "text", h: "<b>dě</b>ti · <b>tě</b>sto · <b>ně</b>co · <b>dě</b>kuji" }, try: { id: "c22_13" } },
+  { t: "Bě, pě, vě, mě", say: "Také bě, pě, vě, mě píšeme s háčkem: oběd, pěna, věž, město.",
+    vis: { k: "text", h: "o<b>bě</b>d · <b>pě</b>na · <b>vě</b>ž · <b>mě</b>sto" }, try: { id: "c22_12" } },
+  { t: "Pozor na di, ti, ni", say: "Když slyšíš ďi, ťi, ňi, píšeš di, ti, ni bez háčku: divadlo, ticho.",
+    vis: { k: "text", h: "<b>di</b>vadlo · <b>ti</b>cho" }, try: { id: "c22_10" } }
+];
+LESSONS.C23 = [
+  { t: "Slabiky", say: "Slovo se dělí na slabiky. Tleskni na každou: ma, min, ka. Tři slabiky.",
+    vis: { k: "text", h: "ma · min · ka → <b>3</b> slabiky<br>so · va → <b>2</b> · pes → <b>1</b>" }, try: { id: "c23_08" } },
+  { t: "Hlásky", say: "Slabiky se skládají z hlásek. Sova má čtyři hlásky: s, o, v, a.",
+    vis: { k: "text", h: "s · o · v · a → <b>4</b> hlásky" }, try: { id: "c23_12" } },
+  { t: "Krátká a dlouhá", say: "Čárka dělá samohlásku dlouhou a mění význam. Pas je doklad, pás je opasek.",
+    vis: { k: "text", h: "p<b>a</b>s (doklad) × p<b>á</b>s (opasek)" }, try: { id: "c23_07" } }
+];
+LESSONS.C24 = [
+  { t: "Nadřazené slovo", say: "Jablko, hruška a švestka jsou ovoce. Ovoce je slovo nadřazené, jablko je slovo podřazené.",
+    vis: { k: "text", h: "<b>ovoce</b> → jablko · hruška · švestka<br><b>zvířata</b> → pes · kočka · kůň" }, try: { id: "c24_10" } },
+  { t: "Opačný význam", say: "Některá slova znamenají opak: velký a malý, den a noc, teplý a studený.",
+    vis: { k: "text", h: "velký × <b>malý</b> · den × <b>noc</b> · teplý × <b>studený</b>" }, try: { id: "c24_12" } },
+  { t: "Stejný význam", say: "Jiná slova znamenají totéž: hezký a pěkný, rychle a svižně, smutný a nešťastný.",
+    vis: { k: "text", h: "hezký = <b>pěkný</b> · rychle = <b>svižně</b>" }, try: { id: "c24_13" } }
+];
+LESSONS.C25 = [
+  { t: "Kdo? Co?", say: "Slova, na která se ptáš kdo, co, jsou podstatná jména: kočka, hůlka, Harry.",
+    vis: { k: "text", h: "kdo? co? → <b>podstatné jméno</b><br>kočka · dopis · Harry" }, try: { id: "c25_06" } },
+  { t: "Co dělá?", say: "Slova, která říkají, co kdo dělá, jsou slovesa: skáče, čte, letí.",
+    vis: { k: "text", h: "co dělá? → <b>sloveso</b><br>skáče · čte · letí" }, try: { id: "c25_12" } },
+  { t: "Malá slůvka", say: "Na, pod, za: malá slůvka před jménem. To jsou předložky. Pod stolem, na polštáři.",
+    vis: { k: "text", h: "<b>pod</b> stolem · <b>na</b> polštáři → <b>předložka</b>" }, try: { id: "c25_09" } }
+];
+LESSONS.C26 = [
+  { t: "Začátek věty", say: "Každá věta začíná velkým písmenem. Dnes je hezky. Sova přiletěla.",
+    vis: { k: "text", h: "<b>D</b>nes je hezky. · <b>S</b>ova přiletěla." }, try: { id: "c26_11" } },
+  { t: "Jména osob a zvířat", say: "Jména lidí a zvířat píšeme s velkým písmenem: Harry, Petr, pes Alík, sova Hedvika.",
+    vis: { k: "text", h: "<b>H</b>arry · <b>P</b>etr · pes <b>A</b>lík · sova <b>H</b>edvika" }, try: { id: "c26_04" } },
+  { t: "Města a řeky", say: "Také jména měst a řek: Praha, Vltava. Obecná slova jako město nebo řeka píšeme malým písmenem.",
+    vis: { k: "text", h: "<b>P</b>raha · <b>V</b>ltava<br>ale: město · řeka · pes" }, try: { id: "c26_12" } }
+];
 /* vyjmenovaná slova: jedna šablona pro všechna písmena (řada → pravidlo → dvojice, které se pletou) */
 var VYJ_LESSON = {
   C4:  { ex: "bydlit → <b>bydlím</b>, bydliště<br>obyvatel → <b>obývat</b>, obydlí<br>ale: bít, bílý, bílek → měkké i", pairs: [["být", "bít", "být = jsem, jsi, budu · bít = tlouct"], ["bydlo", "bidlo", "bydlo = živobytí · bidlo = tyč"], ["nabýt", "nabít", "nabýt = získat · nabít = baterii nebo mobil"]] },
@@ -5450,6 +5723,56 @@ var METHODS = {
 };
 function kidMethod(st) { st = st || S; return METHODS[st && st.method] ? st.method : "klasika"; }
 var LESSONS_H = {
+  M21: [
+    { t: "Krokování přes desítku", say: "Postav se na číslo osm. Udělej pět kroků dopředu, začni teď! Na kterém čísle stojíš?",
+      vis: { k: "steps", start: 8, n: 5, dir: 1 }, try: { q: "Stojíš na 7. Uděláš 6 kroků dopředu. Na kterém čísle stojíš?", correct: 13, opts: [13, 12, 1, 14], why: "Odkrokuj: 8, 9, 10, 11, 12, 13." } },
+    { t: "Krokování dozadu", say: "Stojíš na čtrnácti. Udělej šest kroků dozadu, začni teď! Couváš, neotáčej se. Kde stojíš?",
+      vis: { k: "steps", start: 14, n: 6, dir: -1 }, try: { q: "Stojíš na 13. Uděláš 5 kroků dozadu. Na kterém čísle stojíš?", correct: 8, opts: [8, 9, 18, 7], why: "Couvej: 12, 11, 10, 9, 8." } },
+    { t: "Had", say: "Čísla v kroužcích jsou stavy, čísla nad šipkami změny. Had má hlavu sedm. Doplň prázdný kroužek.",
+      vis: { k: "snake", nodes: [7, "?", 15], ops: ["+5", "+3"] }, try: { q: "Had: 9 → (+6) → ? Jaké číslo je v kroužku?", correct: 15, opts: [15, 14, 3, 16], why: "9 a 6 je 15. Zkus to i krokováním." } },
+    { t: "Autobus", say: "Na první zastávce nastoupilo osm cestujících. Na druhé tři vystoupili a šest nastoupilo. Kolik jich jede dál?",
+      vis: { k: "bus", stops: ["A", "B"], in: [8, 6], out: [0, 3], ride: [8, "?"] }, try: { q: "Na zastávce A nastoupilo 7 cestujících. Na zastávce B 2 vystoupili a 8 nastoupilo. Kolik cestujících jede dál?", correct: 13, opts: [13, 17, 5, 12], why: "7 bez 2 je 5, a 8 nastoupilo: 13." } }
+  ],
+  M22: [
+    { t: "Schody po desítkách", say: "Každý schod je deset. Stojíš na schodu čtyřicet a jdeš o tři schody nahoru. Kde stojíš?",
+      vis: { k: "steps", start: 40, n: 3, dir: 1, step: 10 }, try: { q: "Schody jdou po desítkách. Stojíš na 30 a jdeš o 5 schodů nahoru. Kde stojíš?", correct: 80, opts: [80, 35, 70, 90], why: "40, 50, 60, 70, 80." } },
+    { t: "Had po desítkách", say: "Hlava hada je devadesát, šipka říká mínus čtyřicet. Doplň ocas.",
+      vis: { k: "snake", nodes: [90, "?"], ops: ["−40"] }, try: { q: "Had: 80 → (−30) → ?", correct: 50, opts: [50, 40, 60, 110], why: "8 desítek bez 3 desítek je 5 desítek." } },
+    { t: "Krokování od desítky", say: "Stojíš na čtyřiceti. Udělej sedm kroků dopředu. Na kterém čísle stojíš? A kolik kroků by to bylo zpátky?",
+      vis: { k: "steps", start: 40, n: 7, dir: 1 }, try: { q: "Stojíš na 60. Uděláš 5 kroků dopředu. Na kterém čísle stojíš?", correct: 65, opts: [65, 55, 70, 66], why: "61, 62, 63, 64, 65." } }
+  ],
+  M23: [
+    { t: "Krokovací pás", say: "Krokovací pás jde od nuly do sta. Kdo stojí dál od začátku, šedesát tři nebo padesát osm?",
+      vis: { k: "axis", lo: 55, hi: 65, n: 63 }, try: { q: "Které číslo je na krokovacím pásu nejdál od začátku?", correct: 72, opts: [72, 68, 27, 70], why: "72 je dál než 70, 68 i 27." } },
+    { t: "Sousedé na pásu", say: "Stojíš na čtyřiceti. Kdo stojí hned před tebou a kdo hned za tebou?",
+      vis: { k: "axis", lo: 35, hi: 45, n: 40 }, try: { q: "Které číslo stojí na pásu hned před číslem 70?", correct: 69, opts: [69, 71, 60, 79], why: "Před 70 stojí 69, za ním 71." } },
+    { t: "Schody a kroky", say: "Číslo čtyřicet sedm: vyjdi čtyři schody po desítkách a pak sedm kroků. Kolik schodů a kolik kroků je číslo osmdesát tři?",
+      vis: { k: "steps", start: 40, n: 7, dir: 1 }, try: { q: "Kolik desítek má číslo 83?", correct: 8, opts: [8, 3, 80, 38], why: "8 schodů po desítce a 3 kroky." } }
+  ],
+  M24: [
+    { t: "Rozděl figurky", say: "Dvanáct figurek rozděl spravedlivě do tří skupin. Kolik je v každé?",
+      vis: { k: "figs", n: 12, d: 3 }, try: { n: 15, d: 3 } },
+    { t: "Stejně silná družstva", say: "Děda Lesoň má osm myší. Rozděl je do dvou stejně silných družstev. Kolik myší má každé?",
+      vis: { k: "leson", pool: ["🐭", "🐭", "🐭", "🐭", "🐭", "🐭", "🐭", "🐭"], left: ["?"], right: ["?"] }, try: { q: "Děda Lesoň má 20 myší a rozdělí je do čtyř stejně silných družstev. Kolik myší je v jednom družstvu?", correct: 5, opts: [5, 4, 16, 24], why: "20 myší do 4 družstev: 5 v každém." } },
+    { t: "Mřížový obdélník pozpátku", say: "Čtyři řady po pěti čtverečcích. Kolik je čtverečků celkem? A teď naopak: kdyby jich bylo dvacet ve čtyřech řadách, kolik by bylo v jedné řadě?",
+      vis: { k: "grid", a: 4, b: 5 }, try: { q: "Obdélník má 15 čtverečků a 3 řady. Kolik čtverečků je v jedné řadě?", correct: 5, opts: [5, 3, 12, 18], why: "3 řady po 5 je 15." } }
+  ],
+  M25: [
+    { t: "Ciferník jako kruh", say: "Velká ručička oběhne celé kolo za hodinu. Když stojí nahoře na dvanáctce, je celá hodina. Kam ukazuje malá?",
+      vis: { k: "text", h: "velká nahoře na <b>12</b> → celá hodina<br>malá na <b>3</b> → 3 hodiny" }, try: { q: "Velká ručička je na 12, malá na 5. Kolik je hodin?", correct: "5 hodin", opts: ["5 hodin", "12 hodin", "půl šesté", "6 hodin"], why: "Velká nahoře, malá na pětce." } },
+    { t: "Půl kola", say: "Velká ručička oběhla jen půl kola a stojí dole na šestce. Malá je mezi trojkou a čtyřkou. Co to znamená?",
+      vis: { k: "text", h: "velká dole na <b>6</b> → půl<br>malá mezi 3 a 4 → <b>půl čtvrté</b>" }, try: { q: "Velká ručička je na 6, malá mezi 7 a 8. Kolik je hodin?", correct: "půl osmé", opts: ["půl osmé", "půl sedmé", "7 hodin", "8 hodin"], why: "Půl kola po sedmé: půl osmé." } },
+    { t: "Mince jako zvířátka", say: "Pětikoruna má sílu pěti korun, desetikoruna sílu dvou pětikorun. Kolik korun je deset, pět a dvě koruny dohromady?",
+      vis: { k: "text", h: "🪙 10 · 🪙 5 · 🪙 2 → <b>?</b> Kč" }, try: { q: "Máš mince 20, 5 a 1 Kč. Kolik korun to je dohromady?", correct: 26, opts: [26, 25, 21, 36], why: "20 + 5 + 1 = 26 Kč." } }
+  ],
+  M26: [
+    { t: "Autobus", say: "Na zastávce A nastoupilo dvanáct cestujících. Na zastávce B pět vystoupilo. Kolik jich jede dál? Zahraj si to.",
+      vis: { k: "bus", stops: ["A", "B"], in: [12, 0], out: [0, 5], ride: [12, "?"] }, try: { q: "V sovinci sedí 12 sov a 5 přiletí. Kolik sov tam bude?", correct: 17, opts: [17, 7, 16, 18], why: "Jako autobus: 12 a 5 nastoupí, 17." } },
+    { t: "Had s příběhem", say: "Hagrid má devět dýní, Ron o čtyři méně. Nakresli to jako hada: devět, šipka mínus čtyři, kroužek.",
+      vis: { k: "snake", nodes: [9, "?"], ops: ["−4"] }, try: { q: "Hagrid má 12 dýní a Ron o 5 méně. Kolik dýní má Ron?", correct: 7, opts: [7, 17, 5, 8], why: "Had: 12 → (−5) → 7." } },
+    { t: "Krokuj příběh", say: "Svítí patnáct svíček a šest zhasne. Postav se na patnáct a odkrokuj šest kroků dozadu.",
+      vis: { k: "steps", start: 15, n: 6, dir: -1 }, try: { q: "Hermiona má 14 knih a 6 vrátí do knihovny. Kolik knih jí zůstane?", correct: 8, opts: [8, 20, 9, 7], why: "Z 14 šest kroků dozadu: 8." } }
+  ],
   M1: [
     { t: "Krokování dopředu", say: "Postav se na číslo třicet osm. Udělej pět kroků dopředu, začni teď! Na kterém čísle stojíš?",
       vis: { k: "steps", start: 38, n: 5, dir: 1 }, try: { q: "Stojíš na 47. Uděláš 6 kroků dopředu. Na kterém čísle stojíš?", correct: 53, opts: [53, 52, 41, 54], why: "Odkrokuj: 48, 49, 50, 51, 52, 53." } },
@@ -5594,8 +5917,8 @@ function lessonTry(t, tr, st) {
   if (tr.en) { var pool = vocabPool(t, st), w = pool.filter(function (x) { return x.en === tr.en; })[0]; if (!w) return null; var v = vocabListenQ(w, pool, allVocab(st)); return { q: v.q, opts: v.opts, correct: v.correct, why: v.why, word: w.en, big: !!v.bigOpts }; }
   if (tr.q) return { q: tr.q, opts: shuffle((tr.opts || numOptions(tr.correct)).slice()), correct: tr.correct, why: tr.why || "" };
   if (tr.a != null && tr.b != null && !tr.op) { var ans = tr.a * tr.b; return { q: tr.a + " × " + tr.b + " = ?", opts: shuffle(numOptions(ans, [tr.a, -tr.a, tr.b, -tr.b, 1, -1, 2, -2])), correct: ans, why: tr.a + " × " + tr.b + " = " + ans }; }
-  if (t === "M4" && tr.n) { var qd = tr.n / tr.d; return { q: tr.n + " ÷ " + tr.d + " = ?", opts: shuffle(numOptions(qd, [1, -1, 2, -2, 3, -3])), correct: qd, why: tr.n + " ÷ " + tr.d + " = " + qd + ", protože " + qd + " × " + tr.d + " = " + tr.n }; }
-  if (t === "M1" && tr.op) { var a1 = tr.op === "+" ? tr.a + tr.b : tr.a - tr.b, sym = tr.op === "+" ? " + " : " − "; return { q: tr.a + sym + tr.b + " = ?", opts: shuffle(numOptions(a1)), correct: a1, why: mathHint({ dbg: { t: "M1", op: tr.op, a: tr.a, b: tr.b, ans: a1 } }) || (tr.a + sym + tr.b + " = " + a1) }; }
+  if ((t === "M4" || t === "M24") && tr.n) { var qd = tr.n / tr.d; return { q: tr.n + " ÷ " + tr.d + " = ?", opts: shuffle(numOptions(qd, [1, -1, 2, -2, 3, -3])), correct: qd, why: tr.n + " ÷ " + tr.d + " = " + qd + ", protože " + qd + " × " + tr.d + " = " + tr.n }; }
+  if ((t === "M1" || t === "M21" || t === "M22") && tr.op) { var a1 = tr.op === "+" ? tr.a + tr.b : tr.a - tr.b, sym = tr.op === "+" ? " + " : " − "; return { q: tr.a + sym + tr.b + " = ?", opts: shuffle(numOptions(a1)), correct: a1, why: mathHint({ dbg: { t: "M1", op: tr.op, a: tr.a, b: tr.b, ans: a1 } }) || (tr.a + sym + tr.b + " = " + a1) }; }
   return null;
 }
 function lessonVisHTML(t, v) {
@@ -6957,11 +7280,11 @@ function altExplainHTML(it) {
     var rows = ""; for (var i = 0; i < d.a; i++) rows += '<div class="altRow">' + row(d.b, "🔮") + '</div>';
     return '<p>' + d.a + ' × ' + d.b + ' je ' + d.a + (d.a <= 4 ? ' řady' : ' řad') + ' (hromádky) po ' + d.b + ' kuličkách:</p>' + rows + '<p>Spočítej je: <b>' + (d.a * d.b) + '</b>.</p>';
   }
-  if (t === "M4" && d.n && d.d) {
+  if ((t === "M4" || t === "M24") && d.n && d.d) {
     var g = ""; for (var j = 0; j < d.d; j++) g += '<div class="altRow">🫕 ' + row(d.n / d.d, "💎") + '</div>';
     return '<p>' + d.n + ' kamínků rozdělíme do ' + d.d + ' kotlíků, do každého stejně:</p>' + g + '<p>V každém kotlíku je <b>' + (d.n / d.d) + '</b>, proto ' + d.n + ' ÷ ' + d.d + ' = ' + (d.n / d.d) + '.</p>';
   }
-  if (t === "M1" && d.a != null && d.b != null) {
+  if ((t === "M1" || t === "M21" || t === "M22") && d.a != null && d.b != null) {
     if (d.op === "+") { var up = 10 - d.a % 10; return up < 10 && d.b > up ? '<p>Skákej po číselné ose. Začni na <b>' + d.a + '</b>, skoč o ' + up + ' na desítku <b>' + (d.a + up) + '</b>, pak ještě o ' + (d.b - up) + ' na <b>' + (d.a + d.b) + '</b>.</p>' : '<p>Začni na <b>' + d.a + '</b> a přičti ' + d.b + ': <b>' + (d.a + d.b) + '</b>.</p>'; }
     var dn = d.a % 10; return dn > 0 && d.b > dn ? '<p>Skákej po číselné ose dolů. Začni na <b>' + d.a + '</b>, skoč o ' + dn + ' na desítku <b>' + (d.a - dn) + '</b>, pak ještě o ' + (d.b - dn) + ' na <b>' + (d.a - d.b) + '</b>.</p>' : '<p>Začni na <b>' + d.a + '</b> a uber ' + d.b + ': <b>' + (d.a - d.b) + '</b>.</p>';
   }
@@ -7825,6 +8148,11 @@ var parentLock = null;
    (S.parentSetup prázdné) provede rodiče Harrym Potterem, školní látkou, slovíčky a účtem.
    Každý krok se hned uloží, „Dokončím později“ nic neztratí. Znovu ho spustí rozcestník panelu.
    ===================================================================== */
+CURRICULUM[2].presets = {
+  zacatek:  { n: "Začátek 2. třídy", d: "do 20 přes desítku, abeceda, ú/ů, slabiky a hlásky, slova a jejich význam", t: ["M21", "C2", "C21", "C23", "C24"] },
+  pololeti: { n: "Kolem pololetí", d: "navíc čísla do 100 (bez přechodu i s přechodem), násobilka 2–5, hodiny a peníze, tvrdé a měkké slabiky, dě/tě/ně", t: ["M21", "M22", "M23", "M1", "M2", "M25", "C2", "C21", "C23", "C24", "C1", "C22"] },
+  konec:    { n: "Konec 2. třídy", d: "všechna matematika i čeština 2. třídy včetně dělení, slovních úloh, párových souhlásek, slovních druhů a velkých písmen", t: ["M21", "M22", "M23", "M1", "M2", "M25", "M24", "M26", "C2", "C21", "C23", "C24", "C1", "C22", "C3", "C25", "C26", "C12"] }
+};
 CURRICULUM[4].presets = {
   zacatek:  { n: "Začátek 4. třídy", d: "opakování násobilky a vyjmenovaných slov, čísla do 10 000, stavba slova, předpony", t: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C41", "C42", "C43"] },
   pololeti: { n: "Kolem pololetí", d: "navíc písemné sčítání a odčítání, násobení zpaměti, zaokrouhlování, písemné násobení; rod, číslo, pád a vzory rodu středního a ženského", t: ["M2", "M3", "M4", "M41", "M42", "M43", "M44", "M46", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C41", "C42", "C43", "C44", "C45", "C46"] },
@@ -7835,14 +8163,14 @@ var SETUP_PRESETS = CURRICULUM[3].presets = {
   pololeti: { n: "Kolem pololetí", d: "navíc násobilka 6–10, dělení, párové souhlásky a vyjmenovaná slova po B, L a M", t: ["M1", "M2", "M3", "M4", "C1", "C2", "C3", "C4", "C5", "C6"] },
   konec:    { n: "Konec 3. třídy", d: "všechna matematika a čeština 3. třídy", t: ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"] }
 };
-function setupSchoolTopics() { return gradeTopics(kidGrade()).filter(function (t) { var j = TOPICS[t].subj; return j === "m" || j === "cj"; }); }
+function setupSchoolTopics(st) { return gradeTopics(kidGrade(st || S)).filter(function (t) { var j = TOPICS[t].subj; return j === "m" || j === "cj"; }); }
 function setupApplyPreset(k, st) {
-  st = st || S; var pr = SETUP_PRESETS[k]; if (!pr) return;
-  setupSchoolTopics().forEach(function (t) { st.unlocked[t] = pr.t.indexOf(t) !== -1; });
+  st = st || S; var pr = (curriculumFor(st).presets || SETUP_PRESETS)[k]; if (!pr) return;   /* předvolby podle třídy dítěte, ne vždy 3. třídy */
+  setupSchoolTopics(st).forEach(function (t) { st.unlocked[t] = pr.t.indexOf(t) !== -1; });
 }
 function setupPresetNow(st) {
-  st = st || S; var on = setupSchoolTopics().filter(function (t) { return st.unlocked[t]; }).sort().join(",");
-  for (var k in SETUP_PRESETS) if (SETUP_PRESETS[k].t.slice().sort().join(",") === on) return k;
+  st = st || S; var on = setupSchoolTopics(st).filter(function (t) { return st.unlocked[t]; }).sort().join(","), prs = curriculumFor(st).presets || SETUP_PRESETS;
+  for (var k in prs) if (prs[k].t.slice().sort().join(",") === on) return k;
   return "";
 }
 /* Harry Potter: čteme díl y po kapitolu c (dřívější díly = dočtené), nebo zatím nečteme */
@@ -7931,7 +8259,7 @@ function screenParentSetup(step) {
     html = '<div class="bigIcon">' + svgCheck(64, "#1f6363") + '</div><h2 class="center">Hotovo, hra je nastavená</h2>' +
       '<ul class="ticks">' +
       '<li><b>Harry Potter:</b> ' + (S.year === 1 && chaptersRead(S, 1) === 0 ? "zatím nic dočteného, otázky z knih počkají" : S.year + ". díl, " + (chaptersRead(S, S.year) ? "dočtená " + chaptersRead(S, S.year) + ". kapitola" : "teprve začínáte")) + '</li>' +
-      '<li><b>Škola:</b> ' + kidGrade() + '. třída · ' + (pre ? SETUP_PRESETS[pre].n : "vlastní výběr učeben") + ' · ' + METHODS[kidMethod()].n + '</li>' +
+      '<li><b>Škola:</b> ' + kidGrade() + '. třída · ' + (pre ? (curriculumFor(S).presets || SETUP_PRESETS)[pre].n : "vlastní výběr učeben") + ' · ' + METHODS[kidMethod()].n + '</li>' +
       '<li><b>Angličtina:</b> ' + (wc ? wc + " " + (wc === 1 ? "slovíčko" : wc < 5 ? "slovíčka" : "slovíček") + " ze školy" : "vestavěné okruhy, slovíčka ze školy můžete přidat kdykoli") + '</li>' +
       '<li><b>Zařízení:</b> ' + (ucetGet() ? "přihlášeno e-mailem" : "jen toto zařízení") + '</li></ul>' +
       '<h3>Kde co v panelu najdete</h3><ul class="ticks setupMap">' +
