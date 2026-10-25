@@ -918,7 +918,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-27d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-27e";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -4357,7 +4357,7 @@ function screenHome() {
       '<div id="abandonBox"><button class="btn secondary small" onclick="abandonAsk()">Opustit hodinu</button></div></div>';
   }
   html += '<button class="btn bigCta' + (doneToday ? " done" : "") + '" onclick="startDailyQuest()">' +
-    (doneToday ? "✨ Ještě jedno vyučování" : "🕯️ Dnešní vyučování") + '<span>' + (doneToday ? "dnešní plamínek už hoří — tohle je jen pro radost" : "10 otázek napříč předměty · plamínek poroste") + '</span></button>' +
+    (doneToday ? "✨ Ještě jedno vyučování" : "🕯️ Dnešní vyučování") + '<span>' + (doneToday ? (dailyToday() >= 3 ? "dnes už po " + dailyToday() + ". — radši zkus učebnu v Rozvrhu" : "plamínek už hoří, bonus +10 byl u prvního — galeony jen za otázky") : "10 otázek napříč předměty · plamínek poroste") + '</span></button>' +
     '<div class="hallChips">' +
     '<span class="hourglass">' + houseIcon(S.house, 22) + ' <span>Body pro <b>' + esc(h.n) + '</b>: <b>' + housePoints(S) + '</b></span></span>' +
     '<span class="hchip">' + svgSnow(16) + ' amulety: <b>' + S.streak.freezes + '</b></span>' +
@@ -7184,9 +7184,13 @@ function answerQ(it, chosen, btn) {
 
 /* --- dokončení vyučování --- */
 var postQueue = [];
+/* Kolik denních vyučování už dnes dokončila (před tím právě dokončeným). 27. 10. 2026, Andělka: 102 hodin za víkend,
+   20 denních vyučování za 45 minut kvůli koštěti — denní vyučování se dalo opakovat donekonečna s plnou odměnou. */
+function dailyToday(st) { st = st || S; var d = todayStr(); return (st.lessonLog || []).filter(function (x) { return x && x.d === d && x.mode === "daily"; }).length; }
 function questComplete() {
   sessionClear();
-  var bonus = session.mode === "daily" ? 10 : session.mode === "exam" ? 15 : 5;
+  session.dailyRepeat = session.mode === "daily" && !DEMO ? dailyToday() + 1 : 0;   /* 1 = první dnes, 2 = druhé… */
+  var bonus = session.mode === "daily" ? (session.dailyRepeat > 1 ? 0 : 10) : session.mode === "exam" ? 15 : 5;
   giveDust(bonus);
   session.dustGained += bonus;
   if (!DEMO) {
@@ -7249,6 +7253,10 @@ function screenQuestSummary(perfect) {
   }
   if (session.total >= 10 && (session.mode === "daily" || session.mode === "topic" || session.mode === "exam")) {
     html += '<p class="qtext">' + flameIcon(20) + ' Plamínek: <b>' + S.streak.current + '</b> ' + dayWord(S.streak.current) + ' v řadě</p>';
+  }
+  if (session.dailyRepeat > 1) {
+    html += '<p class="muted">Dnes už ' + (session.dailyRepeat === 2 ? "druhé" : session.dailyRepeat === 3 ? "třetí" : session.dailyRepeat + ".") + ' vyučování — bonus +10 byl u prvního, galeony máš za otázky.</p>';
+    if (session.dailyRepeat >= 3) html += '<div class="feedback ok"><b>Tohle už umíš!</b> V Rozvrhu čekají učebny, kde se jde do hloubky a sbírají se hvězdy. <button class="btn small" onclick="screenMap()">🗺️ Do Rozvrhu</button></div>';
   }
   html += summaryTopicsHTML();
   html += summaryReviewHTML();
@@ -8352,6 +8360,24 @@ function screenParentLock() {
   el("lockInput").onkeydown = function (ev) { if (ev.key === "Enter") el("lockBtn").click(); };
 }
 
+/* Doporučení k odemčení (27. 10. 2026): učebna se 3 hvězdami, ≥ 90 % správně a ≥ 30 odpověďmi = dítě ji umí; navrhne
+   další zamčenou učebnu téhož předmětu v pořadí třídy. Odemyká rodič jedním klepnutím (hra sama ne — škola to ještě nemusela probrat). */
+function unlockAdvice(st) {
+  st = st || S; var out = [], gts = gradeTopics(kidGrade(st));
+  gts.forEach(function (t) {
+    var tp = TOPICS[t]; if (tp.subj !== "m" && tp.subj !== "cj") return; if (!isUnlocked(t, st)) return;
+    var x = st.stats[t] || { c: 0, w: 0 }, n = x.c + x.w; if (n < 30 || topicStars(st, t) < 3 || x.c / n < 0.9) return;
+    var next = null; for (var i = gts.indexOf(t) + 1; i < gts.length; i++) { var u = gts[i]; if (TOPICS[u].subj === tp.subj && !st.unlocked[u] && !next) next = u; }
+    out.push({ t: t, pct: Math.round(100 * x.c / n), n: n, next: next });
+  });
+  return out;
+}
+function unlockAdviceHTML() {
+  var adv = unlockAdvice(S); if (!adv.length) return "";
+  return '<div class="feedback ok" style="text-align:left"><b>💡 Doporučení:</b> tyhle učebny dítě zvládá — ' +
+    adv.map(function (a) { return '<b>' + esc(TOPICS[a.t].n) + '</b> (3 hvězdy, ' + a.pct + ' % správně z ' + a.n + ' odpovědí)' + (a.next ? ' <button class="btn small" data-unlock-next="' + a.next + '">Odemknout: ' + esc(TOPICS[a.next].n) + '</button>' : ' — další učebna tohoto předmětu je už odemčená nebo žádná není'); }).join('<br>') +
+    '<br><span class="muted">Odemkněte, co už ve škole probrali; jinak dítě točí lehké otázky dokola.</span></div>';
+}
 function unlockRow(t) {
   var tp = TOPICS[t];
   return '<div class="chkRow"><input type="checkbox" data-topic="' + t + '"' + (S.unlocked[t] ? " checked" : "") + '>' +
@@ -8380,7 +8406,7 @@ function screenParent(section) {
   if (!section) {
     var subs = {
       prehled: doneWeek + " ze 7 dní hotovo · " + mistWeek + " " + (mistWeek === 1 ? "chyba" : mistWeek < 5 ? "chyby" : "chyb") + " za týden",
-      cteni: yearLabel(S.year) + " · po " + chaptersRead(S, S.year) + ". kapitolu · " + kidGrade() + ". třída · " + unlockedTopics(S).length + " učeben",
+      cteni: (unlockAdvice(S).length ? "💡 doporučení: odemknout další učebny · " : "") + yearLabel(S.year) + " · po " + chaptersRead(S, S.year) + ". kapitolu · " + kidGrade() + ". třída · " + unlockedTopics(S).length + " učeben",
       slovicka: S.words.length + " slov ze školy · 🌟 " + dc[2] + " z hlavy",
       hlas: (ttsProxyOk() ? "hlas ze serveru ✓" : ttsCfg().key ? "přímý klíč ✓" : "vestavěný hlas") + " · hlášky " + (mluveniOn() ? "zap." : "vyp.") + " · zvuky " + (sfxOn() ? "zap." : "vyp."),
       zarizeni: (ucetOn() ? "přihlášeno ✓" : syncOn() ? "připojeno rodinným kódem ✓" : "⚠️ jen toto zařízení") + (syncOn() ? " · " + (syncSt.last ? "sync " + syncWhen(syncSt.last) : "zatím nesynchronizováno") : ""),
@@ -8483,7 +8509,7 @@ function screenParent(section) {
       '<h3>🏆 Zkouška ročníku</h3>' +
       '<p class="muted">Zkouška se dítěti otevře sama na konci školního roku, až nastavíte, že je ' + S.year + '. díl dočtený. Do té doby ji vidí zamčenou s vysvětlením. Když chcete, otevřete ji dřív (třeba na konci školního roku, i když knihu ještě čtete).</p>' +
       '<div class="chkRow"><input type="checkbox" id="pExamOpen"' + (S.examOpen && S.examOpen[S.year] ? " checked" : "") + '><span><b>Zkouška ' + S.year + '. ročníku otevřená</b> <span class="muted">— ' + (examOpen(S) && !(S.examOpen && S.examOpen[S.year]) ? "už je otevřená (díl dočtený nebo složená)" : "i před dočtením dílu") + '</span></span></div>' +
-      '<h3>Co už jste probrali ve škole</h3>' +
+      '<h3>Co už jste probrali ve škole</h3>' + unlockAdviceHTML() +
       '<p class="muted">Zaškrtnutá učebna se odemkne: objeví se v rozvrhu a v denním vyučování. Zamčené učebny dítě vidí jen jako zamčené dveře — bez názvu, ať se těší. Odemykejte, až látku ve škole opravdu proberou: jedna příliš těžká otázka umí zkazit celou hru.</p>' +
       '<h3 style="font-size:17px">' + svgQuill(17) + ' Čeština (Psaní brkem)</h3>' + unlockGroups("cj") +
       '<h3 style="font-size:17px">' + svgCauldron(17) + ' Matematika (Lektvary)</h3>' + unlockGroups("m") +
@@ -8681,6 +8707,7 @@ function screenParent(section) {
     saveState();
     msg("parentMsg", "Dočtená kapitola " + S.year + ". dílu: " + S.chapters[S.year] + ". Dostupných otázek k tomuto dílu: " + knowledgePool("H" + S.year, S).length + ".");
   });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-unlock-next]"), function (b) { b.onclick = function () { var t = b.getAttribute("data-unlock-next"); S.unlocked[t] = true; saveState(); screenParent("cteni"); msg("parentMsg", "Odemčeno: " + TOPICS[t].n + "."); }; });
   Array.prototype.forEach.call(document.querySelectorAll("[data-topic]"), function (chk) {
     chk.onchange = function () {
       var t = chk.getAttribute("data-topic");
@@ -8943,7 +8970,7 @@ W.BRADAVICE = {
   setupApplyPreset: setupApplyPreset, setupApplyHP: setupApplyHP, setupPresetNow: setupPresetNow, SETUP_PRESETS: SETUP_PRESETS,
   ucetFromHash: ucetFromHash, ucetDecide: ucetDecide, ucetEmailOk: ucetEmailOk, ucetEmailNorm: ucetEmailNorm, jwtEmail: jwtEmail, UCET_KEY: UCET_KEY,
   SAVE_KEY: SAVE_KEY, SAVE_VERSION: SAVE_VERSION, OLD_KEYS: OLD_KEYS,
-  VOICE_GAIN: VOICE_GAIN, TOPICS: TOPICS, TOPIC_ORDER: TOPIC_ORDER, DEFAULT_UNLOCKED: DEFAULT_UNLOCKED, YEARS: YEARS,
+  VOICE_GAIN: VOICE_GAIN, unlockAdvice: unlockAdvice, dailyToday: dailyToday, TOPICS: TOPICS, TOPIC_ORDER: TOPIC_ORDER, DEFAULT_UNLOCKED: DEFAULT_UNLOCKED, YEARS: YEARS,
   BANKS: BANKS, GENS: GENS, SHOP: SHOP, BADGES: BADGES, HOUSES: HOUSES, KNOWLEDGE: KNOWLEDGE, VOCAB_SETS: VOCAB_SETS,
   defaultState: defaultState, migrate: migrate, importLegacy: importLegacy, defaultStreak: defaultStreak,
   streakOnLoad: streakOnLoad, streakOnQuestComplete: streakOnQuestComplete,
