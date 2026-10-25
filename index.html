@@ -892,7 +892,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-22i";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-25a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -4735,8 +4735,8 @@ var LESSONS = {
   M3: [
     { t: "Desítka je nejlehčí", say: "Násobit deseti je snadné: připiš nulu. Sedm krát deset je sedmdesát.",
       vis: { k: "text", h: "7 × 10 = 7<b>0</b> · 3 × 10 = 3<b>0</b> · 9 × 10 = 9<b>0</b>" }, try: { a: 10, b: 6 } },
-    { t: "Devítka na prstech", say: "Devět krát čtyři: polož ruce na stůl a skloň čtvrtý prst zleva. Nalevo zůstanou tři prsty, napravo šest. Výsledek je třicet šest.",
-      vis: { k: "text", h: "9 × 4 → skloň 4. prst: <b>3</b> prsty | <b>6</b> prstů → <b>36</b><br>9 × 7 → <b>6</b> | <b>3</b> → <b>63</b>" }, try: { a: 9, b: 6 } },
+    { t: "Devítka z desítky", say: "Devět krát čtyři neznáš? Vezmi deset krát čtyři, to je čtyřicet, a jednu čtyřku uber. Třicet šest.",
+      vis: { k: "text", h: "9 × 4 = 10 × 4 − 4 = 40 − 4 = <b>36</b><br>9 × 7 = 70 − 7 = <b>63</b>" }, try: { a: 9, b: 6 } },
     { t: "Šestka ze známé pětky", say: "Šest krát sedm neznáš? Vezmi pět krát sedm, to je třicet pět, a přidej ještě jednu sedmičku. Čtyřicet dva.",
       vis: { k: "balls", a: 6, b: 7 }, try: { a: 7, b: 6 } },
     { t: "Osmička je dvakrát čtyřka", say: "Osm krát šest je dvakrát čtyři krát šest. Dvakrát dvacet čtyři je čtyřicet osm.",
