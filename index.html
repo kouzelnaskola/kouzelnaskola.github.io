@@ -918,7 +918,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-27c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-27d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -3586,10 +3586,12 @@ var FLAVOR = {
    Text je vidět v bublině s jménem postavy a zazní jejím hlasem (jen se zapnutými mluvenými hláškami). */
 /* Karty identity postav (Lenny's: Claire Vo — postava působí živě díky stálé identitě). Podle nich se píšou
    VŠECHNY nové hlášky; kontrolor je hlídá. „ví“ = jen svět z 1.–2. dílu a dočtené části 3. dílu. */
+/* Brumbál (hlas A4QaWrc6j9wnj1l191pm) odešel 27. 10. 2026: Karolince zněl „smutně a utrápeně“ a žádný jiný hlas mu neseděl.
+   Dějiny, milníky a nový ročník uvádí Skoro bezhlavý Nick hlasem George (JBFqnCBsd6RMkjVDRZzb, vybral táta). */
 var CHARS = {
-  brumbal: { n: "Brumbál", e: "🧙‍♂️", voice: "A4QaWrc6j9wnj1l191pm",
-    povaha: "laskavý, moudrý, klidný, trochu hravý; věří v dítě", mluvi: "spisovně, krátké moudré věty, občas vtipná poznámka; nikdy nekáže",
-    vi: "ředitel Bradavic; Velká síň, body pro koleje, čokoládové žabky, citronová zmrzlina, fénix Fawkes" },
+  nick:    { n: "Skoro bezhlavý Nick", e: "👻", voice: "JBFqnCBsd6RMkjVDRZzb",
+    povaha: "veselý, zdvořilý, rád vypráví, snadno se dojme; na hrad je pyšný, jako by byl jeho", mluvi: "zdvořile a vesele („má úcta“, „bravo“), krátké věty, občas vtipná poznámka o tom, že je duch; nikdy nic strašidelného",
+    vi: "duch Nebelvíru, sir Nicholas de Mimsy-Porpington; v hradě skoro 500 let (oslava smrtin ve 2. dílu), Velká síň, Protiva, Krvavý baron, dějiny hradu; body ani známky nedává, jen fandí" },
   mcg:     { n: "Profesorka McGonagallová", e: "🎓", voice: "bF7C2fCv7Zf30iT84wZ1",
     povaha: "přísná, ale spravedlivá a vlídná; ocení pečlivost", mluvi: "spisovně, věcně, stručně; pochvala je od ní vzácná a o to cennější",
     vi: "učí přeměňování, ředitelka Nebelvíru, famfrpál fandí Nebelvíru, přeměna brouka v knoflík (2. díl)" },
@@ -3599,14 +3601,14 @@ var CHARS = {
 };
 var CHAR_LINES = {
   daily: [
-    ["brumbal", "Vítej ve Velké síni, {jm}. Každý den kousek, a jednou z tebe bude skvěl{á čarodějka|ý čaroděj}."],
-    ["brumbal", "Ach, {jm}! Vědění je to nejkouzelnější, co můžeš mít. Začneme?"],
+    ["nick", "Má úcta, {jm}! Vítej ve Velké síni. Každý den kousek, a jednou z tebe bude skvěl{á čarodějka|ý čaroděj}."],
+    ["nick", "Ach, {jm}! Skoro pět set let se dívám, jak se tu děti učí. Ty to zvládneš. Začneme?"],
     ["mcg", "Vítej, {jm}. Posaď se, dnes nás čeká deset otázek."],
     ["hagrid", "Nazdar, {jm}! Tak co, jdeme na to? Já ti budu držet palce!"]
   ],
   hp: [
-    ["brumbal", "Dějiny jsou plné tajemství, {jm}. Pojďme na ně trochu posvítit."],
-    ["brumbal", "I já jsem kdysi seděl v téhle učebně, {jm}. Uvidíme, co si pamatuješ."]
+    ["nick", "Dějiny, {jm}! Moje oblíbené. Spoustu z nich jsem viděl na vlastní oči. Pojďme na to."],
+    ["nick", "Touhle učebnou jsem proletěl tisíckrát, {jm}. Uvidíme, co si pamatuješ ty."]
   ],
   m: [
     ["mcg", "Přesnost a trpělivost, {jm}. To je základ každého kouzla i každého příkladu."],
@@ -3620,10 +3622,10 @@ var CHAR_LINES = {
     ["hagrid", "Ahoj, {jm}! Tesák tě pozdravuje. Tak jdeme na ty anglický slovíčka!"],
     ["hagrid", "No ne, {jm}! S psaním jsem se vždycky pral, ale ty to zvládneš. Do toho!"]
   ],
-  praise_brumbal: [
-    ["brumbal", "Výborně, {jm}! Deset bodů pro {kolej}."],
-    ["brumbal", "Tak se mi to líbí, {jm}. Opravdu kouzelné."],
-    ["brumbal", "Zase správně! Umíš víc, než si myslíš, {jm}."]
+  praise_nick: [
+    ["nick", "Bravo, {jm}! Smekám klobouk, i s tím pérem."],
+    ["nick", "Tak se mi to líbí, {jm}. Celá Velká síň by tleskala."],
+    ["nick", "Zase správně! Umíš víc, než si myslíš, {jm}."]
   ],
   praise_mcg: [
     ["mcg", "Velmi dobře, {jm}. Pět bodů pro {kolej}."],
@@ -3636,8 +3638,8 @@ var CHAR_LINES = {
     ["hagrid", "No jo, {jm}! Já věděl, že to zvládneš!"]
   ],
   exam: [["mcg", "{Jm}, zkouška začíná. Klid a soustředění. Věřím, že to zvládneš."]],
-  milestone: [["brumbal", "{Jm}, tvůj plamínek září až ke stropu Velké síně. Jsem na tebe pyšný."]],
-  newYear: [["brumbal", "Vítej v novém školním roce, {jm}. Bradavice se na tebe těšily."]]
+  milestone: [["nick", "{Jm}, tvůj plamínek září až ke stropu Velké síně. Jsem na tebe pyšný."]],
+  newYear: [["nick", "Vítej v novém školním roce, {jm}. Hrad se na tebe těšil, a já taky."]]
 };
 var charLast = {};
 function charLine(kind) {
@@ -4937,7 +4939,7 @@ function birthdayCheck() {
   S.bdayYear = y; S.dust += 20; saveState();
   setTimeout(function () {
     confettiRain(null, 60); sfx("fanfare");
-    speakAs({ c: "brumbal", ch: CHARS.brumbal, text: "Všechno nejlepší k narozeninám, " + vok(S.name || "{čarodějko|čaroději}") + "! Celé Bradavice ti přejí krásný den. Posílám ti dvacet galeonů." }, 900);
+    speakAs({ c: "nick", ch: CHARS.nick, text: "Všechno nejlepší k narozeninám, " + vok(S.name || "{čarodějko|čaroději}") + "! Celé Bradavice ti přejí krásný den. Pan ředitel ti posílá dvacet galeonů." }, 900);
   }, 600);
 }
 
@@ -5322,10 +5324,10 @@ function startTopicQuest(t) {
    Každá učebna má 2–5 karet: jedna myšlenka, obrázek (kuličky, kotlíky, skoky, řada vyjmenovaných slov…),
    učitel ji řekne nahlas a dítě si ji hned zkusí (zkušební otázka BEZ galeonů, statistik, chyb i stupňů).
    Hagrid v hájence hostí (NEUČÍ): Lektvary a Psaní brkem vykládá McGonagallová, Formule Hagrid (jen slovíčka),
-   Dějiny Brumbál. Nabídka při prvním vstupu do učebny, znovu v hájence a po 2 chybách za sebou v hodině.
+   Dějiny Skoro bezhlavý Nick. Nabídka při prvním vstupu do učebny, znovu v hájence a po 2 chybách za sebou v hodině.
    Nový obsah pro dítě = i karta výkladu; texty se značkami {holka|kluk}. Viděné: S.lessonSeen[t] = datum.
    ===================================================================== */
-var LESSON_WHO = { m: "mcg", cj: "mcg", en: "hagrid", hp: "brumbal" };
+var LESSON_WHO = { m: "mcg", cj: "mcg", en: "hagrid", hp: "nick" };
 var LESSONS = {
   M1: [
     { t: "Desítky a jednotky", say: "Každé číslo do sta má desítky a jednotky. Čtyřicet sedm jsou čtyři desítky a sedm jednotek.",
@@ -6209,7 +6211,7 @@ function ttsProxyFetch(text, voice) {
 /* Hlasitost po hlasech (27. 10. 2026, táta: Brumbála si člověk musí zesilovat, vypravěčka je hodně nízko). Změřeno
    design/hlasitost.mjs (RMS): vypravěč cs −40 dBFS, Brumbál −36, McGonagallová −26, Hagrid −21, Alice −21 → zesílení
    přes WebAudio (gain + lehký kompresor, ať nejhlasitější věty nepřebudí). Nový hlas = změřit a doplnit, jinak 1. */
-var VOICE_GAIN = { XOgpjkYNnVH5W7ZAlLYg: 5, A4QaWrc6j9wnj1l191pm: 3.5, bF7C2fCv7Zf30iT84wZ1: 1.6 };
+var VOICE_GAIN = { XOgpjkYNnVH5W7ZAlLYg: 5, bF7C2fCv7Zf30iT84wZ1: 1.6 };   /* Nick (George) má −22 dBFS jako Hagrid: bez zesílení */
 function ttsBoost(a, g) {
   var ctx = sfxCtxGet(); if (!ctx || ctx.state !== "running") return;   /* uspaný kontext by hlas umlčel — radši potichu než vůbec */
   try {
@@ -7138,7 +7140,7 @@ function answerQ(it, chosen, btn) {
       if (ht) { session.bonusOffered = true; setTimeout(function () { var nb = el("nextBtn"); if (nb) nb.insertAdjacentHTML("beforebegin", '<button class="btn gold" id="bonusBtn">✨ Chceš zkusit těžší kouzlo? <span class="muted" style="color:#fff">+4 galeony, chyba nic nestojí</span></button>'); var bb = el("bonusBtn"); if (bb) bb.onclick = function () { bonusGo(ht); }; }, 0); }
     }
     if (!it.retry && session.mode !== "exam" && session.okRun % 3 === 0) {
-      var ps = TOPICS[it.topic].subj, pcl = charLine(ps === "en" ? "praise_hagrid" : ps === "hp" ? "praise_brumbal" : "praise_mcg");
+      var ps = TOPICS[it.topic].subj, pcl = charLine(ps === "en" ? "praise_hagrid" : ps === "hp" ? "praise_nick" : "praise_mcg");
       setTimeout(function () { var fbx = document.querySelector(".sheet.ok .stitle"); if (fbx) fbx.insertAdjacentHTML("afterend", charSayHTML(pcl).replace('class="charSay"', 'class="charSay inSheet"')); }, 0);
       speakAs(pcl, 700);
     }
