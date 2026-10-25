@@ -905,7 +905,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-26d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-26f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1577,7 +1577,7 @@ var SUBJECTS = {
 var TOPIC_ORDER = ["C1","C2","M1","M2","C3","M3","M4","C4","C5","M5","C6","M6","C7","M7","C8","M8","C9","M9","C10","C11","C12",
                    "M41","M42","M43","M44","M45","M46","M47","M48","M49",
                    "C41","C42","C43","C44","C45","C46","C47","C48","C49",
-                   "E0","E1","E2","E3","E4",
+                   "E0","E1","E2","E3","E4","E5","E6",
                    "H0","H1","H2","H3","H4","H5","H6","H7"];
 var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
 /* TŘÍDA DÍTĚTE (25. 10. 2026): učivo je zabalené po třídách, aby šly přidat další (4., 2., 1., 5.). Díl Harryho Pottera
@@ -1639,6 +1639,8 @@ var TOPICS = {
   E2:  { subj:"en", n:"Věci kouzelníka",             e:"🪄" },
   E3:  { subj:"en", n:"Jídlo ve Velké síni",         e:"🍎" },
   E4:  { subj:"en", n:"Barvy a čísla",               e:"🎨" },
+  E5:  { subj:"en", n:"Dny, měsíce a čas",           e:"🗓️" },
+  E6:  { subj:"en", n:"Oblečení, počasí a koníčky",  e:"🧥" },
   H0:  { subj:"hp", n:"Dějiny mudlovského světa",    e:"🏰", book:0 },
   H1:  { subj:"hp", n:"1. díl — Kámen mudrců",       e:"📕", book:1 },
   H2:  { subj:"hp", n:"2. díl — Tajemná komnata",    e:"📗", book:2 },
@@ -2428,6 +2430,36 @@ var VOCAB_SETS = {
     { en:"five", cs:"pět", e:"5️⃣" },     { en:"six", cs:"šest", e:"6️⃣" },
     { en:"seven", cs:"sedm", e:"7️⃣" },   { en:"eight", cs:"osm", e:"8️⃣" },
     { en:"nine", cs:"devět", e:"9️⃣" },   { en:"ten", cs:"deset", e:"🔟" }
+  ],
+  /* 4. třída (26. 10. 2026): dny, měsíce a čas; oblečení, počasí a koníčky — pro všechny třídy, rodič odemkne */
+  E5: [
+    { en:"Monday", cs:"pondělí" },              { en:"Tuesday", cs:"úterý" },
+    { en:"Wednesday", cs:"středa" },            { en:"Thursday", cs:"čtvrtek" },
+    { en:"Friday", cs:"pátek" },                { en:"Saturday", cs:"sobota" },
+    { en:"Sunday", cs:"neděle" },               { en:"week", cs:"týden", e:"🗓️" },
+    { en:"today", cs:"dnes", e:"📍" },          { en:"tomorrow", cs:"zítra", e:"➡️" },
+    { en:"yesterday", cs:"včera", e:"⬅️" },     { en:"morning", cs:"ráno", e:"🌅" },
+    { en:"evening", cs:"večer", e:"🌆" },       { en:"night", cs:"noc", e:"🌃" },
+    { en:"clock", cs:"hodiny", e:"🕰️" },        { en:"It's two o'clock.", cs:"Jsou dvě hodiny.", e:"🕑" },
+    { en:"It's half past two.", cs:"Je půl třetí.", e:"🕝" }, { en:"January", cs:"leden", e:"❄️" },
+    { en:"June", cs:"červen", e:"🌻" },         { en:"December", cs:"prosinec", e:"🎄" },
+    { en:"spring", cs:"jaro", e:"🌷" },         { en:"summer", cs:"léto", e:"🏖️" },
+    { en:"autumn", cs:"podzim", e:"🍂" },       { en:"winter", cs:"zima", e:"⛄" }
+  ],
+  E6: [
+    { en:"T-shirt", cs:"tričko", e:"👕" },      { en:"trousers", cs:"kalhoty", e:"👖" },
+    { en:"dress", cs:"šaty", e:"👗" },          { en:"shoes", cs:"boty", e:"👟" },
+    { en:"jacket", cs:"bunda", e:"🧥" },        { en:"socks", cs:"ponožky", e:"🧦" },
+    { en:"scarf", cs:"šála", e:"🧣" },          { en:"gloves", cs:"rukavice", e:"🧤" },
+    { en:"sunny", cs:"slunečno", e:"☀️" },      { en:"rainy", cs:"deštivo", e:"🌧️" },
+    { en:"windy", cs:"větrno", e:"🌬️" },        { en:"cloudy", cs:"zataženo (oblačno)", e:"☁️" },
+    { en:"snowy", cs:"sněží", e:"🌨️" },         { en:"hot", cs:"horko", e:"🥵" },
+    { en:"cold", cs:"chladno", e:"🥶" },        { en:"swimming", cs:"plavání", e:"🏊" },
+    { en:"football", cs:"fotbal", e:"⚽" },     { en:"dancing", cs:"tancování (tanec)", e:"💃" },
+    { en:"singing", cs:"zpívání (zpěv)", e:"🎤" }, { en:"reading", cs:"čtení", e:"📚" },
+    { en:"drawing", cs:"kreslení", e:"🎨" },    { en:"riding a bike", cs:"jízda na kole", e:"🚲" },
+    { en:"playing chess", cs:"hraní šachů (šachy)", e:"♟️" }, { en:"I can swim.", cs:"Umím plavat.", e:"💪" },
+    { en:"I can't fly.", cs:"Neumím létat.", e:"🙅" }
   ]
 };
 
@@ -2637,8 +2669,9 @@ function wordRecord(state, en, how, dir, ok, day) {
   if (ok && how === "recall") x.last = day;
   return { from: from, to: x.l };
 }
-function isLongPhrase(en) { return /[^a-z']/.test(en) && (en.length > 12 || en.split(" ").length > 3); }
-function isPhrase(en) { return /[^a-z']/.test(en) || en.length > 9; }
+/* slovo × fráze: velké písmeno (Monday) a pomlčka (T-shirt) jsou pořád jedno slovo (26. 10. 2026) */
+function isLongPhrase(en) { return /[^a-zA-Z'-]/.test(en) && (en.length > 12 || en.split(" ").length > 3); }
+function isPhrase(en) { return /[^a-zA-Z'-]/.test(en) || en.length > 9; }
 
 /* POSLECH: Alice řekne anglické slovo nebo větu, slovo není vidět; vybírá se obrázek (emoji), u vět česká věta.
    Poznávání (how "rec"), jen když zařízení umí mluvit (listenOk); v node testu se negeneruje samo. */
