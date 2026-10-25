@@ -468,6 +468,9 @@
   .figs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; } .figGroup { border: 2px dashed var(--ink); border-radius: 10px; padding: 6px 8px; font-size: 22px; letter-spacing: 1px; } .figGroup.rest { border-color: var(--coral); } .figGroup small { display: block; font-size: 13px; color: var(--coral); text-align: center; }
   .lesonLegend { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; font-size: 14px; color: var(--muted2); margin-bottom: 8px; } .tug { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 26px; } .team { border: 2px solid var(--ink); border-radius: 12px; padding: 6px 10px; background: #fffaf0; } .team .q { color: var(--teal-d); font-weight: 700; } .team.pool { text-align: center; margin-bottom: 8px; letter-spacing: 2px; }
   .axis { position: relative; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--ink); padding: 0 4px; margin: 12px 8px 30px; height: 40px; } .axis .tick { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 14px; } .axis .tick i { display: block; width: 2px; height: 10px; background: var(--ink); } .axis .tick.big i { height: 18px; } .axis .tick.me i { height: 32px; width: 3px; background: var(--red); } .axis .tick em { position: absolute; top: 100%; margin-top: 6px; font-style: normal; font-size: 15px; font-weight: 700; white-space: nowrap; } .axis .tick.me em { color: var(--red); }
+  .digits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; } .digits div { border: 2px solid var(--ink); border-radius: 10px; padding: 8px 4px; background: #fffaf0; } .digits b { display: block; font-size: 28px; } .digits small { color: var(--muted2); }
+  .column { font-family: Menlo, Consolas, monospace; font-size: 26px; line-height: 1.4; width: max-content; margin: 0 auto; text-align: right; } .column .line { border-top: 3px solid var(--ink); font-weight: 700; }
+  .pie { position: relative; width: 150px; height: 150px; border-radius: 50%; margin: 0 auto 8px; background: #e8dfcc; border: 3px solid var(--ink); overflow: hidden; } .pie i { position: absolute; left: 50%; top: 0; width: 50%; height: 50%; transform-origin: 0 100%; background: transparent; border-left: 2px solid var(--ink); } .pie i.f0, .pie i.f1 { background: var(--teal); } .pie i.f1 { background: var(--mustard); }
   .lsQ { margin-top: 12px; border-top: 1px dashed #c9b48a; padding-top: 10px; }
   .vyjCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin: 8px 0; }
   .vyjCard { border: 2px solid var(--ink); border-radius: 14px; background: #fffaf0; padding: 10px 12px; }
@@ -902,7 +905,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-25d";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-26b";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -1572,6 +1575,7 @@ var SUBJECTS = {
 };
 
 var TOPIC_ORDER = ["C1","C2","M1","M2","C3","M3","M4","C4","C5","M5","C6","M6","C7","M7","C8","M8","C9","M9","C10","C11","C12",
+                   "M41","M42","M43","M44","M45","M46","M47","M48","M49",
                    "E0","E1","E2","E3","E4",
                    "H0","H1","H2","H3","H4","H5","H6","H7"];
 var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
@@ -1581,34 +1585,45 @@ var DEFAULT_UNLOCKED = ["M1","M2","C1","C2","E1","E2"];
    s upozorněním (fallback) — a z S.grade ve zpětné vazbě poznáme, kterou třídu stavět příště. */
 var DEFAULT_GRADE = 3;
 var CURRICULUM = {
+  4: { n: "4. třída", defaultUnlocked: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C11", "E1", "E2"], partial: "Čeština 4. třídy se doplňuje (vzory, stavba slova, slovesa); zatím jsou k dispozici vyjmenovaná slova a slovní druhy.",
+       note: "Výchozí odemčení odpovídá začátku 4. třídy: opakování násobilky a dělení, čísla do 10 000, vyjmenovaná slova po B, L, M a slovní druhy. Písemné počítání, zaokrouhlování, zlomky a jednotky odemykejte, až je ve škole proberou." },
   3: { n: "3. třída", defaultUnlocked: DEFAULT_UNLOCKED, note: "Výchozí odemčení odpovídá začátku 3. třídy (opakování 2. třídy): sčítání a odčítání do 100, násobilka 2–5, tvrdé/měkké slabiky, abeceda, dva okruhy slovíček. Vyjmenovaná slova a násobilku 6–10 školy probírají postupně během 3. třídy — odemykejte po jednom tématu. Slovní úlohy používají jen početní operace z právě odemčených témat." }
 };
 function kidGrade(st) { st = st || S; var g = st && st.grade; return g >= 1 && g <= 5 ? g : DEFAULT_GRADE; }
 function curriculumFor(st) { var g = kidGrade(st), c = CURRICULUM[g]; if (c) return c; var f = {}; for (var k in CURRICULUM[DEFAULT_GRADE]) f[k] = CURRICULUM[DEFAULT_GRADE][k]; f.fallback = true; f.wanted = g; return f; }
-function gradeTopics(g) { var cg = CURRICULUM[g] ? g : DEFAULT_GRADE; return TOPIC_ORDER.filter(function (t) { var tg = TOPICS[t].grade; return !tg || tg === cg; }); }
+function gradeTopics(g) { var cg = CURRICULUM[g] ? g : DEFAULT_GRADE; return TOPIC_ORDER.filter(function (t) { var tg = TOPICS[t].grade; return !tg || tg === cg || (tg.indexOf && tg.indexOf(cg) !== -1); }); }
 
 var TOPICS = {
   C1:  { subj:"cj", n:"Tvrdé a měkké slabiky",       e:"🪨", grade:3 },
   C2:  { subj:"cj", n:"Abeceda a řazení slov",       e:"🔤", grade:3 },
   C3:  { subj:"cj", n:"Párové souhlásky",            e:"🎭", grade:3 },
-  C4:  { subj:"cj", n:"Vyjmenovaná slova po B",      e:"🐂", grade:3 },
-  C5:  { subj:"cj", n:"Vyjmenovaná slova po L",      e:"🎿", grade:3 },
-  C6:  { subj:"cj", n:"Vyjmenovaná slova po M",      e:"🐭", grade:3 },
-  C7:  { subj:"cj", n:"Vyjmenovaná slova po P",      e:"🦇", grade:3 },
-  C8:  { subj:"cj", n:"Vyjmenovaná slova po S",      e:"🧀", grade:3 },
-  C9:  { subj:"cj", n:"Vyjmenovaná slova po V",      e:"🦦", grade:3 },
-  C10: { subj:"cj", n:"Vyjmenovaná slova po Z",      e:"👅", grade:3 },
-  C11: { subj:"cj", n:"Slovní druhy",                e:"🧩", grade:3 },
+  C4:  { subj:"cj", n:"Vyjmenovaná slova po B",      e:"🐂", grade:[3,4] },
+  C5:  { subj:"cj", n:"Vyjmenovaná slova po L",      e:"🎿", grade:[3,4] },
+  C6:  { subj:"cj", n:"Vyjmenovaná slova po M",      e:"🐭", grade:[3,4] },
+  C7:  { subj:"cj", n:"Vyjmenovaná slova po P",      e:"🦇", grade:[3,4] },
+  C8:  { subj:"cj", n:"Vyjmenovaná slova po S",      e:"🧀", grade:[3,4] },
+  C9:  { subj:"cj", n:"Vyjmenovaná slova po V",      e:"🦦", grade:[3,4] },
+  C10: { subj:"cj", n:"Vyjmenovaná slova po Z",      e:"👅", grade:[3,4] },
+  C11: { subj:"cj", n:"Slovní druhy",                e:"🧩", grade:[3,4] },
   C12: { subj:"cj", n:"Věty a souvětí",              e:"💬", grade:3 },
   M1:  { subj:"m",  n:"Sčítání a odčítání do 100",   e:"➕", grade:3 },
-  M2:  { subj:"m",  n:"Násobilka 2–5",               e:"✖️", grade:3 },
-  M3:  { subj:"m",  n:"Násobilka 6–10",              e:"✴️", grade:3 },
-  M4:  { subj:"m",  n:"Dělení malou násobilkou",     e:"➗", grade:3 },
+  M2:  { subj:"m",  n:"Násobilka 2–5",               e:"✖️", grade:[3,4] },
+  M3:  { subj:"m",  n:"Násobilka 6–10",              e:"✴️", grade:[3,4] },
+  M4:  { subj:"m",  n:"Dělení malou násobilkou",     e:"➗", grade:[3,4] },
   M5:  { subj:"m",  n:"Do 1000 — desítky a stovky",  e:"💯", grade:3 },
   M6:  { subj:"m",  n:"Zaokrouhlování",              e:"🎯", grade:3 },
   M7:  { subj:"m",  n:"Dělení se zbytkem",           e:"🍪", grade:3 },
   M8:  { subj:"m",  n:"Jednotky a čas",              e:"⏰", grade:3 },
   M9:  { subj:"m",  n:"Slovní úlohy z Bradavic",     e:"📜", grade:3 },
+  M41: { subj:"m",  n:"Čísla do 10 000",             e:"🔢", grade:4 },
+  M42: { subj:"m",  n:"Písemné sčítání a odčítání",  e:"✏️", grade:4 },
+  M43: { subj:"m",  n:"Násobení a dělení zpaměti",   e:"⚡", grade:4 },
+  M44: { subj:"m",  n:"Písemné násobení",            e:"📝", grade:4 },
+  M45: { subj:"m",  n:"Písemné dělení",              e:"📐", grade:4 },
+  M46: { subj:"m",  n:"Zaokrouhlování do milionu",   e:"🎯", grade:4 },
+  M47: { subj:"m",  n:"Zlomky",                      e:"🍰", grade:4 },
+  M48: { subj:"m",  n:"Jednotky a římské číslice",   e:"📏", grade:4 },
+  M49: { subj:"m",  n:"Slovní úlohy pro čtvrťáky",   e:"📜", grade:4 },
   E0:  { subj:"en", n:"Slovíčka ze školy",           e:"🎒", custom:true },
   E1:  { subj:"en", n:"Zvířata v Bradavicích",       e:"🦉" },
   E2:  { subj:"en", n:"Věci kouzelníka",             e:"🪄" },
@@ -2027,7 +2042,162 @@ function mathHint(g) {
   return "";
 }
 
-var GENS = { M1:genM1, M2:genM2, M3:genM3, M4:genM4, M5:genM5, M6:genM6, M7:genM7, M8:genM8, M9:genM9 };
+/* =====================================================================
+   MATEMATIKA 4. TŘÍDY (M41–M49, 25. 10. 2026): čísla do 10 000 a do milionu, písemné sčítání, odčítání,
+   násobení a dělení (odpověď se píše: kind "type", numeric), násobení a dělení mimo násobilku zpaměti,
+   zaokrouhlování na stovky až desetitisíce, zlomky, jednotky a římské číslice, víckrokové slovní úlohy.
+   Generované jako M1–M9: q, opts/correct, why, dbg (genKey bez výsledku). Vzor: RVP ZV, učebnice 4. ročníku.
+   ===================================================================== */
+var CZ_ONES = ["", "jedna", "dva", "tři", "čtyři", "pět", "šest", "sedm", "osm", "devět", "deset", "jedenáct", "dvanáct", "třináct", "čtrnáct", "patnáct", "šestnáct", "sedmnáct", "osmnáct", "devatenáct"];
+var CZ_TENS = ["", "", "dvacet", "třicet", "čtyřicet", "padesát", "šedesát", "sedmdesát", "osmdesát", "devadesát"];
+var CZ_HUND = ["", "sto", "dvě stě", "tři sta", "čtyři sta", "pět set", "šest set", "sedm set", "osm set", "devět set"];
+/* číslo slovy do 9 999 (pro čtení čísel) */
+function czNum(n) {
+  var parts = [], th = Math.floor(n / 1000), h = Math.floor(n % 1000 / 100), r = n % 100;
+  if (th) parts.push(th === 1 ? "tisíc" : th <= 4 ? CZ_ONES[th] + " tisíce" : CZ_ONES[th] + " tisíc");
+  if (h) parts.push(CZ_HUND[h]);
+  if (r >= 20) parts.push(CZ_TENS[Math.floor(r / 10)] + (r % 10 ? " " + CZ_ONES[r % 10] : ""));
+  else if (r) parts.push(CZ_ONES[r]);
+  return parts.join(" ") || "nula";
+}
+function fmtN(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }   /* 2 346 */
+function placeNames(n) { return { t: Math.floor(n / 1000), s: Math.floor(n % 1000 / 100), d: Math.floor(n % 100 / 10), j: n % 10 }; }
+
+/* M41: čísla do 10 000 */
+function genM41() {
+  var v = rnd(1, 5), n, ans, q, why, opts;
+  if (v === 1) {
+    var arr = [], base = rnd(1, 9) * 1000 + rnd(0, 9) * 100 + rnd(0, 99);
+    arr = [base, base + rnd(1, 9) * 100, base - rnd(1, 9) * 10, base + rnd(1, 9) * 1000]; arr = arr.filter(function (x) { return x > 0 && x < 10000; });
+    while (arr.length < 4) arr.push(rnd(1000, 9999));
+    var set = {}; arr = arr.filter(function (x) { if (set[x]) return false; set[x] = true; return true; }); while (arr.length < 4) { var z = rnd(1000, 9999); if (!set[z]) { set[z] = true; arr.push(z); } }
+    ans = Math.max.apply(null, arr);
+    return { q: "Které z čísel je největší?", opts: shuffle(arr.map(fmtN)), correct: fmtN(ans), why: "Nejdřív porovnej tisíce, pak stovky: největší je " + fmtN(ans) + ".", dbg: { t: "M41", v: v, a: arr.slice().sort().join("_") } };
+  }
+  if (v === 2) {
+    n = rnd(1001, 9999); var pl = placeNames(n), which = pick(["t", "s", "d", "j"]), lab = { t: "tisíců", s: "stovek", d: "desítek", j: "jednotek" }[which];
+    ans = pl[which];
+    q = "Rozlož číslo " + fmtN(n) + " na řády. Kolik má " + lab + "?";
+    why = fmtN(n) + " = " + pl.t + " T + " + pl.s + " S + " + pl.d + " D + " + pl.j + " J.";
+    opts = numOptions(ans, [1, -1, 2, -2, 3]).filter(function (x) { return x >= 0 && x <= 9; }); while (opts.length < 4) { var c = rnd(0, 9); if (opts.indexOf(c) === -1) opts.push(c); }
+    return { q: q, opts: opts, correct: ans, why: why, dbg: { t: "M41", v: v, n: n, w: which } };
+  }
+  if (v === 3) {
+    var a = rnd(1, 7) * 1000 + rnd(1, 9) * 100, b = rnd(1, 9) * 100 + rnd(0, 1) * rnd(1, 8) * 1000; if (a + b > 9999) b = 9900 - a; ans = a + b;
+    return { q: fmtN(a) + " + " + fmtN(b) + " = ?", opts: numOptions(ans, [100, -100, 1000, -1000, 10, -10]).map(fmtN), correct: fmtN(ans), why: fmtN(a) + " + " + fmtN(b) + " = " + fmtN(ans) + " (sčítej tisíce a stovky zvlášť).", dbg: { t: "M41", v: v, a: a, b: b } };
+  }
+  if (v === 4) {
+    var c2 = rnd(3, 9) * 1000 + rnd(0, 9) * 100, d2 = rnd(1, 9) * 100 + rnd(0, 1) * rnd(1, 2) * 1000; if (d2 >= c2) d2 = rnd(1, 9) * 100; ans = c2 - d2;
+    return { q: fmtN(c2) + " − " + fmtN(d2) + " = ?", opts: numOptions(ans, [100, -100, 1000, -1000, 10, -10]).map(fmtN), correct: fmtN(ans), why: fmtN(c2) + " − " + fmtN(d2) + " = " + fmtN(ans) + ".", dbg: { t: "M41", v: v, a: c2, b: d2 } };
+  }
+  n = rnd(1001, 9999); if (n % 10 === 0) n += 7;
+  var alt = [n, parseInt(String(n).split("").reverse().join(""), 10), n + 90, n - 900].filter(function (x, i, arr2) { return x > 999 && x < 10000 && arr2.indexOf(x) === i; }); while (alt.length < 4) { var y = rnd(1000, 9999); if (alt.indexOf(y) === -1) alt.push(y); }
+  return { q: "Které číslo je zapsané slovy: „" + czNum(n) + "“?", opts: shuffle(alt.map(fmtN)), correct: fmtN(n), why: czNum(n) + " = " + fmtN(n) + ".", dbg: { t: "M41", v: v, n: n } };
+}
+/* M42: písemné sčítání a odčítání (odpověď se píše) */
+function genM42() {
+  var add = Math.random() < 0.5, big = Math.random() < 0.3, a, b, ans;
+  if (add) { a = big ? rnd(10000, 899999) : rnd(1000, 8999); b = big ? rnd(1000, 999999 - a) : rnd(100, 9999 - a); ans = a + b; }
+  else { a = big ? rnd(20000, 999999) : rnd(2000, 9999); b = big ? rnd(1000, a - 1) : rnd(100, a - 1); ans = a - b; }
+  var sym = add ? " + " : " − ";
+  return { kind: "type", numeric: true, q: "Vypočítej písemně: " + fmtN(a) + sym + fmtN(b), opts: [], correct: ans,
+    why: fmtN(a) + sym + fmtN(b) + " = " + fmtN(ans) + ". Piš pod sebe: jednotky pod jednotky, počítej zprava" + (add ? ", přenos nezapomeň." : ", kde nejde odečíst, půjč si desítku."), dbg: { t: "M42", op: add ? "+" : "-", a: a, b: b } };
+}
+/* M43: násobení a dělení mimo násobilku zpaměti */
+function genM43() {
+  var v = rnd(1, 4), a, b, ans, q, why;
+  if (v === 1) { a = rnd(11, 19); b = rnd(2, 9); ans = a * b; q = a + " × " + b + " = ?"; why = a + " × " + b + " = 10 × " + b + " + " + (a - 10) + " × " + b + " = " + (10 * b) + " + " + ((a - 10) * b) + " = " + ans + "."; return { q: q, opts: numOptions(ans, [b, -b, 10, -10, a, -a]), correct: ans, why: why, dbg: { t: "M43", v: v, a: a, b: b } }; }
+  if (v === 2) { a = rnd(2, 9) * 10; b = rnd(2, 9); ans = a * b; q = a + " × " + b + " = ?"; why = (a / 10) + " × " + b + " = " + (a / 10 * b) + ", a nula na konci: " + ans + "."; return { q: q, opts: numOptions(ans, [10, -10, 100, -100, b * 10]), correct: ans, why: why, dbg: { t: "M43", v: v, a: a, b: b } }; }
+  if (v === 3) { b = rnd(2, 9); var k = rnd(11, 19); a = b * k; ans = k; q = a + " ÷ " + b + " = ?"; why = a + " ÷ " + b + ": " + (b * 10) + " ÷ " + b + " = 10 a " + (a - b * 10) + " ÷ " + b + " = " + (k - 10) + ", dohromady " + ans + "."; return { q: q, opts: numOptions(ans, [1, -1, 2, -2, 10]), correct: ans, why: why, dbg: { t: "M43", v: v, a: a, b: b } }; }
+  b = rnd(2, 9); var k2 = rnd(2, 9) * (Math.random() < 0.5 ? 10 : 100); a = b * k2; ans = k2; q = fmtN(a) + " ÷ " + b + " = ?"; why = (a / (k2 >= 100 ? 100 : 10)) + " ÷ " + b + " = " + (ans / (k2 >= 100 ? 100 : 10)) + ", a nuly připiš: " + fmtN(ans) + ".";
+  return { q: q, opts: numOptions(ans, [10, -10, 100, -100, ans / 10]).filter(function (x) { return x > 0; }), correct: ans, why: why, dbg: { t: "M43", v: v, a: a, b: b } };
+}
+/* M44: písemné násobení (odpověď se píše) */
+function genM44() {
+  var two = Math.random() < 0.3, a, b, ans;
+  if (two) { a = rnd(12, 49); b = rnd(11, 49); } else { a = rnd(102, 987); b = rnd(2, 9); }
+  ans = a * b;
+  return { kind: "type", numeric: true, q: "Vypočítej písemně: " + fmtN(a) + " × " + b, opts: [], correct: ans,
+    why: fmtN(a) + " × " + b + " = " + fmtN(ans) + ". Násob zprava po řádech" + (two ? ", druhý řádek posuň o jedno místo doleva a sečti." : ", přenos přičti k dalšímu řádu."), dbg: { t: "M44", a: a, b: b } };
+}
+/* M45: písemné dělení jednociferným dělitelem (beze zbytku se píše, se zbytkem výběr) */
+function genM45() {
+  var d = rnd(2, 9), q = rnd(100, 999), rem = Math.random() < 0.4 ? rnd(1, d - 1) : 0, n = d * q + rem;
+  if (!rem) return { kind: "type", numeric: true, q: "Vypočítej písemně: " + fmtN(n) + " ÷ " + d, opts: [], correct: q, why: fmtN(n) + " ÷ " + d + " = " + q + ". Zkouška: " + q + " × " + d + " = " + fmtN(n) + ".", dbg: { t: "M45", n: n, d: d } };
+  var ansStr = q + ", zbytek " + rem, set = {}; set[ansStr] = true; var opts = [ansStr];
+  [[q, (rem + 1) % d], [q + 1, rem], [q - 1, rem], [q, d - rem]].forEach(function (p) { var s = p[0] + ", zbytek " + p[1]; if (!set[s] && opts.length < 4 && p[1] > 0 && p[1] < d) { set[s] = true; opts.push(s); } });
+  while (opts.length < 4) { var s2 = (q + rnd(2, 9)) + ", zbytek " + rem; if (!set[s2]) { set[s2] = true; opts.push(s2); } }
+  return { q: fmtN(n) + " ÷ " + d + " = ?", opts: opts, correct: ansStr, why: d + " × " + q + " = " + fmtN(d * q) + " a zbývá " + rem + ".", dbg: { t: "M45", n: n, d: d } };
+}
+/* M46: zaokrouhlování a čísla do milionu */
+function genM46() {
+  var v = rnd(1, 4), n, ans, unit, lab;
+  if (v <= 3) {
+    unit = [100, 1000, 10000][v - 1]; lab = ["stovky", "tisíce", "desetitisíce"][v - 1];
+    n = v === 1 ? rnd(1001, 9999) : v === 2 ? rnd(1001, 99999) : rnd(10001, 999999); if (n % unit === 0) n += 7;
+    ans = Math.round(n / unit) * unit;
+    var lo = Math.floor(n / unit) * unit, hi = lo + unit, far = ans === lo ? (lo - unit > 0 ? lo - unit : hi + unit) : hi + unit;
+    return { q: "Zaokrouhli číslo " + fmtN(n) + " na " + lab + ".", opts: shuffle([ans, ans === lo ? hi : lo, n, far].map(fmtN)), correct: fmtN(ans),
+      why: fmtN(n) + " leží mezi " + fmtN(lo) + " a " + fmtN(hi) + (n % unit === unit / 2 ? ", je přesně uprostřed a pětka jde nahoru: " : ", blíž má k ") + fmtN(ans) + ".", dbg: { t: "M46", v: v, n: n } };
+  }
+  var arr = [], set = {}; while (arr.length < 4) { var x = rnd(100000, 999999); if (!set[x]) { set[x] = true; arr.push(x); } }
+  ans = Math.max.apply(null, arr);
+  return { q: "Které z čísel je největší?", opts: shuffle(arr.map(fmtN)), correct: fmtN(ans), why: "Porovnej nejdřív statisíce: největší je " + fmtN(ans) + ".", dbg: { t: "M46", v: v, a: arr.slice().sort().join("_") } };
+}
+/* M47: zlomky */
+function genM47() {
+  var v = rnd(1, 4), den, num, ans, q, why, opts;
+  var FR = { 2: "polovina", 3: "třetina", 4: "čtvrtina", 5: "pětina", 6: "šestina", 8: "osmina", 10: "desetina" };
+  if (v === 1) {
+    den = pick([2, 3, 4, 5, 6, 8]); num = rnd(1, den - 1); ans = num + "/" + den;
+    var thing = pick(["koláč", "čokoláda", "pizza"]);
+    q = thing.charAt(0).toUpperCase() + thing.slice(1) + " je rozdělen" + (thing === "koláč" ? "" : "a") + " na " + czCount(den, "stejný díl", "stejné díly", "stejných dílů") + " a " + num + " " + (num === 1 ? "díl se snědl" : num < 5 ? "díly se snědly" : "dílů se snědlo") + ". Jaká část se snědla?";
+    opts = [ans]; [(den - num) + "/" + den, num + "/" + (den + 1), (num + 1) + "/" + den, (num + 2) + "/" + den, num + "/" + (den - 1)].forEach(function (o) { if (opts.length < 4 && opts.indexOf(o) === -1) opts.push(o); });
+    opts = shuffle(opts); why = num + " z " + den + " dílů = " + ans + ".";
+    return { q: q, opts: opts, correct: ans, why: why, dbg: { t: "M47", v: v, n: num, d: den } };
+  }
+  if (v === 2) {
+    den = pick([2, 3, 4, 5, 6, 8, 10]); var k = rnd(2, 9); var tot = den * k; ans = k;
+    q = "Kolik je " + FR[den] + " z " + tot + "?"; why = tot + " ÷ " + den + " = " + k + ".";
+    return { q: q, opts: numOptions(ans, [1, -1, 2, -2, den]), correct: ans, why: why, dbg: { t: "M47", v: v, d: den, tot: tot } };
+  }
+  if (v === 3) {
+    den = pick([3, 4, 5, 6, 8, 10]); var a = rnd(1, den - 2), b = rnd(1, den - 1 - a); ans = (a + b) + "/" + den;
+    q = a + "/" + den + " + " + b + "/" + den + " = ?"; why = "Stejné jmenovatele: sečti jen čitatele, " + a + " + " + b + " = " + (a + b) + ".";
+    opts = [ans]; [(a + b) + "/" + (den + den), (a * b) + "/" + den, (a + b + 1) + "/" + den, (a + b - 1) + "/" + den, (a + b) + "/" + (den + 1)].forEach(function (o) { if (opts.length < 4 && opts.indexOf(o) === -1) opts.push(o); });
+    return { q: q, opts: shuffle(opts), correct: ans, why: why, dbg: { t: "M47", v: v, a: a, b: b, d: den } };
+  }
+  den = pick([2, 4]); var tot2 = den * rnd(3, 12); ans = tot2 / den;
+  q = pick(["Hagrid má " + tot2 + " dýní a " + (den === 2 ? "polovinu" : "čtvrtinu") + " dá Harrymu. Kolik dýní Harry dostane?", "V krabici je " + tot2 + " čokoládových žabek. Ron snědl " + (den === 2 ? "polovinu" : "čtvrtinu") + ". Kolik žabek snědl?"]);
+  why = tot2 + " ÷ " + den + " = " + ans + ".";
+  return { q: q, opts: numOptions(ans, [1, -1, 2, -2, den]), correct: ans, why: why, dbg: { t: "M47", v: v, d: den, tot: tot2 } };
+}
+/* M48: jednotky a římské číslice */
+var ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"];
+function genM48() {
+  var v = rnd(1, 7), n, ans, q, why, opts;
+  if (v === 1) { n = rnd(2, 9); var m = rnd(1, 9) * 100; ans = n * 1000 + m; q = "Kolik metrů " + (n <= 4 ? "jsou " : "je ") + n + " km " + m + " m?"; why = "1 km = 1 000 m, takže " + n + " km " + m + " m = " + fmtN(ans) + " m."; opts = numOptions(ans, [100, -100, 1000, -1000, 10]).map(fmtN); return { q: q, opts: opts, correct: fmtN(ans), why: why, dbg: { t: "M48", v: v, n: n, m: m } }; }
+  if (v === 2) { n = rnd(2, 9); ans = n * 1000; q = "Kolik kilogramů " + (n <= 4 ? "jsou " : "je ") + n + " t?"; why = "1 t = 1 000 kg, takže " + n + " t = " + fmtN(ans) + " kg."; opts = numOptions(ans, [1000, -1000, 100, -100, 500]).map(fmtN); return { q: q, opts: opts, correct: fmtN(ans), why: why, dbg: { t: "M48", v: v, n: n } }; }
+  if (v === 3) { n = rnd(2, 9); ans = n * 60; q = "Kolik sekund " + (n <= 4 ? "jsou " : "je ") + n + " minut" + (n <= 4 ? "y" : "") + "?"; why = "1 minuta = 60 sekund, takže " + n + " min = " + ans + " s."; opts = numOptions(ans, [60, -60, 10, -10, 100]); return { q: q, opts: opts, correct: ans, why: why, dbg: { t: "M48", v: v, n: n } }; }
+  if (v === 4) { n = rnd(2, 9); var h = rnd(1, 9) * 100; ans = n * 1000 + h; q = "Kolik mililitrů " + (n <= 4 ? "jsou " : "je ") + n + " l " + h + " ml?"; why = "1 l = 1 000 ml, takže " + n + " l " + h + " ml = " + fmtN(ans) + " ml."; opts = numOptions(ans, [100, -100, 1000, -1000, 10]).map(fmtN); return { q: q, opts: opts, correct: fmtN(ans), why: why, dbg: { t: "M48", v: v, n: n, h: h } }; }
+  if (v === 5) { n = rnd(2, 9); var c = rnd(1, 9); ans = n * 10 + c; q = "Kolik milimetrů " + (n <= 4 ? "jsou " : "je ") + n + " cm " + c + " mm?"; why = "1 cm = 10 mm, takže " + n + " cm " + c + " mm = " + ans + " mm."; opts = numOptions(ans, [1, -1, 10, -10, 9]); return { q: q, opts: opts, correct: ans, why: why, dbg: { t: "M48", v: v, n: n, c: c } }; }
+  if (v === 6) { n = rnd(1, 20); ans = n; q = "Jaké číslo je zapsané římsky: " + ROMAN[n] + "?"; why = ROMAN[n] + " = " + n + "."; opts = numOptions(ans, [1, -1, 2, -2, 5, -5]).filter(function (x) { return x >= 1 && x <= 20; }); while (opts.length < 4) { var z = rnd(1, 20); if (opts.indexOf(z) === -1) opts.push(z); } return { q: q, opts: opts, correct: ans, why: why, dbg: { t: "M48", v: v, n: n } }; }
+  n = rnd(1, 20); ans = ROMAN[n]; var wr = [ROMAN[n]]; [n + 1, n - 1, n + 5, n - 5, n + 2].forEach(function (k) { if (k >= 1 && k <= 20 && wr.length < 4 && wr.indexOf(ROMAN[k]) === -1) wr.push(ROMAN[k]); });
+  while (wr.length < 4) { var kk = rnd(1, 20); if (wr.indexOf(ROMAN[kk]) === -1) wr.push(ROMAN[kk]); }
+  return { q: "Jak se zapíše číslo " + n + " římskými číslicemi?", opts: shuffle(wr), correct: ans, why: n + " = " + ans + ".", dbg: { t: "M48", v: v, n: n } };
+}
+/* M49: slovní úlohy 4. třídy (víckrokové, o kolik víc, kolikrát víc) */
+function genM49(state) {
+  var v = rnd(1, 5), a, b, ans, text, why, name = (state && state.name) || "{Mladá čarodějka|Mladý čaroděj}";
+  if (v === 1) { a = rnd(12, 60); b = rnd(3, a - 5); ans = a + (a - b); var who = pick([["Hermiona má " + a + " knih a Ron má o " + b + " méně. Kolik knih mají dohromady?", "Ron"], ["Nebelvír má " + a + " bodů a Mrzimor o " + b + " méně. Kolik bodů mají obě koleje dohromady?", "Mrzimor"]]); text = who[0]; why = who[1] + " má " + a + " − " + b + " = " + (a - b) + ", dohromady " + a + " + " + (a - b) + " = " + ans + "."; return { q: text, opts: numOptions(ans, [b, -b, 1, -1, 10]), correct: ans, why: why, dbg: { t: "M49", v: v, a: a, b: b } }; }
+  if (v === 2) { a = rnd(3, 12); b = rnd(2, 6); ans = a * b; text = pick(["Harry má " + czCount(a, "čokoládovou žabku", "čokoládové žabky", "čokoládových žabek") + " a Ron " + b + "krát víc. Kolik žabek má Ron?", "V sovinci " + (a <= 4 ? "jsou " : "je ") + czCount(a, "sova", "sovy", "sov") + " a v Zapovězeném lese " + b + "krát víc. Kolik sov je v lese?"]); why = b + "krát víc = " + a + " × " + b + " = " + ans + "."; return { q: text, opts: numOptions(ans, [a, -a, b, -b, 1]), correct: ans, why: why, dbg: { t: "M49", v: v, a: a, b: b } }; }
+  if (v === 3) { a = rnd(3, 8); b = rnd(11, 25) * 5; ans = a * b; text = pick(["Ve " + a + " krabicích je po " + b + " Bertíkových fazolkách. Kolik fazolek je celkem?", "Madam Pinceová má " + czCount(a, "polici", "police", "polic") + " a v každé " + b + " knih. Kolik knih je v knihovně?"]); why = a + " × " + b + " = " + fmtN(ans) + "."; return { q: text, opts: numOptions(ans, [b, -b, 10, -10, 100]).map(fmtN), correct: fmtN(ans), why: why, dbg: { t: "M49", v: v, a: a, b: b } }; }
+  if (v === 4) { a = rnd(2, 9) * 100 + rnd(1, 9) * 10; b = rnd(2, 9) * 10 + rnd(1, 9); var c = rnd(2, 9) * 10; ans = a - b - c; if (ans <= 0) { ans = a; b = 0; c = 0; } text = name + " měl{a|} " + a + " galeonů. Za koště dal{a|} " + b + " a za sovu " + c + ". Kolik galeonů {jí|mu} zbylo?"; why = a + " − " + b + " − " + c + " = " + ans + "."; return { q: text, opts: numOptions(ans, [10, -10, c, -c, 1]), correct: ans, why: why, dbg: { t: "M49", v: v, a: a, b: b, c: c } }; }
+  a = rnd(4, 9); b = rnd(2, 9); var d = rnd(2, 6); ans = a * b * d; text = "Do kotlíku " + (a <= 4 ? "patří " : "patří ") + czCount(a, "kapka", "kapky", "kapek") + " lektvaru. " + (b <= 4 ? "Kotlíky jsou " + b : "Kotlíků je " + b) + " a lekce se opakuje " + d + "krát. Kolik kapek se spotřebuje?"; why = a + " × " + b + " = " + (a * b) + " kapek na jednu lekci, × " + d + " = " + ans + ".";
+  return { q: text, opts: numOptions(ans, [a, -a, b * d, -(b * d), 10]), correct: ans, why: why, dbg: { t: "M49", v: v, a: a, b: b, d: d } };
+}
+var GENS = { M1:genM1, M2:genM2, M3:genM3, M4:genM4, M5:genM5, M6:genM6, M7:genM7, M8:genM8, M9:genM9,
+  M41:genM41, M42:genM42, M43:genM43, M44:genM44, M45:genM45, M46:genM46, M47:genM47, M48:genM48, M49:genM49 };
 
 /* =====================================================================
    KOUZELNÉ FORMULE — anglická slovíčka.
@@ -2923,6 +3093,7 @@ function makeQuestion(t, state, usedIds) {
   state.recentQ[t] = rq;
   var hint = mathHint(g);
   var fk = (t === "M2" || t === "M3") && g.dbg ? factKey(g.dbg.a, g.dbg.b) : null;
+  if (g.kind === "type") return { topic: t, kind: "type", numeric: true, q: g.q, opts: [], correct: g.correct, accept: [String(g.correct)], why: g.why, dbg: g.dbg };
   return { topic: t, kind:"choice", q: g.q, opts: shuffle(g.opts), correct: g.correct, why: hint || g.why, hint: hint ? hintOpen(hint) : "", fact: fk, dbg: g.dbg };
 }
 /* Klíč příkladu z ladicích údajů generátoru (bez výsledku); 3×7 a 7×3 je týž příklad. */
@@ -4857,6 +5028,79 @@ var LESSONS = {
       vis: { k: "text", h: "Kočka <b>spí</b> na gauči. → 1 sloveso → <b>věta</b><br><b>Prší</b>, a proto <b>zůstaneme</b> doma. → 2 slovesa → <b>souvětí</b>" }, try: { id: "c12_07" } }
   ]
 };
+/* karty výkladu 4. třídy — matematika (klasika, McGonagallová) */
+LESSONS.M41 = [
+  { t: "Tisíce, stovky, desítky, jednotky", say: "Každé číslo do deseti tisíc má čtyři řády. Tři tisíce čtyři sta padesát šest: tři tisíce, čtyři stovky, pět desítek, šest jednotek.",
+    vis: { k: "digits", n: 3456 }, try: { q: "Kolik desítek má číslo 7 283?", correct: 8, opts: [8, 2, 3, 7], why: "7 283 = 7 T + 2 S + 8 D + 3 J." } },
+  { t: "Porovnávání", say: "Při porovnávání se dívej nejdřív na tisíce. Když jsou stejné, rozhodnou stovky, pak desítky.",
+    vis: { k: "text", h: "4 <b>7</b>12 · 4 <b>3</b>98 → tisíce stejné, stovky 7 > 3<br>4 712 > 4 398" }, try: { q: "Které z čísel je největší?", correct: "6 240", opts: ["6 240", "6 204", "6 024", "5 999"], why: "Tisíce 6 mají tři čísla, stovky 2 mají dvě, rozhodnou desítky: 4 > 0." } },
+  { t: "Stovky a tisíce zpaměti", say: "Celé stovky a tisíce sčítej jako jednotky. Dva tisíce tři sta a čtyři sta: tři stovky a čtyři stovky je sedm stovek.",
+    vis: { k: "text", h: "2 300 + 400 → 3 S + 4 S = 7 S → <b>2 700</b><br>5 000 − 2 000 → 5 T − 2 T → <b>3 000</b>" }, try: { q: "3 600 + 300 = ?", correct: "3 900", opts: ["3 900", "3 300", "6 600", "3 630"], why: "6 stovek + 3 stovky = 9 stovek." } }
+];
+LESSONS.M42 = [
+  { t: "Pod sebe, řád pod řád", say: "Při písemném sčítání piš čísla pod sebe: jednotky pod jednotky, desítky pod desítky. Počítej zprava.",
+    vis: { k: "column", op: "+", a: 2346, b: 1528 }, try: { q: "Vypočítej písemně: 1 234 + 2 345", correct: 3579, opts: [3579, 3569, 3479, 3589], why: "4+5=9, 3+4=7, 2+3=5, 1+2=3 → 3 579." } },
+  { t: "Přenos", say: "Když součet v jednom řádu přesáhne devět, zapiš jednotky a jedničku přenes do dalšího řádu.",
+    vis: { k: "column", op: "+", a: 4785, b: 2367 }, try: { q: "Vypočítej písemně: 2 658 + 1 475", correct: 4133, opts: [4133, 4123, 3133, 4033], why: "8+5=13 (píšu 3, 1 dál), 5+7+1=13, 6+4+1=11, 2+1+1=4." } },
+  { t: "Odčítání s půjčkou", say: "Když nejde odečíst, půjč si desítku z vyššího řádu. Dvanáct bez pěti je sedm a v dalším řádu odečítám o jedna víc.",
+    vis: { k: "column", op: "-", a: 5342, b: 1725 }, try: { q: "Vypočítej písemně: 6 431 − 2 785", correct: 3646, opts: [3646, 3656, 4646, 3746], why: "11−5=6 (půjčka), 3−1−8 nejde → 12−8=4 (půjčka), 4−1−7 nejde → 13−7=6 (půjčka), 6−1−2=3 → 3 646." } }
+];
+LESSONS.M43 = [
+  { t: "Rozlož na desítku a zbytek", say: "Dvanáct krát čtyři neznáš? Rozlož: deset krát čtyři je čtyřicet a dva krát čtyři je osm. Dohromady čtyřicet osm.",
+    vis: { k: "text", h: "12 × 4 = 10 × 4 + 2 × 4 = 40 + 8 = <b>48</b>" }, try: { a: 13, b: 3 } },
+  { t: "Desítky se násobí snadno", say: "Sedmdesát krát osm: sedm krát osm je padesát šest, a nula na konci. Pět set šedesát.",
+    vis: { k: "text", h: "70 × 8 → 7 × 8 = 56 → <b>560</b><br>400 × 3 → 4 × 3 = 12 → <b>1 200</b>" }, try: { q: "60 × 7 = ?", correct: 420, opts: [420, 42, 630, 4200], why: "6 × 7 = 42, nula na konci: 420." } },
+  { t: "Dělení s nulami", say: "Tři sta šedesát děleno šesti: třicet šest děleno šesti je šest, a nula se vrátí. Šedesát.",
+    vis: { k: "text", h: "360 ÷ 6 → 36 ÷ 6 = 6 → <b>60</b><br>4 800 ÷ 8 → 48 ÷ 8 = 6 → <b>600</b>" }, try: { q: "420 ÷ 7 = ?", correct: 60, opts: [60, 6, 70, 600], why: "42 ÷ 7 = 6, nula zpět: 60." } }
+];
+LESSONS.M44 = [
+  { t: "Násob zprava", say: "Při písemném násobení začni jednotkami. Tři sta čtyřicet dva krát šest: šest krát dva, šest krát čtyři, šest krát tři.",
+    vis: { k: "column", op: "×", a: 342, b: 6 }, try: { q: "Vypočítej písemně: 213 × 3", correct: 639, opts: [639, 636, 649, 629], why: "3×3=9, 3×1=3, 3×2=6 → 639." } },
+  { t: "Přenos při násobení", say: "Když vyjde víc než devět, zapiš jednotky a desítky přenes. Šest krát osm je čtyřicet osm: píšu osm, čtyři přenesu k dalšímu řádu.",
+    vis: { k: "column", op: "×", a: 478, b: 6 }, try: { q: "Vypočítej písemně: 356 × 4", correct: 1424, opts: [1424, 1224, 1404, 1434], why: "4×6=24 (4, 2 dál), 4×5+2=22 (2, 2 dál), 4×3+2=14 → 1 424." } },
+  { t: "Dvojciferný činitel", say: "Dvacet tři krát čtyřicet pět: nejdřív krát pět, pak krát čtyřicet, druhý řádek posuň o jedno místo doleva a sečti.",
+    vis: { k: "text", h: "23 × 45<br>23 × 5 = 115<br>23 × 40 = 920<br>115 + 920 = <b>1 035</b>" }, try: { q: "Vypočítej písemně: 14 × 12", correct: 168, opts: [168, 148, 158, 178], why: "14×2=28, 14×10=140, 28+140=168." } }
+];
+LESSONS.M45 = [
+  { t: "Děl zleva", say: "Při písemném dělení začni od nejvyššího řádu. Kolikrát se šestka vejde do čtyř tisíc sedm set třiceti osmi? Nejdřív do čtyřiceti sedmi.",
+    vis: { k: "text", h: "4 738 ÷ 6<br>47 ÷ 6 = 7, zbytek 5 → 53 ÷ 6 = 8, zbytek 5 → 58 ÷ 6 = 9, zbytek 4<br>= <b>789, zbytek 4</b>" }, try: { q: "Vypočítej písemně: 846 ÷ 2", correct: 423, opts: [423, 432, 413, 424], why: "8÷2=4, 4÷2=2, 6÷2=3 → 423." } },
+  { t: "Zkouška", say: "Výsledek vždy ověř násobením: sedm set osmdesát devět krát šest a zbytek čtyři musí dát původní číslo.",
+    vis: { k: "text", h: "789 × 6 = 4 734<br>4 734 + 4 = <b>4 738</b> ✓" }, try: { q: "1 365 ÷ 5 = ?", correct: 273, opts: [273, 263, 283, 275], why: "Zkouška: 273 × 5 = 1 365." } },
+  { t: "Zbytek je menší než dělitel", say: "Zbytek musí být vždy menší než číslo, kterým dělíš. Kdyby byl větší, dělitel se tam vejde ještě jednou.",
+    vis: { k: "text", h: "935 ÷ 4 = 233, zbytek <b>3</b> (3 < 4 ✓)<br>zkouška: 233 × 4 + 3 = 935" }, try: { q: "527 ÷ 5 = ?", correct: "105, zbytek 2", opts: ["105, zbytek 2", "105, zbytek 7", "104, zbytek 2", "15, zbytek 2"], why: "5 × 105 = 525, zbývají 2." } }
+];
+LESSONS.M46 = [
+  { t: "Na stovky", say: "Při zaokrouhlování na stovky se dívej na desítky. Nula až čtyři dolů, pět až devět nahoru.",
+    vis: { k: "text", h: "2 3<b>4</b>7 → 2 300 · 2 3<b>6</b>2 → 2 400" }, try: { q: "Zaokrouhli číslo 5 281 na stovky.", correct: "5 300", opts: ["5 300", "5 200", "5 280", "6 000"], why: "Desítky 8 → nahoru." } },
+  { t: "Na tisíce a desetitisíce", say: "Na tisíce rozhodují stovky, na desetitisíce tisíce. Vždy se podívej o jeden řád níž, než na který zaokrouhluješ.",
+    vis: { k: "text", h: "4 <b>7</b>12 → 5 000 (stovky 7)<br>3<b>2</b> 450 → 30 000 (tisíce 2)" }, try: { q: "Zaokrouhli číslo 8 462 na tisíce.", correct: "8 000", opts: ["8 000", "9 000", "8 500", "8 400"], why: "Stovky 4 → dolů." } },
+  { t: "Čísla do milionu", say: "Čísla do milionu čti po trojicích: dvě stě čtyřicet šest tisíc tři sta dvanáct. Mezera odděluje tisíce.",
+    vis: { k: "text", h: "246 312 = <b>246</b> tisíc <b>312</b><br>1 000 000 = milion" }, try: { q: "Které z čísel je největší?", correct: "512 000", opts: ["512 000", "498 999", "125 000", "500 999"], why: "Statisíce 5 mají dvě čísla, rozhodnou desetitisíce: 1 > 0." } }
+];
+LESSONS.M47 = [
+  { t: "Díl celku", say: "Když koláč rozdělíš na čtyři stejné díly, jeden díl je čtvrtina. Píše se jedna lomeno čtyřmi.",
+    vis: { k: "frac", d: 4, n: 1 }, try: { q: "Pizza je rozdělena na 8 stejných dílů a 3 díly se snědly. Jaká část se snědla?", correct: "3/8", opts: ["3/8", "5/8", "3/5", "1/3"], why: "3 díly z 8 = 3/8." } },
+  { t: "Zlomek z počtu", say: "Čtvrtina z dvaceti čtyř: rozděl dvacet čtyři na čtyři stejné části. Každá má šest.",
+    vis: { k: "frac", d: 4, n: 1, of: 24 }, try: { q: "Kolik je třetina z 27?", correct: 9, opts: [9, 3, 24, 8], why: "27 ÷ 3 = 9." } },
+  { t: "Sčítání stejných dílů", say: "Jedna pětina a dvě pětiny: sčítej jen díly. Tři pětiny. Jmenovatel zůstává.",
+    vis: { k: "frac", d: 5, n: 3, parts: [1, 2] }, try: { q: "2/6 + 3/6 = ?", correct: "5/6", opts: ["5/6", "5/12", "6/6", "1/6"], why: "2 + 3 = 5 dílů ze 6." } }
+];
+LESSONS.M48 = [
+  { t: "Kilometr a tuna", say: "Kilometr je tisíc metrů, tuna je tisíc kilogramů. Kilo znamená tisíc.",
+    vis: { k: "text", h: "1 km = <b>1 000</b> m · 1 t = <b>1 000</b> kg<br>2 km 300 m = <b>2 300</b> m" }, try: { q: "Kolik metrů jsou 3 km 500 m?", correct: "3 500", opts: ["3 500", "350", "3 050", "35 000"], why: "3 000 + 500 = 3 500 m." } },
+  { t: "Minuty a sekundy", say: "Minuta má šedesát sekund, hodina šedesát minut. Tři minuty jsou sto osmdesát sekund.",
+    vis: { k: "text", h: "1 min = <b>60</b> s · 1 h = <b>60</b> min<br>3 min = <b>180</b> s" }, try: { q: "Kolik sekund jsou 2 minuty?", correct: 120, opts: [120, 200, 60, 100], why: "2 × 60 = 120." } },
+  { t: "Římské číslice", say: "Římané psali čísla písmeny: I je jedna, V pět, X deset. Menší před větším se odečítá: IV je čtyři, IX devět.",
+    vis: { k: "text", h: "I II III <b>IV</b> V VI VII VIII <b>IX</b> X<br>XII = 12 · XVII = 17 · XX = 20" }, try: { q: "Jaké číslo je XIV?", correct: 14, opts: [14, 16, 9, 19], why: "X = 10, IV = 4 → 14." } }
+];
+LESSONS.M49 = [
+  { t: "Dva kroky", say: "Někdy úloha potřebuje dva kroky. Nejdřív zjisti, co chybí, teprve pak odpověz na otázku.",
+    vis: { k: "text", h: "Hermiona má 24 knih, Ron o 8 méně. Kolik mají dohromady?<br>1. Ron: 24 − 8 = <b>16</b><br>2. dohromady: 24 + 16 = <b>40</b>" }, try: { q: "Harry má 30 žabek, Ron o 10 méně. Kolik mají dohromady?", correct: 50, opts: [50, 40, 20, 60], why: "Ron 20, dohromady 30 + 20 = 50." } },
+  { t: "O kolik víc, kolikrát víc", say: "O tři víc znamená přičíst tři. Třikrát víc znamená násobit třemi. Dávej pozor na to slovíčko.",
+    vis: { k: "text", h: "6 žabek, <b>o 3 víc</b> → 6 + 3 = 9<br>6 žabek, <b>3krát víc</b> → 6 × 3 = 18" }, try: { q: "Hagrid má 7 dýní a Ron 4krát víc. Kolik dýní má Ron?", correct: 28, opts: [28, 11, 3, 21], why: "4krát víc = 7 × 4 = 28." } },
+  { t: "Odhad a kontrola", say: "Než počítáš přesně, odhadni výsledek. Šest krabic po sto dvaceti fazolkách je asi sedm set. Pak spočítej a porovnej.",
+    vis: { k: "text", h: "6 × 120 ≈ 6 × 100 = 600, tedy <b>něco přes 600</b><br>přesně: 6 × 120 = <b>720</b> ✓" }, try: { q: "V 5 krabicích je po 140 fazolkách. Kolik fazolek je celkem?", correct: 700, opts: [700, 600, 145, 7000], why: "5 × 140 = 700." } }
+];
 /* vyjmenovaná slova: jedna šablona pro všechna písmena (řada → pravidlo → dvojice, které se pletou) */
 var VYJ_LESSON = {
   C4:  { ex: "bydlit → <b>bydlím</b>, bydliště<br>obyvatel → <b>obývat</b>, obydlí<br>ale: bít, bílý, bílek → měkké i", pairs: [["být", "bít", "být = jsem, jsi, budu · bít = tlouct"], ["bydlo", "bidlo", "bydlo = živobytí · bidlo = tyč"], ["nabýt", "nabít", "nabýt = získat · nabít = baterii nebo mobil"]] },
@@ -5046,7 +5290,7 @@ function lessonTry(t, tr, st) {
   if (tr.id) { var bq = (BANKS[t] || []).filter(function (x) { return x.id === tr.id; })[0]; if (!bq) return null; return { q: bq.q, opts: shuffle(bq.o.slice()), correct: bq.o[0], why: bq.why || "" }; }
   if (tr.en) { var pool = vocabPool(t, st), w = pool.filter(function (x) { return x.en === tr.en; })[0]; if (!w) return null; var v = vocabListenQ(w, pool, allVocab(st)); return { q: v.q, opts: v.opts, correct: v.correct, why: v.why, word: w.en, big: !!v.bigOpts }; }
   if (tr.q) return { q: tr.q, opts: shuffle((tr.opts || numOptions(tr.correct)).slice()), correct: tr.correct, why: tr.why || "" };
-  if ((t === "M2" || t === "M3") && tr.a) { var ans = tr.a * tr.b; return { q: tr.a + " × " + tr.b + " = ?", opts: shuffle(numOptions(ans, [tr.a, -tr.a, tr.b, -tr.b, 1, -1, 2, -2])), correct: ans, why: tr.a + " × " + tr.b + " = " + ans }; }
+  if (tr.a != null && tr.b != null && !tr.op) { var ans = tr.a * tr.b; return { q: tr.a + " × " + tr.b + " = ?", opts: shuffle(numOptions(ans, [tr.a, -tr.a, tr.b, -tr.b, 1, -1, 2, -2])), correct: ans, why: tr.a + " × " + tr.b + " = " + ans }; }
   if (t === "M4" && tr.n) { var qd = tr.n / tr.d; return { q: tr.n + " ÷ " + tr.d + " = ?", opts: shuffle(numOptions(qd, [1, -1, 2, -2, 3, -3])), correct: qd, why: tr.n + " ÷ " + tr.d + " = " + qd + ", protože " + qd + " × " + tr.d + " = " + tr.n }; }
   if (t === "M1" && tr.op) { var a1 = tr.op === "+" ? tr.a + tr.b : tr.a - tr.b, sym = tr.op === "+" ? " + " : " − "; return { q: tr.a + sym + tr.b + " = ?", opts: shuffle(numOptions(a1)), correct: a1, why: mathHint({ dbg: { t: "M1", op: tr.op, a: tr.a, b: tr.b, ans: a1 } }) || (tr.a + sym + tr.b + " = " + a1) }; }
   return null;
@@ -5054,6 +5298,9 @@ function lessonTry(t, tr, st) {
 function lessonVisHTML(t, v) {
   if (!v) return "";
   if (/^(steps|snake|bus|grid|msq|figs|leson|axis)$/.test(v.k)) return lessonVisHejnyHTML(v);
+  if (v.k === "digits") { var pn = placeNames(v.n); return '<div class="lsVis digits"><div><b>' + pn.t + '</b><small>tisíce</small></div><div><b>' + pn.s + '</b><small>stovky</small></div><div><b>' + pn.d + '</b><small>desítky</small></div><div><b>' + pn.j + '</b><small>jednotky</small></div></div><p class="muted center">' + fmtN(v.n) + ' = ' + pn.t + ' T + ' + pn.s + ' S + ' + pn.d + ' D + ' + pn.j + ' J</p>'; }
+  if (v.k === "column") { var res = v.op === "+" ? v.a + v.b : v.op === "-" ? v.a - v.b : v.a * v.b, w = Math.max(String(res).length, String(v.a).length, String(v.b).length + 1); var pad = function (x) { x = String(x); while (x.length < w) x = " " + x; return x.replace(/ /g, "&nbsp;"); }; return '<div class="lsVis column"><div>' + pad(v.a) + '</div><div>' + (v.op === "-" ? "−" : v.op) + pad(v.b).slice(6) + '</div><div class="line">' + pad(res) + '</div></div>'; }
+  if (v.k === "frac") { var parts = v.parts || [v.n], filled = 0, segs = ""; for (var i = 0; i < v.d; i++) { var cls = ""; var acc = 0; for (var pi = 0; pi < parts.length; pi++) { acc += parts[pi]; if (i < acc) { cls = " f" + (pi % 2); break; } } segs += '<i class="' + cls + '" style="transform:rotate(' + (360 / v.d * i) + 'deg)"></i>'; } var txt = (v.parts ? v.parts.map(function (x) { return x + "/" + v.d; }).join(" + ") + " = " : "") + v.n + "/" + v.d + (v.of ? " z " + v.of + " = " + (v.of / v.d * v.n) : ""); return '<div class="lsVis fracWrap"><div class="pie" style="--n:' + v.d + '">' + segs + '</div><p class="center" style="font-size:22px;font-weight:700">' + txt + '</p></div>'; }
   var row = function (n, e) { return new Array(n + 1).join(e); };
   if (v.k === "balls") return '<div class="lsVis">' + altExplainHTML({ topic: "M2", dbg: { a: v.a, b: v.b } }) + '</div>';
   if (v.k === "pots") return '<div class="lsVis">' + altExplainHTML({ topic: "M4", dbg: { n: v.n, d: v.d } }) + '</div>';
@@ -5881,9 +6128,9 @@ function showQuestion() {
       (it.cue ? '<div class="wordCue">' + it.cue + '</div>' : '') +
       '<p class="qtext center">' + esc(it.q) + '</p>' +
       (it.sayPre ? '<div class="sayRow">' + sayBtnHTML(it.word) + '</div>' : '') +
-      '<div class="typeRow"><input type="text" id="typeInput" class="' + (it.csInput ? "csIn" : "") + '" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + (it.csInput ? "česky…" : "…") + '">' +
+      '<div class="typeRow"><input type="text" id="typeInput" class="' + (it.csInput ? "csIn" : it.numeric ? "numIn" : "") + '"' + (it.numeric ? ' inputmode="numeric"' : '') + ' autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + (it.numeric ? "výsledek…" : it.csInput ? "česky…" : "…") + '">' +
       '<button class="btn" id="typeBtn">Hotovo</button></div>' +
-      (it.csInput ? '<p class="muted center">Háčky a čárky psát nemusíš.</p>' : '');
+      (it.csInput ? '<p class="muted center">Háčky a čárky psát nemusíš.</p>' : it.numeric ? '<p class="muted center">Spočítej na papír a napiš výsledek.</p>' : '');
   } else if (it.kind === "card") {
     html += '<div class="recallTag">🧠 Z hlavy — bez nabídky</div>' +
       '<p class="qtext center">' + esc(it.q) + '</p>' +
@@ -5953,7 +6200,8 @@ function showQuestion() {
     var inp = el("typeInput");
     var submit = function () {
       var v = inp.value.trim().toLowerCase().replace(/\s+/g, " ");
-      if (!v) { inp.placeholder = "Napiš slovo…"; return; }
+      if (it.numeric) v = v.replace(/[\s.]/g, "").replace(",", "");
+      if (!v) { inp.placeholder = it.numeric ? "Napiš výsledek…" : "Napiš slovo…"; return; }
       inp.disabled = true; el("typeBtn").disabled = true;
       answerQ(it, v, null);
     };
@@ -6205,7 +6453,7 @@ function answerQ(it, chosen, btn) {
   });
   var fb = el("fb");
   var st = S.stats[it.topic];
-  var isSpell = (it.kind === "build" && !it.tokens) || (it.kind === "type" && !it.csInput);
+  var isSpell = (it.kind === "build" && !it.tokens) || (it.kind === "type" && !it.csInput && !it.numeric);
   var note = wordNote(it, correct);
   if (it.fact && !it.retry) {
     var fch = factRecord(S, it.fact, !!correct, todayStr());
@@ -7274,6 +7522,11 @@ var parentLock = null;
    (S.parentSetup prázdné) provede rodiče Harrym Potterem, školní látkou, slovíčky a účtem.
    Každý krok se hned uloží, „Dokončím později“ nic neztratí. Znovu ho spustí rozcestník panelu.
    ===================================================================== */
+CURRICULUM[4].presets = {
+  zacatek:  { n: "Začátek 4. třídy", d: "opakování násobilky a dělení, čísla do 10 000, vyjmenovaná slova, slovní druhy", t: ["M2", "M3", "M4", "M41", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11"] },
+  pololeti: { n: "Kolem pololetí", d: "navíc písemné sčítání a odčítání, násobení zpaměti, zaokrouhlování, písemné násobení", t: ["M2", "M3", "M4", "M41", "M42", "M43", "M44", "M46", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11"] },
+  konec:    { n: "Konec 4. třídy", d: "všechna matematika 4. třídy včetně písemného dělení, zlomků a jednotek", t: ["M2", "M3", "M4", "M41", "M42", "M43", "M44", "M45", "M46", "M47", "M48", "M49", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11"] }
+};
 var SETUP_PRESETS = CURRICULUM[3].presets = {
   zacatek:  { n: "Začátek 3. třídy", d: "sčítání a odčítání do 100, násobilka 2–5, tvrdé a měkké slabiky, abeceda", t: ["M1", "M2", "C1", "C2"] },
   pololeti: { n: "Kolem pololetí", d: "navíc násobilka 6–10, dělení, párové souhlásky a vyjmenovaná slova po B, L a M", t: ["M1", "M2", "M3", "M4", "C1", "C2", "C3", "C4", "C5", "C6"] },
@@ -7342,7 +7595,7 @@ function screenParentSetup(step) {
     var cu = curriculumFor(S), prs = cu.presets || SETUP_PRESETS;
     html = head(2, "🏫 Do které třídy chodí?") +
       '<div class="gradePick">' + [1, 2, 3, 4, 5].map(function (g) { return '<button class="setupOpt' + (kidGrade() === g ? " on" : "") + '" data-grade="' + g + '"><b>' + g + '.</b></button>'; }).join("") + '</div>' +
-      (cu.fallback ? '<div class="stavBox ne">Učivo pro ' + cu.wanted + '. třídu teprve připravujeme. Zatím hra nabízí učebny ' + cu.n + ' — odemkněte jen ty, které dítě zvládne. Až bude balíček hotový, hra ho nabídne sama.</div>' : '') +
+      (cu.fallback ? '<div class="stavBox ne">Učivo pro ' + cu.wanted + '. třídu teprve připravujeme. Zatím hra nabízí učebny ' + cu.n + ' — odemkněte jen ty, které dítě zvládne. Až bude balíček hotový, hra ho nabídne sama.</div>' : cu.partial ? '<div class="stavBox ne">' + esc(cu.partial) + '</div>' : '') +
       '<h3 style="font-size:19px;margin-top:14px">Co už probrali ve škole?</h3>' +
       '<p class="muted">Učivo ' + cu.n + '. Vyberte, kde ve školním roce jste. Zamčené učebny dítě vidí jen jako zamčené, bez názvu, ať se těší.</p>' +
       '<div class="setupChoice col">' + Object.keys(prs).map(function (k) { var pr = prs[k];
@@ -7549,8 +7802,8 @@ function screenParent(section) {
       '<div><label>Dočtená kapitola ' + S.year + '. dílu</label><select id="pChapter">' + chOpts + '</select></div></div>' +
       '<p class="muted">Otázek k ' + S.year + '. dílu je připraveno ' + hpCount + ' z ' + hpTotal + ' napsaných' + (hpTotal === 0 ? ' — k tomuto dílu zatím žádné nejsou, požádejte o balíček.' : '.') + ' Učebna dílu se otevře, jakmile jsou dostupné aspoň 3 otázky.</p>' +
       '<h3>🏫 Třída</h3>' +
-      '<p class="muted">Školní třída určuje učivo (učebny). Díl Harryho Pottera je zvlášť výše. ' + (curriculumFor(S).fallback ? '<b>Učivo pro ' + kidGrade() + '. třídu teprve připravujeme</b>, zatím jsou k dispozici učebny 3. třídy.' : '') + '</p>' +
-      '<div class="row"><div><label>Do které třídy chodí</label><select id="pGrade">' + [1, 2, 3, 4, 5].map(function (g) { return '<option value="' + g + '"' + (kidGrade() === g ? " selected" : "") + '>' + g + '. třída' + (CURRICULUM[g] ? "" : " (učivo připravujeme)") + '</option>'; }).join("") + '</select></div></div>' +
+      '<p class="muted">Školní třída určuje učivo (učebny). Díl Harryho Pottera je zvlášť výše. ' + (curriculumFor(S).fallback ? '<b>Učivo pro ' + kidGrade() + '. třídu teprve připravujeme</b>, zatím jsou k dispozici učebny 3. třídy.' : curriculumFor(S).partial ? esc(curriculumFor(S).partial) : '') + '</p>' +
+      '<div class="row"><div><label>Do které třídy chodí</label><select id="pGrade">' + [1, 2, 3, 4, 5].map(function (g) { return '<option value="' + g + '"' + (kidGrade() === g ? " selected" : "") + '>' + g + '. třída' + (!CURRICULUM[g] ? " (učivo připravujeme)" : CURRICULUM[g].partial ? " (zatím matematika)" : "") + '</option>'; }).join("") + '</select></div></div>' +
       '<h3>🧮 Jak se u vás počítá?</h3>' +
       '<p class="muted">Výklad matematiky v hájence používá stejný jazyk jako škola dítěte. Klasicky: rozklad přes desítku, stejné skupiny. Hejného metoda: krokování, hadi, autobus, násobilkové čtverce, zvířátka dědy Lesoně, úlohy k objevování bez vysvětlování. Nemíchat: výklad matematiky vypnutý, hra jen zkouší.</p>' +
       '<div class="row"><div><label>Metoda</label><select id="pMethod">' + Object.keys(METHODS).map(function (k) { return '<option value="' + k + '"' + (kidMethod() === k ? " selected" : "") + '>' + METHODS[k].n + '</option>'; }).join("") + '</select></div></div>' +
@@ -8008,6 +8261,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
+  czNum: czNum, fmtN: fmtN, checkAnswer: checkAnswer, makeQuestion: makeQuestion,
   CURRICULUM: CURRICULUM, DEFAULT_GRADE: DEFAULT_GRADE, kidGrade: kidGrade, curriculumFor: curriculumFor, gradeTopics: gradeTopics,
   LESSONS_H: LESSONS_H, METHODS: METHODS, kidMethod: kidMethod,
   CHARS: CHARS, examOpen: examOpen, LESSONS: LESSONS, lessonCards: lessonCards, lessonTry: lessonTry, lessonHas: lessonHas, lessonVisHTML: lessonVisHTML, lessonWho: lessonWho, VYJ_LESSON: VYJ_LESSON,
