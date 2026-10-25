@@ -905,7 +905,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-26f";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-26g";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -2555,7 +2555,7 @@ function parseWordList(text) {
     if (alt && EN_RE.test(alt)) item.alt = alt;
     if (unit) { item.b = unit; item.bl = unitName; }
     if (parts[2] && !/^[a-z0-9]/i.test(parts[2].trim())) item.e = parts[2].trim();
-    else { for (var k in VOCAB_SETS) VOCAB_SETS[k].forEach(function (w) { if (w.en === en && !item.e) item.e = w.e; }); }
+    else { for (var k in VOCAB_SETS) VOCAB_SETS[k].forEach(function (w) { if (w.en === en && !item.e) item.e = w.e; }); if (!item.e && autoEmoji(en)) item.e = autoEmoji(en); }
     out.push(item);
   });
   return out;
@@ -2569,6 +2569,23 @@ function wordsToText(words) {
   });
   return lines.join("\n");
 }
+/* Emoji pro běžná školní slovíčka, když je rodič do seznamu nenapíše (26. 10. 2026, Karolinka: „purple jsou hvězdičky“).
+   Jen jednoznačné obrázky; co tu není, zůstane bez emoji (poslech pak nabídne česká slova). Rodič může emoji vždy přepsat. */
+var AUTO_EMOJI = {
+  purple: "🟣", pink: "🌸", grey: "🌫️", gray: "🌫️", gold: "🥇", silver: "🥈", violet: "🟣",
+  mother: "👩", mum: "👩", father: "👨", dad: "👨", sister: "👧", brother: "👦", grandmother: "👵", grandma: "👵", grandfather: "👴", grandpa: "👴", baby: "👶", family: "👨‍👩‍👧", friend: "🤝",
+  head: "🗣️", hand: "✋", foot: "🦶", eye: "👁️", nose: "👃", mouth: "👄", ear: "👂", hair: "💇", leg: "🦵", arm: "💪", tooth: "🦷", heart: "❤️",
+  school: "🏫", teacher: "👩‍🏫", chair: "🪑", window: "🪟", door: "🚪", bag: "🎒", clock: "🕰️", picture: "🖼️", computer: "💻", phone: "📱",
+  house: "🏠", garden: "🌳", kitchen: "🍳", bathroom: "🛁", bedroom: "🛏️", tree: "🌳", flower: "🌼", sun: "☀️", star: "⭐", moon: "🌙", rain: "🌧️", snow: "❄️",
+  horse: "🐴", cow: "🐄", pig: "🐷", sheep: "🐑", duck: "🦆", fish: "🐟", bird: "🐦", rabbit: "🐰", elephant: "🐘", lion: "🦁", monkey: "🐒", tiger: "🐯", bear: "🐻", snake: "🐍", frog: "🐸", mouse: "🐭", spider: "🕷️", giraffe: "🦒", zebra: "🦓", bee: "🐝", butterfly: "🦋", chicken: "🐔",
+  bread: "🍞", cheese: "🧀", milk: "🥛", water: "💧", juice: "🧃", pizza: "🍕", "ice cream": "🍦", banana: "🍌", egg: "🥚", rice: "🍚", soup: "🍲", chocolate: "🍫", cake: "🎂", tea: "🍵", sandwich: "🥪", carrot: "🥕", tomato: "🍅", potato: "🥔", cherry: "🍒", strawberry: "🍓", lemon: "🍋", pear: "🍐", grapes: "🍇", watermelon: "🍉", sweets: "🍬", biscuit: "🍪", cookie: "🍪",
+  doll: "🪆", car: "🚗", kite: "🪁", "teddy bear": "🧸", bike: "🚲", robot: "🤖", boat: "⛵", plane: "✈️", bus: "🚌", ball: "⚽",
+  run: "🏃", jump: "🤸", swim: "🏊", sing: "🎤", dance: "💃", read: "📚", write: "✍️", draw: "🎨", sleep: "😴", eat: "🍽️", drink: "🥤", play: "🎮", walk: "🚶", fly: "🕊️", climb: "🧗", cook: "👨‍🍳", listen: "👂", look: "👀",
+  happy: "😀", sad: "😢", angry: "😠", tired: "🥱", hot: "🥵", cold: "🥶", old: "👴", young: "👶", tall: "🦒", small: "🐜", big: "🐘", fast: "🐆", slow: "🐢", hungry: "🍽️", thirsty: "🥤",
+  "t-shirt": "👕", trousers: "👖", dress: "👗", shoes: "👟", jacket: "🧥", socks: "🧦", hat: "🎩", cap: "🧢", coat: "🧥", skirt: "👗",
+  king: "🤴", queen: "👸", princess: "👸", prince: "🤴", witch: "🧙‍♀️", wizard: "🧙", dragon: "🐉", ghost: "👻", monster: "👹", pirate: "🏴‍☠️", castle: "🏰", crown: "👑", key: "🗝️", treasure: "💰"
+};
+function autoEmoji(en) { return AUTO_EMOJI[String(en || "").toLowerCase().replace(/^(a|an|the) /, "")] || ""; }
 function vocabPool(t, state) {
   if (t === "E0") return (state && state.words) || [];
   return VOCAB_SETS[t] || [];
@@ -3181,6 +3198,7 @@ function migrate(s) {
      přenést synchronizací bez slov (8. 10. 2026). Smazání všeho (wordsCleared) se respektuje. */
   if (!Array.isArray(s.unitsShipped)) s.unitsShipped = [];
   if (!Array.isArray(s.wordsRemoved)) s.wordsRemoved = [];
+  s.words.forEach(function (w) { if (w && !w.e && autoEmoji(w.en)) w.e = autoEmoji(w.en); });   /* purple → 🟣 i u dřív uložených slov */
   if (s.sesit) SCHOOL_UNITS_SHIPPED.forEach(function (u) {
     var have = {}; s.words.forEach(function (w) { have[w.en] = w; });
     u.words.forEach(function (w) { var x = have[w.en]; if (x && !x.b) { x.b = w.b; x.bl = w.bl; if (w.alt && !x.alt) x.alt = w.alt; } });
@@ -5595,7 +5613,7 @@ function lessonVisHTML(t, v) {
   if (v.k === "pair") return '<div class="lsVis lsPair"><div><b>' + esc(v.t1) + '</b><div class="lsLetters">' + v.l1.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join("") + '</div></div><div><b>' + esc(v.t2) + '</b><div class="lsLetters">' + v.l2.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join("") + '</div></div></div>';
   if (v.k === "pairs") return '<div class="lsVis">' + v.list.map(function (p) { return '<div class="lsDuo"><span class="lsY">' + esc(p[0]) + '</span> × <span class="lsI">' + esc(p[1]) + '</span><small>' + esc(p[2]) + '</small></div>'; }).join("") + '</div>';
   if (v.k === "abc") return '<div class="lsVis lsLetters big">' + "A B C Č D Ď E F G H CH I J K L M N Ň O P Q R Ř S Š T Ť U V W X Y Z Ž".split(" ").map(function (c) { return '<span' + (c === "CH" ? ' class="hi"' : '') + '>' + c + '</span>'; }).join("") + '</div>';
-  if (v.k === "words") return '<div class="lsVis lsWords">' + v.list.map(function (w) { return '<div class="lsWord"><span class="lsEmoji">' + (w.e || "✨") + '</span><b class="qword">' + esc(w.en) + '</b><span class="muted">' + esc(w.cs) + '</span>' + sayBtnHTML(w.en, true) + '</div>'; }).join("") + '</div>';
+  if (v.k === "words") return '<div class="lsVis lsWords">' + v.list.map(function (w) { return '<div class="lsWord"><span class="lsEmoji">' + (w.e || "🔤") + '</span><b class="qword">' + esc(w.en) + '</b><span class="muted">' + esc(w.cs) + '</span>' + sayBtnHTML(w.en, true) + '</div>'; }).join("") + '</div>';
   if (v.k === "text") return '<div class="lsVis lsText">' + v.h + '</div>';
   return "";
 }
@@ -8547,7 +8565,7 @@ W.claimReward = claimReward;
 
 /* Rozhraní pro automatické testy (node) — hru nijak neovlivňuje. */
 W.BRADAVICE = {
-  VZOR_TOPICS: VZOR_TOPICS, vzorListHTML: vzorListHTML,
+  autoEmoji: autoEmoji, parseWordList: parseWordList, VZOR_TOPICS: VZOR_TOPICS, vzorListHTML: vzorListHTML,
   czNum: czNum, fmtN: fmtN, checkAnswer: checkAnswer, makeQuestion: makeQuestion,
   CURRICULUM: CURRICULUM, DEFAULT_GRADE: DEFAULT_GRADE, kidGrade: kidGrade, curriculumFor: curriculumFor, gradeTopics: gradeTopics,
   LESSONS_H: LESSONS_H, METHODS: METHODS, kidMethod: kidMethod,
