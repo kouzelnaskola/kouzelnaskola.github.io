@@ -121,6 +121,18 @@
   .qtext { font-size: 23px; line-height: 1.5; margin-bottom: 6px; font-weight: 700; }
   .qword { font-family: "Helvetica Neue", Arial, sans-serif; letter-spacing: 1.5px; font-weight: 700; }
   .progress { font-size: 15px; color: var(--muted2); font-style: italic; margin-bottom: 8px; }
+  /* karta otázky nese barvu předmětu: pruh nahoře, štítek s názvem předmětu a jemné pozadí, aby dítě poznalo přechod z počtů do angličtiny (27. 10. 2026) */
+  .card.q-m  { --subj: #2f6f5e; --subj-pale: #e2f1ec; }
+  .card.q-cj { --subj: #7a4a1e; --subj-pale: #f5e8d6; }
+  .card.q-en { --subj: #4a3f9a; --subj-pale: #e7e4f7; }
+  .card.q-hp { --subj: #9a6b12; --subj-pale: #f8ecd2; }
+  .card[class*="q-"] { border-top: 12px solid var(--subj); background: linear-gradient(var(--subj-pale), #fff 140px); }
+  .subjBand { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -4px 0 6px; font-size: 19px; color: var(--subj); }
+  .subjBand b { font-size: 21px; } .subjBand .subjSub { font-size: 15px; color: var(--muted2); font-style: italic; }
+  .subjBand .icon-inline { flex: none; }
+  .card.subjNew .subjBand { animation: subjPop .7s ease-out both; }
+  @keyframes subjPop { 0% { transform: scale(1); } 30% { transform: scale(1.12); } 100% { transform: scale(1); } }
+  html.noAnim .card.subjNew .subjBand { animation: none; }
   .flavor { font-style: italic; color: var(--muted2); font-size: 17px; margin-bottom: 8px; }
   .introFlavor { font-style: italic; font-size: 20px; line-height: 1.55; margin: 10px 0 14px; color: var(--muted2); }
 
@@ -884,6 +896,7 @@
   .parentLink button { background: none; border: none; color: #8a7a6a; text-decoration: underline; font-size: .9em; font-style: italic; padding: 8px; }
   hr { border: none; border-top: 2px dashed var(--shadow); margin: 16px 0; }
   .hidden { display: none !important; }
+.unlockMore{margin:6px 0 10px;border:1.5px dashed var(--ink);border-radius:10px;padding:4px 10px}.unlockMore summary{cursor:pointer;font-weight:700;padding:6px 0}.unlockMore summary .muted{font-weight:400}
 </style>
 </head>
 <body>
@@ -905,7 +918,7 @@
    mezi zařízeními (Supabase, rodinný kód) — bez nich hra funguje beze změny.
    ===================================================================== */
 
-var GAME_VERSION = "2026-10-27a";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
+var GAME_VERSION = "2026-10-27c";   /* zobrazí se v rodičovském panelu — pomůže poznat, jestli zařízení má novou verzi */
 var SAVE_KEY = "bradaviceV3";
 var SAVE_VERSION = 3;
 var OLD_KEYS = { akademie: "akademieV1", bradavice2: "bradavickaHraV1" };
@@ -6060,7 +6073,8 @@ function questionHeader(it) {
   var pct = Math.round(100 * session.index / session.queue.length);
   if (session.maxPct > pct) pct = session.maxPct; else session.maxPct = pct;
   return '<div class="pbar"><i style="width:' + pct + '%"></i></div>' +
-    '<p class="progress">' + subjIcon(tp.subj, 18) + ' ' + esc(tp.n) + ' · ' + counter + '</p>' +
+    '<div class="subjBand">' + subjIcon(tp.subj, 22) + '<b>' + esc(SUBJECTS[tp.subj].n) + '</b><span class="subjSub">' + esc(SUBJECTS[tp.subj].sub) + '</span></div>' +
+    '<p class="progress">' + esc(tp.n) + ' · ' + counter + '</p>' +
     (flavor ? '<p class="flavor">' + esc(flavor) + '</p>' : '');
 }
 
@@ -6192,11 +6206,24 @@ function ttsProxyFetch(text, voice) {
     return fetch(j.url).then(function (r2) { if (!r2.ok) throw new Error("mp3 " + r2.status); return r2.blob(); });
   });
 }
-function ttsPlayBlob(blob) {
+/* Hlasitost po hlasech (27. 10. 2026, táta: Brumbála si člověk musí zesilovat, vypravěčka je hodně nízko). Změřeno
+   design/hlasitost.mjs (RMS): vypravěč cs −40 dBFS, Brumbál −36, McGonagallová −26, Hagrid −21, Alice −21 → zesílení
+   přes WebAudio (gain + lehký kompresor, ať nejhlasitější věty nepřebudí). Nový hlas = změřit a doplnit, jinak 1. */
+var VOICE_GAIN = { XOgpjkYNnVH5W7ZAlLYg: 5, A4QaWrc6j9wnj1l191pm: 3.5, bF7C2fCv7Zf30iT84wZ1: 1.6 };
+function ttsBoost(a, g) {
+  var ctx = sfxCtxGet(); if (!ctx || ctx.state !== "running") return;   /* uspaný kontext by hlas umlčel — radši potichu než vůbec */
+  try {
+    var src = ctx.createMediaElementSource(a), gn = ctx.createGain(), comp = ctx.createDynamicsCompressor();
+    gn.gain.value = g; comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.15;
+    src.connect(gn); gn.connect(comp); comp.connect(ctx.destination);
+  } catch (e) {}
+}
+function ttsPlayBlob(blob, voice) {
   if (ttsAudio) { try { ttsAudio.pause(); } catch (e) {} }
   var url = URL.createObjectURL(blob);
   ttsAudio = new Audio(url);
   var a = ttsAudio, ducked = true; ambDuck(true);
+  var g = (voice && VOICE_GAIN[voice]) || 1; if (g !== 1) ttsBoost(a, g);
   var undo = function () { if (ducked) { ducked = false; ambDuck(false); } };
   /* slib se splní až po dořečení (sayFirst ukazuje možnosti až po slově), chyba přehrání = odmítnutí */
   return new Promise(function (res, rej) {
@@ -6254,7 +6281,7 @@ function ttsSay(word, cfgOverride, lang, voiceForce) {
       throw e;
     });
     return get.then(function (b) { ttsPutCached(id, b); return b; });
-  }).then(ttsPlayBlob);
+  }).then(function (b) { return ttsPlayBlob(b, voice); });
   /* při výpadku (offline, kredity, server) promluví aspoň vestavěný hlas; v panelu (cfgOverride) chybu hlásíme */
   return cfgOverride ? p : p.catch(function (e) { if (ttsLocalOk() && lang !== "cs") return ttsSpeak(word, lang); throw e; });
 }
@@ -6747,7 +6774,8 @@ function showQuestion() {
   sessionPersist();
   if (session.index === 0 || !S.live || !S.live.active) { liveMark(true); saveState(); } else liveMark(true);
   var it = session.queue[session.index];
-  var html = topbarHTML(true) + '<div class="card">' + questionHeader(it);
+  var tpq = TOPICS[it.topic], subjNew = session.lastSubj && session.lastSubj !== tpq.subj; session.lastSubj = tpq.subj;   /* změna předmětu = kartu to „přebarví“ (27. 10. 2026, táta: přechod mezi předměty je násilný) */
+  var html = topbarHTML(true) + '<div class="card q-' + tpq.subj + (subjNew ? " subjNew" : "") + '">' + questionHeader(it);
   if (it.kind === "build") { html += buildUIHTML(it); }
   else if (it.kind === "type") {
     html += (it.recall ? '<div class="recallTag">🧠 Z hlavy — bez nabídky</div>' : '') +
@@ -8372,8 +8400,19 @@ function screenParent(section) {
   }
 
   /* ---------- společné pomůcky ---------- */
-  var cjT = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === "cj"; });
-  var mT = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === "m"; });
+  /* Odemykání po třídách (27. 10. 2026, táta: „není možné rozeznat, co je učivo pro jakou třídu“): učebny třídy dítěte nahoře,
+     ostatní třídy ve sbalených blocích — zaškrtnutí se pamatuje, dítě je uvidí až po přepnutí třídy. */
+  var unlockGroups = function (subj) {
+    var kg = kidGrade(S), grades = Object.keys(CURRICULUM).map(Number).sort(function (a, b) { return a === kg ? -1 : b === kg ? 1 : a - b; });
+    var has = function (t, g) { var tg = TOPICS[t].grade; return !tg || tg === g || (tg.indexOf && tg.indexOf(g) !== -1); };
+    return grades.map(function (g) {
+      var list = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === subj && has(t, g) && (g === kg || !has(t, kg)); });
+      if (!list.length) return "";
+      var rows = list.map(unlockRow).join("");
+      if (g === kg) return '<p class="muted" style="margin:4px 0 2px"><b>' + g + '. třída</b> — třída dítěte</p>' + rows;
+      return '<details class="unlockMore"><summary>Učebny ' + g + '. třídy <span class="muted">(dítě je uvidí, až mu přepnete třídu)</span></summary>' + rows + '</details>';
+    }).join("");
+  };
   var enT = TOPIC_ORDER.filter(function (t) { return TOPICS[t].subj === "en" && !TOPICS[t].custom; });
   function acc(t) { var x = S.stats[t], tot = x.c + x.w; return tot ? Math.round(100 * x.c / tot) + " % (" + x.c + "/" + tot + ")" : "—"; }
   var body = "";
@@ -8444,8 +8483,8 @@ function screenParent(section) {
       '<div class="chkRow"><input type="checkbox" id="pExamOpen"' + (S.examOpen && S.examOpen[S.year] ? " checked" : "") + '><span><b>Zkouška ' + S.year + '. ročníku otevřená</b> <span class="muted">— ' + (examOpen(S) && !(S.examOpen && S.examOpen[S.year]) ? "už je otevřená (díl dočtený nebo složená)" : "i před dočtením dílu") + '</span></span></div>' +
       '<h3>Co už jste probrali ve škole</h3>' +
       '<p class="muted">Zaškrtnutá učebna se odemkne: objeví se v rozvrhu a v denním vyučování. Zamčené učebny dítě vidí jen jako zamčené dveře — bez názvu, ať se těší. Odemykejte, až látku ve škole opravdu proberou: jedna příliš těžká otázka umí zkazit celou hru.</p>' +
-      '<h3 style="font-size:17px">' + svgQuill(17) + ' Čeština (Psaní brkem)</h3>' + cjT.map(unlockRow).join("") +
-      '<h3 style="font-size:17px">' + svgCauldron(17) + ' Matematika (Lektvary)</h3>' + mT.map(unlockRow).join("") +
+      '<h3 style="font-size:17px">' + svgQuill(17) + ' Čeština (Psaní brkem)</h3>' + unlockGroups("cj") +
+      '<h3 style="font-size:17px">' + svgCauldron(17) + ' Matematika (Lektvary)</h3>' + unlockGroups("m") +
       '<h3>🧠 Počítání z hlavy (bonus)</h3>' +
       '<p class="muted">U učeben Lektvarů, kde už má aspoň jednu hvězdu, dostane nejdřív pole pro výsledek a tiché přesýpací hodiny (15 s). Správně z hlavy = o galeon víc. Po uplynutí času se možnosti objeví samy, špatný tip nic nestojí.</p>' +
       '<div class="chkRow"><input type="checkbox" id="pMental"' + (S.mental ? " checked" : "") + '><span><b>Počítání z hlavy zapnuté</b></span></div>' +
@@ -8902,7 +8941,7 @@ W.BRADAVICE = {
   setupApplyPreset: setupApplyPreset, setupApplyHP: setupApplyHP, setupPresetNow: setupPresetNow, SETUP_PRESETS: SETUP_PRESETS,
   ucetFromHash: ucetFromHash, ucetDecide: ucetDecide, ucetEmailOk: ucetEmailOk, ucetEmailNorm: ucetEmailNorm, jwtEmail: jwtEmail, UCET_KEY: UCET_KEY,
   SAVE_KEY: SAVE_KEY, SAVE_VERSION: SAVE_VERSION, OLD_KEYS: OLD_KEYS,
-  TOPICS: TOPICS, TOPIC_ORDER: TOPIC_ORDER, DEFAULT_UNLOCKED: DEFAULT_UNLOCKED, YEARS: YEARS,
+  VOICE_GAIN: VOICE_GAIN, TOPICS: TOPICS, TOPIC_ORDER: TOPIC_ORDER, DEFAULT_UNLOCKED: DEFAULT_UNLOCKED, YEARS: YEARS,
   BANKS: BANKS, GENS: GENS, SHOP: SHOP, BADGES: BADGES, HOUSES: HOUSES, KNOWLEDGE: KNOWLEDGE, VOCAB_SETS: VOCAB_SETS,
   defaultState: defaultState, migrate: migrate, importLegacy: importLegacy, defaultStreak: defaultStreak,
   streakOnLoad: streakOnLoad, streakOnQuestComplete: streakOnQuestComplete,
